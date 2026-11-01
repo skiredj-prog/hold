@@ -1,0 +1,1502 @@
+{
+ "scenario": "S2",
+ "family": "F1-structured",
+ "condition": "C2",
+ "hold": true,
+ "journal": {
+  "format": "hold.journal/v1",
+  "mission": {
+   "id": "m_3de05d4c8011",
+   "title": "S2 · C2",
+   "status": "CLOSED_COMPLETED"
+  },
+  "profiles": {
+   "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674": {
+    "authority": {
+     "can_revoke": true,
+     "channel": "whatsapp",
+     "contact": "212600000000",
+     "grant_ttl_minutes": 15,
+     "locale": "fr",
+     "max_extra_checks": 1,
+     "max_requests": 2,
+     "name": "Autorité de la mission",
+     "question_ttl_minutes": 60,
+     "sigma": 0.95
+    },
+    "description": "L'agent prépare un déplacement : il cherche et réserve un hôtel dans l'enveloppe fixée, vérifie seul une réservation incertaine, et ne sollicite l'autorité que si la cohérence ne peut pas être rétablie dans son habilitation.",
+    "expires_at": "2026-11-30T23:59:59Z",
+    "hesitation": {
+     "autonomous_resume": true,
+     "envelope_breach": "ask_authority",
+     "ladder": [
+      "VERIFY",
+      "CONTACT_SUPPORT",
+      "ASK_AUTHORITY",
+      "PRESERVE"
+     ],
+     "map_retries": 1,
+     "max_rounds": 8,
+     "max_wait_seconds": 900,
+     "max_waits": 2,
+     "on_refused_proposal": "reference",
+     "tau_star": 0.5
+    },
+    "hold": "habilitation/v1",
+    "id": "reservation-voyage",
+    "issued_at": "2026-11-01T12:00:00Z",
+    "powers": [
+     {
+      "action": "search_hotels",
+      "depends_on": [],
+      "description": "Chercher des hôtels disponibles (lecture seule).",
+      "identity": [],
+      "kind": "read"
+     },
+     {
+      "action": "venue_info",
+      "depends_on": [],
+      "description": "Vérifier l'adresse et les horaires du lieu (lecture seule).",
+      "identity": [],
+      "kind": "read"
+     },
+     {
+      "action": "create_booking",
+      "budget": 1,
+      "depends_on": [],
+      "description": "Réserver une chambre (effet externe, non idempotent chez le fournisseur).",
+      "envelope": {
+       "allowed": {
+        "city": [
+         "Lyon"
+        ],
+        "provider": [
+         "hotel-synthetique"
+        ]
+       },
+       "amount_field": "price",
+       "currency_field": "currency",
+       "max_amount": {
+        "amount": 300,
+        "currency": "EUR"
+       },
+       "required": [
+        "provider",
+        "hotel_id",
+        "traveler",
+        "check_in",
+        "check_out",
+        "price",
+        "currency",
+        "city"
+       ],
+       "windows": {
+        "check_in": {
+         "end": "2026-11-20",
+         "start": "2026-11-15"
+        },
+        "check_out": {
+         "end": "2026-11-21",
+         "start": "2026-11-15"
+        }
+       }
+      },
+      "identity": [
+       "provider",
+       "hotel_id",
+       "traveler",
+       "check_in",
+       "check_out"
+      ],
+      "kind": "effect",
+      "reconciliation": {
+       "decay": 0.6,
+       "max_checks": 3,
+       "sigma": 0.9,
+       "status_action": "check_booking"
+      }
+     },
+     {
+      "action": "check_booking",
+      "depends_on": [],
+      "description": "Consulter le statut d'une réservation existante par son identifiant d'opération.",
+      "identity": [],
+      "kind": "status"
+     },
+     {
+      "action": "contact_support",
+      "budget": 1,
+      "depends_on": [],
+      "description": "Écrire au support du fournisseur pour retrouver une réservation.",
+      "identity": [],
+      "kind": "contact",
+      "role": "support",
+      "sigma": 0.7
+     },
+     {
+      "action": "send_itinerary",
+      "budget": 1,
+      "depends_on": [
+       "create_booking"
+      ],
+      "description": "Envoyer l'itinéraire final au voyageur (suppose l'hôtel confirmé).",
+      "identity": [
+       "traveler",
+       "booking_reference"
+      ],
+      "kind": "effect"
+     }
+    ],
+    "revision": 1,
+    "title": "Réservation de voyage professionnel"
+   }
+  },
+  "events": [
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 1,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "MISSION_OPENED",
+    "actor": "AGENT",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "title": "S2 · C2"
+    },
+    "phase": null,
+    "status": "OPEN",
+    "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+    "hash": "0c074ccfd0563c8b8332062202222026ae5a556a9178437dc83bf90b59acaccf"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 2,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "PROFILE_ATTACHED",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "fingerprint": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+     "revision": 1,
+     "profile": "reservation-voyage",
+     "signed": false,
+     "authority": "Autorité de la mission"
+    },
+    "phase": null,
+    "status": "OPEN",
+    "prev": "0c074ccfd0563c8b8332062202222026ae5a556a9178437dc83bf90b59acaccf",
+    "hash": "591662c7bd4256a7198bdca725c2eff511c58deec359cf2b151493644376250e"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 3,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "RUNTIME_BOUND",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "core": "hold-core/0.1.0",
+     "agent": {
+      "name": "scripted"
+     },
+     "discerner": {
+      "name": "delay-rule",
+      "kind": "rule",
+      "subject": "\\b(booking|bookings|reservation|reservations)\\b",
+      "delay": "\\b(?:up to|within|in)\\s+(\\d+)\\s*(?:minutes?|mins?)\\b"
+     },
+     "relay": {
+      "channel": "whatsapp",
+      "mode": "simulated"
+     },
+     "authority_reachable": true,
+     "tools": [
+      {
+       "action": "search_hotels",
+       "kind": "read",
+       "idempotency": "none",
+       "verified_by": null
+      },
+      {
+       "action": "venue_info",
+       "kind": "read",
+       "idempotency": "none",
+       "verified_by": null
+      },
+      {
+       "action": "create_booking",
+       "kind": "effect",
+       "idempotency": "none",
+       "verified_by": null
+      },
+      {
+       "action": "check_booking",
+       "kind": "status",
+       "idempotency": "none",
+       "verified_by": null
+      },
+      {
+       "action": "contact_support",
+       "kind": "contact",
+       "idempotency": "none",
+       "verified_by": null
+      },
+      {
+       "action": "send_itinerary",
+       "kind": "effect",
+       "idempotency": "none",
+       "verified_by": null
+      }
+     ],
+     "missing": []
+    },
+    "phase": null,
+    "status": "OPEN",
+    "prev": "591662c7bd4256a7198bdca725c2eff511c58deec359cf2b151493644376250e",
+    "hash": "97a9e648cd459a411c616892ee0699dff30142fb950596decdb6053daa623dac"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 4,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "ACTION_ADMITTED",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "venue_info",
+     "kind": "read"
+    },
+    "phase": "CAPTER",
+    "status": "OPEN",
+    "prev": "97a9e648cd459a411c616892ee0699dff30142fb950596decdb6053daa623dac",
+    "hash": "ccc298c77f7095397c1cdd794206ca7365700fa4f04b34de6a3a4cc8fb852174"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 5,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "ACTION_RESULT",
+    "actor": "PROVIDER",
+    "cause": 4,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "venue_info",
+     "status": "OK",
+     "data_sha": "0b268d36517f536ba6676592c271f55581c602b76d6e9734330510625d49f93a"
+    },
+    "phase": "CAPTER",
+    "status": "OPEN",
+    "prev": "ccc298c77f7095397c1cdd794206ca7365700fa4f04b34de6a3a4cc8fb852174",
+    "hash": "351ba7bbd9a72bf4f531787cd09069a41ca7ee8b156c10803d02daf74bb37a99"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 6,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "ACTION_ADMITTED",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "search_hotels",
+     "kind": "read"
+    },
+    "phase": "CAPTER",
+    "status": "OPEN",
+    "prev": "351ba7bbd9a72bf4f531787cd09069a41ca7ee8b156c10803d02daf74bb37a99",
+    "hash": "afb5a083ef88e5db48e7f42c9f657c949ae0c94a56dcc711db69b4746f59a919"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 7,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "ACTION_RESULT",
+    "actor": "PROVIDER",
+    "cause": 6,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "search_hotels",
+     "status": "OK",
+     "data_sha": "6ffb8f94de610ff36d481d15d5e8173bd02171c81c48df85c61e59555cdd913a"
+    },
+    "phase": "CAPTER",
+    "status": "OPEN",
+    "prev": "afb5a083ef88e5db48e7f42c9f657c949ae0c94a56dcc711db69b4746f59a919",
+    "hash": "49c0292cb9200b5660ea289ff033ea2a7e6555bf4783eefe817059e7a38cd5ea"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 8,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "ACTION_ADMITTED",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "create_booking",
+     "kind": "effect",
+     "grant": null
+    },
+    "phase": "ENGAGER",
+    "status": "OPEN",
+    "prev": "49c0292cb9200b5660ea289ff033ea2a7e6555bf4783eefe817059e7a38cd5ea",
+    "hash": "4f55e155f4e7e87e0b84ca389239e5f65fa73617960dba978d1be024b1e3b310"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 9,
+    "at": "2026-11-17T09:00:00.000Z",
+    "type": "EFFECT_RESERVED",
+    "actor": "CORE",
+    "cause": 8,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "create_booking",
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "operation_id": "op_f45010f2bbaf",
+     "attributes": {
+      "provider": "hotel-synthetique",
+      "hotel_id": "LYON-EUREXPO-042",
+      "hotel_name": "Fictional Eurexpo Lyon Hotel",
+      "city": "Lyon",
+      "traveler": "Fictional Traveler A.",
+      "check_in": "2026-11-17",
+      "check_out": "2026-11-19",
+      "price": 238,
+      "currency": "EUR"
+     }
+    },
+    "phase": "ENGAGER",
+    "status": "OPEN",
+    "prev": "4f55e155f4e7e87e0b84ca389239e5f65fa73617960dba978d1be024b1e3b310",
+    "hash": "c0af156ed71f22e9802ad8a950e1ddc6703a0f75c5202ad82361e6f6f44c3ea5"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 10,
+    "at": "2026-11-17T09:00:30.000Z",
+    "type": "EFFECT_OUTCOME",
+    "actor": "PROVIDER",
+    "cause": 9,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "operation_id": "op_f45010f2bbaf",
+     "status": "UNKNOWN",
+     "reason": "TimeoutError: no answer from the provider after 30 s"
+    },
+    "phase": "RESSENTIR",
+    "status": "OPEN",
+    "prev": "c0af156ed71f22e9802ad8a950e1ddc6703a0f75c5202ad82361e6f6f44c3ea5",
+    "hash": "b3a83aa2fd68e6008a158a5e1edb150eef5aa71e303967264fdcd83a50fa6adb"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 11,
+    "at": "2026-11-17T09:00:30.000Z",
+    "type": "HOLD_ENTERED",
+    "actor": "CORE",
+    "cause": 10,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "operation_id": "op_f45010f2bbaf",
+     "scope": [
+      "create_booking",
+      "send_itinerary"
+     ],
+     "reason": "TimeoutError: no answer from the provider after 30 s"
+    },
+    "phase": "RELIER",
+    "status": "HELD",
+    "prev": "b3a83aa2fd68e6008a158a5e1edb150eef5aa71e303967264fdcd83a50fa6adb",
+    "hash": "1128d6007ee557f598ea34314b9c0743d163090020ea71ef72843850c6b555df"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 12,
+    "at": "2026-11-17T09:00:30.000Z",
+    "type": "POSITION",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 1,
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "position": {
+      "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+      "action": "create_booking",
+      "operation_id": "op_f45010f2bbaf",
+      "effect_state": "UNKNOWN",
+      "coherence": 0.0,
+      "tau_star": 0.5,
+      "threatened": true,
+      "paths": [
+       {
+        "name": "VERIFY",
+        "open": true,
+        "reason": "3 check(s) left",
+        "sigma": 0.9,
+        "authority": "agent",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 3
+       },
+       {
+        "name": "CONTACT_SUPPORT",
+        "open": true,
+        "reason": "1 contact(s) left",
+        "sigma": 0.7,
+        "authority": "mandate",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 1
+       },
+       {
+        "name": "ASK_AUTHORITY",
+        "open": true,
+        "reason": "Autorité de la mission reachable on whatsapp",
+        "sigma": 0.95,
+        "authority": "authority",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 2
+       },
+       {
+        "name": "WAIT",
+        "open": true,
+        "reason": "900 s of patience left; only on a pending condition stated in the evidence",
+        "sigma": 0.0,
+        "authority": "none",
+        "reaches_tau": false,
+        "directed": false,
+        "left": 900
+       },
+       {
+        "name": "PRESERVE",
+        "open": true,
+        "reason": "always possible: keep the state without acting",
+        "sigma": 0.0,
+        "authority": "none",
+        "reaches_tau": false,
+        "directed": false,
+        "left": null
+       }
+      ],
+      "restorable_in_habilitation": true,
+      "reference": "VERIFY",
+      "observations": [
+       {
+        "id": "E10",
+        "seq": 10,
+        "at": "2026-11-17T09:00:30.000Z",
+        "source": "core",
+        "kind": "NO_RESPONSE",
+        "text": "TimeoutError: no answer from the provider after 30 s"
+       }
+      ],
+      "forbidden": [
+       "RECREATE_EQUIVALENT_EFFECT",
+       "DECLARE_SUCCESS_WITHOUT_EVIDENCE",
+       "RUN_DEPENDENT_ACTIONS",
+       "EXCEED_PROFILE"
+      ]
+     }
+    },
+    "phase": "DISCERNER",
+    "status": "HELD",
+    "prev": "1128d6007ee557f598ea34314b9c0743d163090020ea71ef72843850c6b555df",
+    "hash": "e77af47e04948264ee89d72d219d804dd014402ed1974f5fc37bf20b55dd723c"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 13,
+    "at": "2026-11-17T09:00:30.000Z",
+    "type": "PROPOSAL",
+    "actor": "DISCERNER",
+    "cause": 12,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 1,
+     "attempt": 0,
+     "discerner": "delay-rule",
+     "position_seq": 12,
+     "proposal": {
+      "discerner": "delay-rule",
+      "move": "VERIFY",
+      "map": {
+       "effect_state": "UNKNOWN",
+       "open_paths": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY",
+        "WAIT"
+       ],
+       "reaching_tau": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY"
+       ],
+       "pending": {
+        "condition": "NONE"
+       }
+      },
+      "rationale": "Cascade.",
+      "cites": [
+       "P:VERIFY"
+      ]
+     }
+    },
+    "phase": "PERCEVOIR",
+    "status": "HELD",
+    "prev": "e77af47e04948264ee89d72d219d804dd014402ed1974f5fc37bf20b55dd723c",
+    "hash": "c0e1532b0d35cf112504ba5e4a3aabcea6831bdfac63724ac381c34e24f9fe76"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 14,
+    "at": "2026-11-17T09:00:30.000Z",
+    "type": "DECISION",
+    "actor": "CORE",
+    "cause": 13,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 1,
+     "attempt": 0,
+     "position_seq": 12,
+     "proposal": {
+      "move": "VERIFY",
+      "map": {
+       "effect_state": "UNKNOWN",
+       "open_paths": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY",
+        "WAIT"
+       ],
+       "reaching_tau": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY"
+       ],
+       "pending": {
+        "condition": "NONE"
+       }
+      }
+     },
+     "read_digest": "80bc0e1fee516932d72d57818f11a459b606d6a7210c4d23abee14c282ec5a53",
+     "now_digest": "80bc0e1fee516932d72d57818f11a459b606d6a7210c4d23abee14c282ec5a53",
+     "on_refused": "reference",
+     "final": false,
+     "outcome": "ADMITTED",
+     "verdict": {
+      "outcome": "ADMITTED",
+      "proposed": "VERIFY",
+      "applied": "VERIFY",
+      "reference": "VERIFY",
+      "credit": "discerner",
+      "rule": "ADMIT",
+      "reason": "VERIFY is open and follows from a reading supported by the evidence.",
+      "reading": "SUPPORTED",
+      "claims": {
+       "effect_state": "SUPPORTED",
+       "open_paths": "SUPPORTED",
+       "reaching_tau": "SUPPORTED"
+      },
+      "coherent": true,
+      "admissible": [
+       "VERIFY",
+       "CONTACT_SUPPORT",
+       "ASK_AUTHORITY",
+       "WAIT",
+       "PRESERVE"
+      ],
+      "justified": [
+       "VERIFY",
+       "CONTACT_SUPPORT"
+      ],
+      "supported": [
+       "VERIFY",
+       "CONTACT_SUPPORT"
+      ],
+      "discrepancies": [],
+      "wait_seconds": null
+     }
+    },
+    "phase": "CHOISIR",
+    "status": "HELD",
+    "prev": "c0e1532b0d35cf112504ba5e4a3aabcea6831bdfac63724ac381c34e24f9fe76",
+    "hash": "6e23ec3e81f34756dbb5d89a5efe1dad6d68f27fc36e6da9de95eebf0ccc99f3"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 15,
+    "at": "2026-11-17T09:00:35.000Z",
+    "type": "PATH_EXECUTED",
+    "actor": "PROVIDER",
+    "cause": 14,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 1,
+     "path": "VERIFY",
+     "result": "NOT_FOUND",
+     "operation_id": "op_f45010f2bbaf",
+     "correlated": false
+    },
+    "phase": "CAPTER",
+    "status": "HELD",
+    "prev": "6e23ec3e81f34756dbb5d89a5efe1dad6d68f27fc36e6da9de95eebf0ccc99f3",
+    "hash": "0c38b74d796208c1722bc8bfe22c01f43f06f01e57e720b57b5d473b1c361743"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 16,
+    "at": "2026-11-17T09:00:35.000Z",
+    "type": "EVIDENCE",
+    "actor": "PROVIDER",
+    "cause": 15,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "source": "status",
+     "kind": "NOT_FOUND",
+     "operation_id": null,
+     "receipt": null,
+     "correlated": false,
+     "detail": "not found"
+    },
+    "phase": "CAPTER",
+    "status": "HELD",
+    "prev": "0c38b74d796208c1722bc8bfe22c01f43f06f01e57e720b57b5d473b1c361743",
+    "hash": "0df41e716836246c17eeed0f9d4f1777bc4230f97df7f21a68ca16a627473ee2"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 17,
+    "at": "2026-11-17T09:00:35.000Z",
+    "type": "POSITION",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 2,
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "position": {
+      "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+      "action": "create_booking",
+      "operation_id": "op_f45010f2bbaf",
+      "effect_state": "UNKNOWN",
+      "coherence": 0.0,
+      "tau_star": 0.5,
+      "threatened": true,
+      "paths": [
+       {
+        "name": "VERIFY",
+        "open": true,
+        "reason": "2 check(s) left",
+        "sigma": 0.54,
+        "authority": "agent",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 2
+       },
+       {
+        "name": "CONTACT_SUPPORT",
+        "open": true,
+        "reason": "1 contact(s) left",
+        "sigma": 0.7,
+        "authority": "mandate",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 1
+       },
+       {
+        "name": "ASK_AUTHORITY",
+        "open": true,
+        "reason": "Autorité de la mission reachable on whatsapp",
+        "sigma": 0.95,
+        "authority": "authority",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 2
+       },
+       {
+        "name": "WAIT",
+        "open": true,
+        "reason": "900 s of patience left; only on a pending condition stated in the evidence",
+        "sigma": 0.0,
+        "authority": "none",
+        "reaches_tau": false,
+        "directed": false,
+        "left": 900
+       },
+       {
+        "name": "PRESERVE",
+        "open": true,
+        "reason": "always possible: keep the state without acting",
+        "sigma": 0.0,
+        "authority": "none",
+        "reaches_tau": false,
+        "directed": false,
+        "left": null
+       }
+      ],
+      "restorable_in_habilitation": true,
+      "reference": "VERIFY",
+      "observations": [
+       {
+        "id": "E10",
+        "seq": 10,
+        "at": "2026-11-17T09:00:30.000Z",
+        "source": "core",
+        "kind": "NO_RESPONSE",
+        "text": "TimeoutError: no answer from the provider after 30 s"
+       },
+       {
+        "id": "E16",
+        "seq": 16,
+        "at": "2026-11-17T09:00:35.000Z",
+        "source": "status",
+        "kind": "NOT_FOUND",
+        "text": "not found"
+       }
+      ],
+      "forbidden": [
+       "RECREATE_EQUIVALENT_EFFECT",
+       "DECLARE_SUCCESS_WITHOUT_EVIDENCE",
+       "RUN_DEPENDENT_ACTIONS",
+       "EXCEED_PROFILE"
+      ]
+     }
+    },
+    "phase": "DISCERNER",
+    "status": "HELD",
+    "prev": "0df41e716836246c17eeed0f9d4f1777bc4230f97df7f21a68ca16a627473ee2",
+    "hash": "c5d4864c93e9497e25f396bb9a0d9fcbd1faba98f6b6b7432bee516d766e0e0c"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 18,
+    "at": "2026-11-17T09:00:35.000Z",
+    "type": "PROPOSAL",
+    "actor": "DISCERNER",
+    "cause": 17,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 2,
+     "attempt": 0,
+     "discerner": "delay-rule",
+     "position_seq": 17,
+     "proposal": {
+      "discerner": "delay-rule",
+      "move": "VERIFY",
+      "map": {
+       "effect_state": "UNKNOWN",
+       "open_paths": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY",
+        "WAIT"
+       ],
+       "reaching_tau": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY"
+       ],
+       "pending": {
+        "condition": "NONE"
+       }
+      },
+      "rationale": "Cascade.",
+      "cites": [
+       "P:VERIFY"
+      ]
+     }
+    },
+    "phase": "PERCEVOIR",
+    "status": "HELD",
+    "prev": "c5d4864c93e9497e25f396bb9a0d9fcbd1faba98f6b6b7432bee516d766e0e0c",
+    "hash": "4b587788028a3aa1c5fa25667c0e447148561ace421f62622ddc20578743b434"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 19,
+    "at": "2026-11-17T09:00:35.000Z",
+    "type": "DECISION",
+    "actor": "CORE",
+    "cause": 18,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 2,
+     "attempt": 0,
+     "position_seq": 17,
+     "proposal": {
+      "move": "VERIFY",
+      "map": {
+       "effect_state": "UNKNOWN",
+       "open_paths": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY",
+        "WAIT"
+       ],
+       "reaching_tau": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY"
+       ],
+       "pending": {
+        "condition": "NONE"
+       }
+      }
+     },
+     "read_digest": "09abc3f10efcde6fd3cfe756c1a54f82abb14396c48b00598ed84db398761a92",
+     "now_digest": "09abc3f10efcde6fd3cfe756c1a54f82abb14396c48b00598ed84db398761a92",
+     "on_refused": "reference",
+     "final": false,
+     "outcome": "ADMITTED",
+     "verdict": {
+      "outcome": "ADMITTED",
+      "proposed": "VERIFY",
+      "applied": "VERIFY",
+      "reference": "VERIFY",
+      "credit": "discerner",
+      "rule": "ADMIT",
+      "reason": "VERIFY is open and follows from a reading supported by the evidence.",
+      "reading": "SUPPORTED",
+      "claims": {
+       "effect_state": "SUPPORTED",
+       "open_paths": "SUPPORTED",
+       "reaching_tau": "SUPPORTED"
+      },
+      "coherent": true,
+      "admissible": [
+       "VERIFY",
+       "CONTACT_SUPPORT",
+       "ASK_AUTHORITY",
+       "WAIT",
+       "PRESERVE"
+      ],
+      "justified": [
+       "VERIFY",
+       "CONTACT_SUPPORT"
+      ],
+      "supported": [
+       "VERIFY",
+       "CONTACT_SUPPORT"
+      ],
+      "discrepancies": [],
+      "wait_seconds": null
+     }
+    },
+    "phase": "CHOISIR",
+    "status": "HELD",
+    "prev": "4b587788028a3aa1c5fa25667c0e447148561ace421f62622ddc20578743b434",
+    "hash": "64e402995fe7a2cd0c8f6417bfbd759eed0b6889c50e0a6ab7660d051c09271d"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 20,
+    "at": "2026-11-17T09:00:40.000Z",
+    "type": "PATH_EXECUTED",
+    "actor": "PROVIDER",
+    "cause": 19,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 2,
+     "path": "VERIFY",
+     "result": "NOT_FOUND",
+     "operation_id": "op_f45010f2bbaf",
+     "correlated": false
+    },
+    "phase": "CAPTER",
+    "status": "HELD",
+    "prev": "64e402995fe7a2cd0c8f6417bfbd759eed0b6889c50e0a6ab7660d051c09271d",
+    "hash": "e1d3151078a6a2791b9b7a351d790e0d8e7af55600e7775d73e535533b277e07"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 21,
+    "at": "2026-11-17T09:00:40.000Z",
+    "type": "EVIDENCE",
+    "actor": "PROVIDER",
+    "cause": 20,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "source": "status",
+     "kind": "NOT_FOUND",
+     "operation_id": null,
+     "receipt": null,
+     "correlated": false,
+     "detail": "not found"
+    },
+    "phase": "CAPTER",
+    "status": "HELD",
+    "prev": "e1d3151078a6a2791b9b7a351d790e0d8e7af55600e7775d73e535533b277e07",
+    "hash": "37d325639afd9d8c02ea169ce66e2d7ab6a76de40c228220eb5cccc9264b93bb"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 22,
+    "at": "2026-11-17T09:00:40.000Z",
+    "type": "POSITION",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 3,
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "position": {
+      "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+      "action": "create_booking",
+      "operation_id": "op_f45010f2bbaf",
+      "effect_state": "UNKNOWN",
+      "coherence": 0.0,
+      "tau_star": 0.5,
+      "threatened": true,
+      "paths": [
+       {
+        "name": "VERIFY",
+        "open": true,
+        "reason": "1 check(s) left",
+        "sigma": 0.324,
+        "authority": "agent",
+        "reaches_tau": false,
+        "directed": false,
+        "left": 1
+       },
+       {
+        "name": "CONTACT_SUPPORT",
+        "open": true,
+        "reason": "1 contact(s) left",
+        "sigma": 0.7,
+        "authority": "mandate",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 1
+       },
+       {
+        "name": "ASK_AUTHORITY",
+        "open": true,
+        "reason": "Autorité de la mission reachable on whatsapp",
+        "sigma": 0.95,
+        "authority": "authority",
+        "reaches_tau": true,
+        "directed": false,
+        "left": 2
+       },
+       {
+        "name": "WAIT",
+        "open": true,
+        "reason": "900 s of patience left; only on a pending condition stated in the evidence",
+        "sigma": 0.0,
+        "authority": "none",
+        "reaches_tau": false,
+        "directed": false,
+        "left": 900
+       },
+       {
+        "name": "PRESERVE",
+        "open": true,
+        "reason": "always possible: keep the state without acting",
+        "sigma": 0.0,
+        "authority": "none",
+        "reaches_tau": false,
+        "directed": false,
+        "left": null
+       }
+      ],
+      "restorable_in_habilitation": true,
+      "reference": "CONTACT_SUPPORT",
+      "observations": [
+       {
+        "id": "E10",
+        "seq": 10,
+        "at": "2026-11-17T09:00:30.000Z",
+        "source": "core",
+        "kind": "NO_RESPONSE",
+        "text": "TimeoutError: no answer from the provider after 30 s"
+       },
+       {
+        "id": "E16",
+        "seq": 16,
+        "at": "2026-11-17T09:00:35.000Z",
+        "source": "status",
+        "kind": "NOT_FOUND",
+        "text": "not found"
+       },
+       {
+        "id": "E21",
+        "seq": 21,
+        "at": "2026-11-17T09:00:40.000Z",
+        "source": "status",
+        "kind": "NOT_FOUND",
+        "text": "not found"
+       }
+      ],
+      "forbidden": [
+       "RECREATE_EQUIVALENT_EFFECT",
+       "DECLARE_SUCCESS_WITHOUT_EVIDENCE",
+       "RUN_DEPENDENT_ACTIONS",
+       "EXCEED_PROFILE"
+      ]
+     }
+    },
+    "phase": "DISCERNER",
+    "status": "HELD",
+    "prev": "37d325639afd9d8c02ea169ce66e2d7ab6a76de40c228220eb5cccc9264b93bb",
+    "hash": "64fa78a50d07010eb10c0a89a19d692fce2f3f8e6b42e2303466af354cd7788d"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 23,
+    "at": "2026-11-17T09:00:40.000Z",
+    "type": "PROPOSAL",
+    "actor": "DISCERNER",
+    "cause": 22,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 3,
+     "attempt": 0,
+     "discerner": "delay-rule",
+     "position_seq": 22,
+     "proposal": {
+      "discerner": "delay-rule",
+      "move": "CONTACT_SUPPORT",
+      "map": {
+       "effect_state": "UNKNOWN",
+       "open_paths": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY",
+        "WAIT"
+       ],
+       "reaching_tau": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT"
+       ],
+       "pending": {
+        "condition": "NONE"
+       }
+      },
+      "rationale": "Cascade.",
+      "cites": [
+       "P:CONTACT_SUPPORT"
+      ]
+     }
+    },
+    "phase": "PERCEVOIR",
+    "status": "HELD",
+    "prev": "64fa78a50d07010eb10c0a89a19d692fce2f3f8e6b42e2303466af354cd7788d",
+    "hash": "6c99be9384b67f0c69718e8de4dcf14e2efcb9ad67a8d5fcb98c712ac9ee5a9e"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 24,
+    "at": "2026-11-17T09:00:40.000Z",
+    "type": "DECISION",
+    "actor": "CORE",
+    "cause": 23,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 3,
+     "attempt": 0,
+     "position_seq": 22,
+     "proposal": {
+      "move": "CONTACT_SUPPORT",
+      "map": {
+       "effect_state": "UNKNOWN",
+       "open_paths": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT",
+        "VERIFY",
+        "WAIT"
+       ],
+       "reaching_tau": [
+        "ASK_AUTHORITY",
+        "CONTACT_SUPPORT"
+       ],
+       "pending": {
+        "condition": "NONE"
+       }
+      }
+     },
+     "read_digest": "05ef6c8ed6c62cd682fb6d5712c4cb11c991d029656164badced76cca0f2dbd7",
+     "now_digest": "05ef6c8ed6c62cd682fb6d5712c4cb11c991d029656164badced76cca0f2dbd7",
+     "on_refused": "reference",
+     "final": false,
+     "outcome": "ADMITTED",
+     "verdict": {
+      "outcome": "ADMITTED",
+      "proposed": "CONTACT_SUPPORT",
+      "applied": "CONTACT_SUPPORT",
+      "reference": "CONTACT_SUPPORT",
+      "credit": "discerner",
+      "rule": "ADMIT",
+      "reason": "CONTACT_SUPPORT is open and follows from a reading supported by the evidence.",
+      "reading": "SUPPORTED",
+      "claims": {
+       "effect_state": "SUPPORTED",
+       "open_paths": "SUPPORTED",
+       "reaching_tau": "SUPPORTED"
+      },
+      "coherent": true,
+      "admissible": [
+       "VERIFY",
+       "CONTACT_SUPPORT",
+       "ASK_AUTHORITY",
+       "WAIT",
+       "PRESERVE"
+      ],
+      "justified": [
+       "CONTACT_SUPPORT"
+      ],
+      "supported": [
+       "CONTACT_SUPPORT"
+      ],
+      "discrepancies": [],
+      "wait_seconds": null
+     }
+    },
+    "phase": "CHOISIR",
+    "status": "HELD",
+    "prev": "6c99be9384b67f0c69718e8de4dcf14e2efcb9ad67a8d5fcb98c712ac9ee5a9e",
+    "hash": "757f57f4083469f89e903e66f2019f6f635cd0f030e3057adee2bec502180e6f"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 25,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "PATH_EXECUTED",
+    "actor": "PROVIDER",
+    "cause": 24,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "round": 3,
+     "path": "CONTACT_SUPPORT",
+     "result": "REPLY",
+     "operation_id": "op_f45010f2bbaf",
+     "correlated": true
+    },
+    "phase": "RELIER",
+    "status": "HELD",
+    "prev": "757f57f4083469f89e903e66f2019f6f635cd0f030e3057adee2bec502180e6f",
+    "hash": "f6127e19152de62081d5c742826ceee1628b8544786a913f60709e332fcadd61"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 26,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "EVIDENCE",
+    "actor": "PROVIDER",
+    "cause": 25,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "source": "support",
+     "kind": "SUPPORT_REPLY",
+     "operation_id": "op_f45010f2bbaf",
+     "receipt": "RCPT-051D53",
+     "correlated": true,
+     "detail": "Booking found: RCPT-051D53."
+    },
+    "phase": "CAPTER",
+    "status": "HELD",
+    "prev": "f6127e19152de62081d5c742826ceee1628b8544786a913f60709e332fcadd61",
+    "hash": "a8002e38381f74325c26643afcf9ca82c9145568f48f5b33f4cddeb24092486c"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 27,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "RECONCILED",
+    "actor": "CORE",
+    "cause": 25,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "receipt": "RCPT-051D53",
+     "operation_id": "op_f45010f2bbaf",
+     "source": "CONTACT_SUPPORT"
+    },
+    "phase": "REEVALUER",
+    "status": "HELD",
+    "prev": "a8002e38381f74325c26643afcf9ca82c9145568f48f5b33f4cddeb24092486c",
+    "hash": "0c66d05f28ecf0513c7e3603fb3618d096ccbce9a598f67bfe35715d3af71725"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 28,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "RESUMED",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f",
+     "receipt": "RCPT-051D53",
+     "autonomous": true
+    },
+    "phase": "REEVALUER",
+    "status": "OPEN",
+    "prev": "0c66d05f28ecf0513c7e3603fb3618d096ccbce9a598f67bfe35715d3af71725",
+    "hash": "ddfddbe34428b1abc3cc7758322a22795623b11d14de93f806ee4284cae40928"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 29,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "ACTION_ADMITTED",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "send_itinerary",
+     "kind": "effect",
+     "grant": null
+    },
+    "phase": "ENGAGER",
+    "status": "OPEN",
+    "prev": "ddfddbe34428b1abc3cc7758322a22795623b11d14de93f806ee4284cae40928",
+    "hash": "48382974506a8c2ce6424fc7a0b028c98b3c746f4da1018c23b0ed57a61360c5"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 30,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "EFFECT_RESERVED",
+    "actor": "CORE",
+    "cause": 29,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "action": "send_itinerary",
+     "effect_key": "c893437a70246aad84581bb69dd08f9a69368ce6bedbe281acd4db45edfbc1fd",
+     "operation_id": "op_553d8d7ea4ae",
+     "attributes": {
+      "traveler": "Fictional Traveler A.",
+      "booking_reference": "RCPT-051D53"
+     }
+    },
+    "phase": "ENGAGER",
+    "status": "OPEN",
+    "prev": "48382974506a8c2ce6424fc7a0b028c98b3c746f4da1018c23b0ed57a61360c5",
+    "hash": "585f1a3472bee796367171c67335a5f6d0c129aecbc2bb17790c90a5ad7c8e59"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 31,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "EFFECT_OUTCOME",
+    "actor": "PROVIDER",
+    "cause": 30,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "c893437a70246aad84581bb69dd08f9a69368ce6bedbe281acd4db45edfbc1fd",
+     "operation_id": "op_553d8d7ea4ae",
+     "status": "CONFIRMED",
+     "receipt": "ITIN-RCPT-051D53"
+    },
+    "phase": "REEVALUER",
+    "status": "OPEN",
+    "prev": "585f1a3472bee796367171c67335a5f6d0c129aecbc2bb17790c90a5ad7c8e59",
+    "hash": "198f20b2931ab9d35b18b12bf87d5d471e75752b35007f05a0dba072b9b42660"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 32,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "EVIDENCE",
+    "actor": "PROVIDER",
+    "cause": 31,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "effect_key": "c893437a70246aad84581bb69dd08f9a69368ce6bedbe281acd4db45edfbc1fd",
+     "source": "provider",
+     "kind": "RECEIPT",
+     "operation_id": "op_553d8d7ea4ae",
+     "receipt": "ITIN-RCPT-051D53",
+     "correlated": true
+    },
+    "phase": "CAPTER",
+    "status": "OPEN",
+    "prev": "198f20b2931ab9d35b18b12bf87d5d471e75752b35007f05a0dba072b9b42660",
+    "hash": "c4200266900a08b4909332df4083dcfe04c2c3e91ef4526bf9bacb38d714f9b2"
+   },
+   {
+    "v": "hold.event/v1",
+    "mission": "m_3de05d4c8011",
+    "seq": 33,
+    "at": "2026-11-17T09:01:10.000Z",
+    "type": "MISSION_CLOSED",
+    "actor": "CORE",
+    "cause": null,
+    "profile": "db948c0187545c707d8babfece2b88867b80852359ce19299c520516ed141674",
+    "revision": 1,
+    "core": "hold-core/0.1.0",
+    "data": {
+     "outcome": "CLOSED_COMPLETED",
+     "report": {
+      "confirmed": [
+       {
+        "action": "create_booking",
+        "receipt": "RCPT-051D53",
+        "operation_id": "op_f45010f2bbaf"
+       },
+       {
+        "action": "send_itinerary",
+        "receipt": "ITIN-RCPT-051D53",
+        "operation_id": "op_553d8d7ea4ae"
+       }
+      ],
+      "unconfirmed": [],
+      "failed": []
+     }
+    },
+    "phase": "REEVALUER",
+    "status": "CLOSED_COMPLETED",
+    "prev": "c4200266900a08b4909332df4083dcfe04c2c3e91ef4526bf9bacb38d714f9b2",
+    "hash": "4c9ffe4b1fd6fab6f715ebb3ce38043a2bcaa1b0f54f05563d653d6fc9166d41"
+   }
+  ],
+  "store": {
+   "status": "CLOSED_COMPLETED",
+   "revoked": false,
+   "effects": {
+    "cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f": {
+     "action": "create_booking",
+     "operation_id": "op_f45010f2bbaf",
+     "status": "CONFIRMED",
+     "receipt": "RCPT-051D53",
+     "not_found": 2,
+     "attempts": 1
+    },
+    "c893437a70246aad84581bb69dd08f9a69368ce6bedbe281acd4db45edfbc1fd": {
+     "action": "send_itinerary",
+     "operation_id": "op_553d8d7ea4ae",
+     "status": "CONFIRMED",
+     "receipt": "ITIN-RCPT-051D53",
+     "not_found": 0,
+     "attempts": 1
+    }
+   },
+   "usage": {
+    "checks:cfb74e0eafa11f3c6d3b1e049c1763fc59f21f63b3e61f0403fa2d52a809a79f": 2,
+    "power:contact_support": 1,
+    "power:create_booking": 1,
+    "power:send_itinerary": 1
+   },
+   "requests": {},
+   "grants_consumed": []
+  }
+ },
+ "provider": {
+  "created": 1,
+  "bookings": [
+   {
+    "price": 238,
+    "receipt": "RCPT-051D53"
+   }
+  ]
+ },
+ "elapsed_s": 70.0
+}
