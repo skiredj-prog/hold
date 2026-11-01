@@ -1,0 +1,5640 @@
+{
+ "evaluation": true,
+ "protocol_sha256": "3404d1a823c719eb4215494236ede853d27dffa35ec56b2a9a390a5555252426",
+ "model": null,
+ "results": [
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "C",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 40.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "C",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 70.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 3,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 3,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "C",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "C",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "C",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "C",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "C",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "C",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 195.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 5,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "C",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 195.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 5,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "C",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "C",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 150.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "C2",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 40.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "C2",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 70.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 3,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 3,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "C2",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "C2",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 640.0,
+   "labels": {
+    "CONTINUITY": 1,
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "WAIT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "UNDETERMINED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "CONTINUITY",
+      "INITIATIVE"
+     ],
+     "cites_annotated": true
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 3,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 1,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 305
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "C2",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "C2",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "C2",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "C2",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 795.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "FRICTION": 1,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "WAIT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "UNDETERMINED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": true
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 34,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 1,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 305
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "C2",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 195.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 5,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "C2",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 19,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 24,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 29,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 36,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 41,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 6,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "C2",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 150.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 190.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 4,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 3,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 190.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 5
+   },
+   "options_left": {
+    "VERIFY": 3,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 1
+  },
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 40.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 1
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 1
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 2
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 65.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 1
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 2
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 65.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 1
+   },
+   "readings": {
+    "SUPPORTED": 1,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 2
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 1
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 70.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "USEFUL_AUTONOMY": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 2
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 3
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 1,
+    "ASK_AUTHORITY": 2,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 2
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 51,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 5
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 5
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 51,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 5
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 5
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 51,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 5
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 5
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 51,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 5
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 5
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "FRICTION": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "FRICTION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 51,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 5
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 5
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 195.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 3
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 2
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "LEGITIMATE_DISCERNMENT": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 195.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 3,
+    "LEGITIMATE_DISCERNMENT": 1
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "ASK_AUTHORITY"
+     ],
+     "tags": [
+      "LEGITIMATE_DISCERNMENT"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 3
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 2
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 23,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 30,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 39,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 2,
+    "floor": 3
+   },
+   "readings": {
+    "SUPPORTED": 5,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 4
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 310.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "INITIATIVE": 1,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 16,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [
+      "INITIATIVE"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 37,
+     "round": 4,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 4
+   },
+   "readings": {
+    "SUPPORTED": 2,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 7
+   },
+   "options_left": {
+    "VERIFY": 2,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "X",
+   "completed": false,
+   "solicitations": 2,
+   "unnecessary_solicitations": 2,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 315.0,
+   "labels": {
+    "EPISTEMIC_PROGRESS": 2,
+    "UNNECESSARY_SOLICITATION": 2
+   },
+   "decisions": [
+    {
+     "seq": 14,
+     "round": 1,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "discerner",
+     "outcome": "ADMITTED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 21,
+     "round": 2,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY",
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 28,
+     "round": 3,
+     "applied": "CONTACT_SUPPORT",
+     "reference": "CONTACT_SUPPORT",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "CONTACT_SUPPORT"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 35,
+     "round": 4,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    },
+    {
+     "seq": 44,
+     "round": 5,
+     "applied": "VERIFY",
+     "reference": "VERIFY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "SUPPORTED",
+     "bench_justified": [
+      "VERIFY"
+     ],
+     "tags": [],
+     "cites_annotated": false
+    },
+    {
+     "seq": 51,
+     "round": 6,
+     "applied": "ASK_AUTHORITY",
+     "reference": "ASK_AUTHORITY",
+     "credit": "floor",
+     "outcome": "REFERENCE_APPLIED",
+     "reading": "CONTRADICTED",
+     "bench_justified": [
+      "WAIT"
+     ],
+     "tags": [
+      "UNNECESSARY_SOLICITATION"
+     ],
+     "cites_annotated": false
+    }
+   ],
+   "credit": {
+    "discerner": 1,
+    "floor": 5
+   },
+   "readings": {
+    "SUPPORTED": 6,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 5
+   },
+   "options_left": {
+    "VERIFY": 1,
+    "CONTACT_SUPPORT": 0,
+    "ASK_AUTHORITY": 1,
+    "WAIT": 900
+   },
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 150.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 0
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 150.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 1
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "X",
+   "completed": true,
+   "solicitations": 1,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "completed_without_unnecessary_solicitation": true,
+   "elapsed_s": 150.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_COMPLETED",
+   "rep": 2
+  }
+ ]
+}
