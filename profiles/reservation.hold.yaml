@@ -1,0 +1,67 @@
+hold: habilitation/v1
+id: reservation-voyage
+title: Réservation de voyage professionnel
+description: >-
+  L'agent prépare un déplacement : il cherche et réserve un hôtel dans l'enveloppe fixée,
+  vérifie seul une réservation incertaine, et ne sollicite l'autorité que si la cohérence
+  ne peut pas être rétablie dans son habilitation.
+revision: 1
+issued_at: "2026-11-01T12:00:00Z"
+expires_at: "2026-11-30T23:59:59Z"
+authority:
+  name: Autorité de la mission
+  channel: whatsapp
+  contact: "212600000000"
+  sigma: 0.95
+  can_revoke: true
+  max_extra_checks: 1
+powers:
+  - action: search_hotels
+    kind: read
+    description: Chercher des hôtels disponibles (lecture seule).
+  - action: venue_info
+    kind: read
+    description: Vérifier l'adresse et les horaires du lieu (lecture seule).
+  - action: create_booking
+    kind: effect
+    description: Réserver une chambre (effet externe, non idempotent chez le fournisseur).
+    budget: 1
+    identity: [provider, hotel_id, traveler, check_in, check_out]
+    envelope:
+      max_amount: { amount: 300, currency: EUR }
+      amount_field: price
+      currency_field: currency
+      allowed:
+        provider: [hotel-synthetique]
+        city: [Lyon]
+      windows:
+        check_in: { start: "2026-11-15", end: "2026-11-20" }
+        check_out: { start: "2026-11-15", end: "2026-11-21" }
+      required: [provider, hotel_id, traveler, check_in, check_out, price, currency, city]
+    reconciliation:
+      status_action: check_booking
+      max_checks: 3
+      sigma: 0.9
+      decay: 0.6
+  - action: check_booking
+    kind: status
+    description: Consulter le statut d'une réservation existante par son identifiant d'opération.
+  - action: contact_support
+    kind: contact
+    role: support
+    budget: 1
+    sigma: 0.7
+    description: Écrire au support du fournisseur pour retrouver une réservation.
+  - action: send_itinerary
+    kind: effect
+    description: Envoyer l'itinéraire final au voyageur (suppose l'hôtel confirmé).
+    budget: 1
+    identity: [traveler, booking_reference]
+    depends_on: [create_booking]
+hesitation:
+  tau_star: 0.5
+  ladder: [VERIFY, CONTACT_SUPPORT, ASK_AUTHORITY, PRESERVE]
+  on_refused_proposal: reference
+  autonomous_resume: true
+  max_rounds: 8
+  envelope_breach: ask_authority

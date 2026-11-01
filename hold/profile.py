@@ -1,0 +1,259 @@
+"""Profil d'habilitation (habilitation/v1).
+
+Le profil est l'objet portable : il dit ce que l'agent peut faire seul, dans quelles
+limites, qui est l'autorité responsable et comment elle révoque. Il est produit par
+n'importe quel outil (HOLD Studio, éditeur, CI) et lu par la bibliothèque.
+
+Les invariants du plancher ne figurent pas dans le profil : ils ne se configurent pas.
+"""
+
+from __future__ import annotations
+
+import hmac
+import json
+from datetime import date, datetime, timezone
+from hashlib import sha256
+from pathlib import Path
+from typing import Literal
+
+import yaml
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from .canonical import canonical_json, sha256_hex
+
+SCHEMA_VERSION = "habilitation/v1"
+PathName = Literal["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"]
+IDENT = r"^[a-z][a-z0-9_]{0,63}$"
+
+
+class _Model(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class Money(_Model):
+    amount: float = Field(gt=0)
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+
+
+class DateWindow(_Model):
+    start: date
+    end: date
+
+    @model_validator(mode="after")
+    def _ordered(self) -> "DateWindow":
+        if self.start > self.end:
+            raise ValueError("La fenêtre commence après sa fin")
+        return self
+
+
+class EffectEnvelope(_Model):
+    """Bornes sur le contenu d'un effet : ce qui rend le pouvoir délégué fini."""
+
+    max_amount: Money | None = None
+    amount_field: str = "price"
+    currency_field: str = "currency"
+    allowed: dict[str, list[str]] = Field(default_factory=dict)
+    windows: dict[str, DateWindow] = Field(default_factory=dict)
+    required: list[str] = Field(default_factory=list)
+
+
+class Reconciliation(_Model):
+    """Comment lever l'incertitude d'un effet sans le répéter."""
+
+    status_action: str = Field(pattern=IDENT)
+    max_checks: int = Field(default=3, ge=1, le=20)
+    sigma: float = Field(default=0.9, ge=0, le=1, description="Chance qu'un contrôle rétablisse la cohérence")
+    decay: float = Field(default=0.6, ge=0, le=1, description="σ est multiplié par ce facteur après chaque « introuvable »")
+
+
+class Power(_Model):
+    action: str = Field(pattern=IDENT)
+    kind: Literal["read", "effect", "status", "contact"]
+    description: str = ""
+    budget: int | None = Field(default=None, ge=0, description="Nombre maximal d'exécutions ; vide = illimité")
+    envelope: EffectEnvelope | None = None
+    identity: list[str] = Field(default_factory=list, description="Attributs qui identifient un effet équivalent")
+    reconciliation: Reconciliation | None = None
+    depends_on: list[str] = Field(default_factory=list, description="Effets qui doivent être confirmés avant cette action")
+    role: Literal["support"] | None = None
+    sigma: float | None = Field(default=None, ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _coherent(self) -> "Power":
+        if self.kind == "effect":
+            if not self.identity:
+                raise ValueError(f"{self.action} : un effet doit déclarer ses attributs d'identité")
+        else:
+            if self.envelope or self.reconciliation or self.identity:
+                raise ValueError(f"{self.action} : enveloppe, identité et réconciliation sont réservées aux effets")
+        if self.role == "support" and self.kind != "contact":
+            raise ValueError(f"{self.action} : le rôle « support » exige un pouvoir de contact")
+        return self
+
+
+class Authority(_Model):
+    """L'autorité responsable (Accountable Authority) : elle tranche et révoque."""
+
+    name: str = Field(min_length=1, max_length=80)
+    channel: Literal["whatsapp", "console"] = "whatsapp"
+    contact: str | None = Field(default=None, description="Numéro international, chiffres seuls (format wa_id)")
+    sigma: float = Field(default=0.95, ge=0, le=1)
+    can_revoke: bool = True
+    max_extra_checks: int = Field(default=1, ge=0, le=5, description="Contrôles supplémentaires accordables par Decision Request")
+    max_requests: int = Field(default=2, ge=0, le=10, description="Decision Requests au plus par mission : l'autorité n'est pas un recours par défaut")
+    locale: Literal["fr", "en"] = "fr"
+
+    @field_validator("contact")
+    @classmethod
+    def _digits(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        d = v.replace(" ", "").replace("-", "").lstrip("+")
+        if d.startswith("00"):
+            d = d[2:]
+        if not d.isdigit() or not (8 <= len(d) <= 15) or d.startswith("0"):
+            raise ValueError("Numéro international invalide")
+        return d
+
+    @model_validator(mode="after")
+    def _reachable(self) -> "Authority":
+        if self.channel == "whatsapp" and not self.contact:
+            raise ValueError("Le canal WhatsApp exige le numéro de l'autorité")
+        return self
+
+
+class Hesitation(_Model):
+    """Pass / fail / hold, puis hold → discernement."""
+
+    tau_star: float = Field(default=0.5, gt=0, le=1, description="Seuil de cohérence à rétablir")
+    ladder: list[PathName] = Field(default_factory=lambda: ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"])
+    on_refused_proposal: Literal["reference", "preserve"] = "reference"
+    autonomous_resume: bool = True
+    max_rounds: int = Field(default=8, ge=1, le=50)
+    envelope_breach: Literal["refuse", "ask_authority"] = "refuse"
+
+    @field_validator("ladder")
+    @classmethod
+    def _ladder(cls, v: list[str]) -> list[str]:
+        if len(set(v)) != len(v):
+            raise ValueError("Chemin en double dans l'échelle")
+        if not v or v[-1] != "PRESERVE":
+            raise ValueError("PRESERVE doit être le dernier chemin de l'échelle")
+        return v
+
+
+class Signature(_Model):
+    method: Literal["hmac-sha256"] = "hmac-sha256"
+    by: str
+    value: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class Profile(_Model):
+    hold: Literal["habilitation/v1"] = SCHEMA_VERSION
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9._-]{1,63}$")
+    title: str = Field(min_length=1, max_length=120)
+    description: str = ""
+    revision: int = Field(default=1, ge=1)
+    supersedes: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    issued_at: datetime
+    expires_at: datetime | None = None
+    authority: Authority
+    powers: list[Power] = Field(min_length=1)
+    hesitation: Hesitation = Field(default_factory=Hesitation)
+    signature: Signature | None = None
+
+    @model_validator(mode="after")
+    def _references(self) -> "Profile":
+        names = [p.action for p in self.powers]
+        if len(set(names)) != len(names):
+            raise ValueError("Deux pouvoirs portent la même action")
+        by = {p.action: p for p in self.powers}
+        for p in self.powers:
+            if p.reconciliation:
+                s = by.get(p.reconciliation.status_action)
+                if not s or s.kind != "status":
+                    raise ValueError(f"{p.action} : la réconciliation exige un pouvoir « status » nommé {p.reconciliation.status_action}")
+            for d in p.depends_on:
+                if d not in by or by[d].kind != "effect":
+                    raise ValueError(f"{p.action} : dépendance inconnue ou qui n'est pas un effet ({d})")
+        if sum(1 for p in self.powers if p.role == "support") > 1:
+            raise ValueError("Un seul pouvoir peut tenir le rôle « support »")
+        if self.expires_at and self.expires_at <= self.issued_at:
+            raise ValueError("Le profil expire avant d'être émis")
+        return self
+
+    # -- lecture -------------------------------------------------------------
+    def power(self, action: str) -> Power | None:
+        return next((p for p in self.powers if p.action == action), None)
+
+    @property
+    def support(self) -> Power | None:
+        return next((p for p in self.powers if p.role == "support"), None)
+
+    def body(self) -> dict:
+        """Contenu signé : tout le profil sauf la signature."""
+        return self.model_dump(mode="json", exclude={"signature"}, exclude_none=True)
+
+    @property
+    def fingerprint(self) -> str:
+        return sha256_hex(canonical_json(self.body()))
+
+    def expired(self, now: datetime | None = None) -> bool:
+        now = now or datetime.now(timezone.utc)
+        return bool(self.expires_at and _aware(self.expires_at) <= _aware(now))
+
+
+def _aware(d: datetime) -> datetime:
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
+# -- signature et révisions -----------------------------------------------------
+
+def sign(profile: Profile, secret: str, by: str) -> Profile:
+    mac = hmac.new(secret.encode(), canonical_json(profile.body()).encode(), sha256).hexdigest()
+    return profile.model_copy(update={"signature": Signature(by=by, value=mac)})
+
+
+def signature_valid(profile: Profile, secret: str) -> bool:
+    if not profile.signature:
+        return False
+    mac = hmac.new(secret.encode(), canonical_json(profile.body()).encode(), sha256).hexdigest()
+    return hmac.compare_digest(mac, profile.signature.value)
+
+
+def revise(profile: Profile, **changes) -> Profile:
+    """Nouvelle révision : numéro + 1, liée à l'empreinte précédente, non signée."""
+    data = profile.model_dump(mode="python", exclude={"signature"})
+    data.update(changes)
+    data["revision"] = profile.revision + 1
+    data["supersedes"] = profile.fingerprint
+    data["issued_at"] = datetime.now(timezone.utc)
+    return Profile.model_validate(data)
+
+
+# -- fichiers ----------------------------------------------------------------------
+
+def load_profile(source: str | Path | dict, *, secret: str | None = None, require_signature: bool = False) -> Profile:
+    if isinstance(source, dict):
+        data = source
+    else:
+        text = Path(source).read_text(encoding="utf-8")
+        data = json.loads(text) if str(source).endswith(".json") else yaml.safe_load(text)
+    profile = Profile.model_validate(data)
+    if require_signature or (secret and profile.signature):
+        if not secret or not signature_valid(profile, secret):
+            raise ValueError("Signature du profil absente ou invalide")
+    return profile
+
+
+def dump_profile(profile: Profile, path: str | Path) -> None:
+    data = profile.model_dump(mode="json", exclude_none=True)
+    p = Path(path)
+    if p.suffix == ".json":
+        p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    else:
+        p.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
+def json_schema() -> dict:
+    return Profile.model_json_schema()
