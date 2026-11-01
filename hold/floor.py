@@ -13,6 +13,7 @@ Reasons are recorded in English (stable journal language, replayed identically b
 from __future__ import annotations
 
 import unicodedata
+from decimal import Decimal, InvalidOperation
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from typing import Any
@@ -106,6 +107,42 @@ def envelope_violations(power: Power, attrs: dict[str, Any], locale: str = "en")
     return out
 
 
+
+def structural_effect_violations(power: Power, attrs: dict[str, Any]) -> list[str]:
+    """Non-overridable argument validity checks, separate from discretionary envelope breaches.
+
+    A principal may approve a known value above a spending ceiling, but cannot authorize an
+    uninterpretable price or a malformed date as though it were a valid financial commitment.
+    This check is intentionally narrower than all possible provider-specific schemas.
+    """
+    env = power.envelope
+    if not env:
+        return []
+    problems: list[str] = []
+    for name in env.required:
+        value = attrs.get(name)
+        if value is None or (isinstance(value, str) and not value.strip()):
+            problems.append(f"missing or empty required field: {name}")
+    if env.max_amount:
+        value = attrs.get(env.amount_field)
+        if isinstance(value, bool) or value is None:
+            problems.append(f"invalid amount: {env.amount_field}")
+        else:
+            try:
+                amount = Decimal(str(value).strip())
+            except InvalidOperation:
+                problems.append(f"invalid amount: {env.amount_field}")
+            else:
+                if not amount.is_finite() or amount < 0:
+                    problems.append(f"invalid amount: {env.amount_field}")
+    for name in env.windows:
+        if name in attrs:
+            try:
+                date.fromisoformat(str(attrs[name]))
+            except (ValueError, TypeError):
+                problems.append(f"invalid date: {name}")
+    return sorted(set(problems))
+
 def parse_time(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
@@ -150,6 +187,9 @@ def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: Acti
     if power.budget is not None and ctx.usage.get(f"power:{action}", 0) >= power.budget:
         return Verdict(False, "I4/BUDGET", f"Budget exhausted for \"{action}\" ({power.budget}).")
     if power.kind == "effect":
+        invalid = structural_effect_violations(power, attrs)
+        if invalid:
+            return Verdict(False, "I4/INVALID_ARGUMENTS", "Invalid effect attributes (not approvable): " + "; ".join(invalid), invalid)
         v = envelope_violations(power, attrs)
         if v:
             problem = grant_problem(grant, action=action, attrs=attrs, profile=profile, now=ctx.now) if grant else "no approval"

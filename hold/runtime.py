@@ -24,7 +24,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, get_type_hints
 
 from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
@@ -78,12 +78,18 @@ def effect_guarantees(effect: dict[str, Any], tool: "_Tool | None") -> dict[str,
 
 
 def _schema_from_signature(fn: Callable[..., Any]) -> dict[str, Any]:
+    """Resolve postponed annotations before advertising tool argument types to models."""
     props: dict[str, Any] = {}
     required: list[str] = []
+    try:
+        hints = get_type_hints(fn)
+    except (NameError, TypeError):
+        hints = {}  # Unknown annotations remain strings; never claim a numeric type without evidence.
     for name, p in inspect.signature(fn).parameters.items():
         if name in ("operation_id", "self") or p.kind in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             continue
-        t = {int: "integer", float: "number", bool: "boolean"}.get(p.annotation, "string")
+        hint = hints.get(name, p.annotation)
+        t = {int: "integer", float: "number", bool: "boolean", "int": "integer", "float": "number", "bool": "boolean"}.get(hint, "string")
         props[name] = {"type": t}
         if p.default is inspect.Parameter.empty:
             required.append(name)

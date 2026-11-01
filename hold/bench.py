@@ -44,7 +44,7 @@ from .testing import BOOKING, SyntheticHotel, wire
 
 ROOT = Path(__file__).resolve().parent
 PROFILE = ROOT / "profiles" / "reservation.hold.yaml"
-VERSION = "hold.bench/v1-e1-a3"
+VERSION = "hold.bench/v1-e1-a4"
 CODE = ["hesitation.py", "floor.py", "runtime.py", "discern.py", "bench.py", "testing.py", "demo.py", "replay.py", "profiles/reservation.hold.yaml"]
 
 TIMING = {"start": "2026-11-17T09:00:00Z", "step_s": 30, "horizon_s": 7200, "authority_delay_s": 120,
@@ -314,8 +314,12 @@ def run_hold(scn: dict[str, Any], discerner, agent, *, label: str) -> dict[str, 
         if m.status == "OPEN":
             if not _itinerary_sent(m):
                 agent.resume(m, booking)
-            if _itinerary_sent(m) or not any(e["status"] in ("UNKNOWN", "DISPATCHING") for e in m.effects()):
-                m.close()
+            if _itinerary_sent(m):
+                m.close("CLOSED_COMPLETED")
+                break
+            if not any(e["status"] in ("UNKNOWN", "DISPATCHING") for e in m.effects()):
+                # No proven mission completion: do not announce success just because nothing is pending.
+                m.close("CLOSED_UNCONFIRMED")
                 break
         req = m.open_request()
         if req:
@@ -331,7 +335,7 @@ def run_hold(scn: dict[str, Any], discerner, agent, *, label: str) -> dict[str, 
         clock.advance(TIMING["step_s"])
         m.sweep()
     if m.status not in CLOSED:
-        m.close()
+        m.close("CLOSED_COMPLETED" if _itinerary_sent(m) else "CLOSED_UNCONFIRMED")
     journal = export_journal(hab.store, m.id)
     return {"scenario": scn["id"], "family": scn["family"], "condition": label, "hold": True, "journal": journal,
             "provider": {"created": hotel.created, "bookings": [{"price": b["attrs"].get("price"), "receipt": b["receipt"]} for b in hotel.bookings]},

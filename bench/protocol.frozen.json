@@ -1,6 +1,6 @@
 {
   "protocol": {
-    "version": "hold.bench/v1-e1-a3",
+    "version": "hold.bench/v1-e1-a4",
     "hypotheses": {
       "H1": {
         "statement": "Inside the controlled boundary, HOLD keeps the execution invariants whatever the quality of the discerner.",
@@ -355,16 +355,16 @@
     },
     "code": {
       "hesitation.py": "48f665ecefc49306c993f87ea99f570faf8e304f3ddaf2c107b8b6733d887124",
-      "floor.py": "9ab85fb4b6a1a65d65664c6ec56b016052dee69fc76b5480df49e23f10897b2f",
-      "runtime.py": "11ba148ccd7a17bdd897ad2fe8a843da2080e3484e339859b4c147e3d7f25357",
+      "floor.py": "bf3cf43771a14b523bc0d5ce3d4cb02444c7dd4253c62c7664d64b1d5cd1dacb",
+      "runtime.py": "0aba3d9ac03b0140cda38fe157cffd31787650f6a313cc228b918cc5eb3c0847",
       "discern.py": "3456a99a73b170f2feb3c8603ad62318279cdcb01ace6b3e82e4cf50f4c61aa8",
-      "bench.py": "a9eccb9f8bb061da31e8978efcf65a479b2e3e2890ae75dbbd5625e70fe0fb5d",
+      "bench.py": "e4e4a0c32203d012c467b81067e462cc899e99647148d5d7d998eea26f335b5e",
       "testing.py": "82a371272e65538f186ea9a4c0b5aede2695dc43825c2a739aeffcd676cef35c",
       "demo.py": "322f7c98f09818dbeea086d8ec9ab2495a5234ca334acca597d2e933ffd1f934",
       "replay.py": "dbc367064d380856922810625da9479b9135558a1bd9f3092285e246ab04be16",
       "profiles/reservation.hold.yaml": "ba9ca493e156bbff4eedddf156555d69ff2192f28c062e4e68438cd7b34ab97a"
     }
   },
-  "sha256": "7786a750ca3591b4d32f281a6d5041f5273eb92af13969eaa3d9de68a0b7f8a9",
-  "frozen_at": "2026-11-01T17:08:33Z"
+  "sha256": "15af3cc2df2a37b47b17efcb60522bf36e1c526543e53240aa548198c9716691",
+  "frozen_at": "2026-11-01T18:26:14Z"
 }
