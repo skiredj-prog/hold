@@ -94,7 +94,7 @@ def test_a_true_reading_with_a_move_it_does_not_justify_is_incoherent(booking):
     m = hab.open_mission("Lyon")
     m.call("create_booking", **booking)
     first = decisions(m)[0]
-    assert first["outcome"] == "INCOHERENT" and first["verdict"]["map_true"] and first["verdict"]["coherent"] is False
+    assert first["outcome"] == "INCOHERENT" and first["verdict"]["reading"] == "SUPPORTED" and first["verdict"]["coherent"] is False
     assert decisions(m)[1]["outcome"] == "REFERENCE_APPLIED" and decisions(m)[1]["verdict"]["credit"] == "floor"
     assert hab.relay.outbox == []  # the authority was not disturbed by an unjustified request
     sound(hab, m)
@@ -128,6 +128,7 @@ def test_reading_the_evidence_spares_the_authority_where_the_cascade_cannot(book
     assert wait["credit"] == "discerner" and wait["wait_seconds"] == 600 and wait["reference"] == "VERIFY"
     # supported by its reading of quoted evidence; not justified by the structured facts alone
     assert "WAIT" in wait["supported"] and "WAIT" not in wait["justified"]
+    assert wait["reading"] == "UNDETERMINED" and wait["claims"]["pending"] == "UNDETERMINED"  # quoted, not interpretable by the kernel
     clock.advance(600)
     m.sweep()  # the wait is over: the position is read again, the booking has appeared
     assert m.status == "OPEN" and hotel.created == 1
@@ -145,6 +146,7 @@ def test_a_wait_must_quote_the_evidence(booking):
     m.call("create_booking", **booking)
     refused = [d for d in decisions(m) if d["outcome"] == "MAP_REFUSED"]
     assert refused and "does not contain the quoted passage" in refused[0]["verdict"]["reason"]
+    assert refused[0]["verdict"]["claims"]["pending"] == "CONTRADICTED"
     assert not any(d["verdict"]["applied"] == "WAIT" for d in decisions(m))
     sound(hab, m)
 

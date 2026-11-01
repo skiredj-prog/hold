@@ -83,4 +83,4 @@ def test_llama_agent_wears_the_profile(fake_ollama, scenario, final):
     decisions = [e.data for e in events if e.type == "DECISION"]
     assert all(p["proposal"]["discerner"] == "llama" for p in proposals)
     # a disciplined reader: every reading true, every move admitted on its own merit and credited to it
-    assert all(d["outcome"] == "ADMITTED" and d["verdict"]["credit"] == "discerner" and d["verdict"]["map_true"] for d in decisions)
+    assert all(d["outcome"] == "ADMITTED" and d["verdict"]["credit"] == "discerner" and d["verdict"]["reading"] == "SUPPORTED" for d in decisions)

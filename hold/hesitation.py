@@ -208,17 +208,27 @@ def pending_of(m: Any) -> dict[str, Any] | None:
     return p if isinstance(p, dict) and p.get("condition") not in (None, "", "NONE") else None
 
 
+SUPPORTED, CONTRADICTED, UNDETERMINED = "SUPPORTED", "CONTRADICTED", "UNDETERMINED"
+
+
 def check_map(declared: dict[str, Any] | None, position: dict[str, Any]) -> dict[str, Any]:
-    """Is the declared map true? Returns the discrepancies, field by field."""
+    """Qualifies each claim of the declared reading against the evidence available at decision time:
+    SUPPORTED, CONTRADICTED, or UNDETERMINED (neither established nor refuted: a pending condition
+    quoted verbatim from the evidence, which the kernel cannot interpret). The reading as a whole is
+    CONTRADICTED if any claim is, UNDETERMINED if any claim is, SUPPORTED otherwise. An uncertain
+    reading is not a false one: only a contradicted reading is refused."""
     if not isinstance(declared, dict):
-        return {"true": False, "discrepancies": ["no map declared"], "grounded": None}
+        return {"reading": None, "claims": {}, "discrepancies": ["no reading declared"]}
     truth = true_map(position)
     out: list[str] = []
+    claims: dict[str, str] = {}
     state = declared.get("effect_state")
+    claims["effect_state"] = SUPPORTED if state == truth["effect_state"] else CONTRADICTED
     if state != truth["effect_state"]:
         out.append(f"effect_state is {truth['effect_state']}, not {state if isinstance(state, str) else 'nothing'}")
     for k, label in (("open_paths", "open paths"), ("reaching_tau", "paths reaching tau*")):
         got = _names(declared.get(k))
+        claims[k] = SUPPORTED if got == truth[k] else CONTRADICTED
         if got != truth[k]:
             out.append(f"{label} are {', '.join(truth[k]) or 'none'}, not {', '.join(got) or 'none'}")
     grounded = None
@@ -239,7 +249,10 @@ def check_map(declared: dict[str, Any] | None, position: dict[str, Any]) -> dict
             grounded = False
         else:
             grounded = True
-    return {"true": not out, "discrepancies": out, "grounded": grounded}
+        claims["pending"] = UNDETERMINED if grounded else CONTRADICTED
+    values = set(claims.values())
+    reading = CONTRADICTED if CONTRADICTED in values else UNDETERMINED if UNDETERMINED in values else SUPPORTED
+    return {"reading": reading, "claims": claims, "discrepancies": out}
 
 
 def justified_moves(declared: dict[str, Any] | None, position: dict[str, Any]) -> list[str]:

@@ -158,6 +158,7 @@ def test_refused_proposals_never_deadlock_the_mission(make, booking):
     assert all(d["outcome"] == "MAP_REFUSED" and d["verdict"]["applied"] is None for d in first_tries)
     assert all(d["outcome"] == "REFERENCE_APPLIED" and d["verdict"]["credit"] == "floor" and d["verdict"]["applied"] == "VERIFY" for d in finals)
     assert "effect_state is UNKNOWN, not NOT_SENT" in stubborn.feedback[0]["reason"]  # its error was handed back
+    assert first_tries[0]["verdict"]["reading"] == "CONTRADICTED" and first_tries[0]["verdict"]["claims"]["effect_state"] == "CONTRADICTED"
     assert not any(d["verdict"]["credit"] == "discerner" for d in decisions)  # nothing is credited to it
     assert_sound(hab, m)
 
