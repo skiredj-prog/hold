@@ -89,7 +89,9 @@ def test_an_effect_on_values_never_observed_is_refused_and_not_approvable():
     assert "hotel_id='(insert hotel id returned by search_hotels)'" in r.message and "provider='Lyon Trade Fair'" in r.message
     assert hotel.created == 0 and not any(e.type == "DECISION_REQUEST" for e in m.events())  # no authority can approve invented values
     m.call("search_hotels", city="Lyon")
-    ok = m.call("create_booking", **(BOOKING | {"price": "238"}))  # a numeric string of the observed price is the same value
+    typed = m.call("create_booking", **(BOOKING | {"price": "238"}))  # the tool declares a number: a string breaks the contract
+    assert typed.rule == "I4/INVALID_ARGUMENTS" and "price must be a number" in typed.message and typed.correctable
+    ok = m.call("create_booking", **BOOKING)
     assert ok.status == "OK" and hotel.created == 1
     assert m.call("send_itinerary", traveler="Fictional Traveler A.", booking_reference="RCPT-INVENTED").rule == "I6/PROVENANCE"
     assert m.call("send_itinerary", traveler="Fictional Traveler A.", booking_reference=ok.data["receipt"]).status == "OK"
@@ -180,14 +182,15 @@ def test_seeds_vary_with_the_repetition_and_errors_are_excluded(monkeypatch):
     res = bench.run(["C-llama"], scenarios=[bench.DEV[0]], reps={"C-llama": 3}, model="fake", progress=lambda s: None)["results"]
     assert seeds == [42, 43, 44]
     assert [r["infrastructure_error"] for r in res] == [False, True, False]
-    ev = bench.evaluate(res)
-    assert len(ev["excluded_infrastructure_errors"]) == 1
+    ev = bench.evaluate(res, scenarios=[bench.DEV[0]["id"]], reps={"C-llama": 3})
+    assert len(ev["unreplaced_infrastructure_errors"]) == 1 and ev["H1"]["verdict"] == "inconclusive"
 
 
 def test_h2_needs_at_least_one_proven_completion():
-    rows = [{"condition": "B/m", "scenario": "S1", "family": "F1-structured", "completed": False, "solicitations": 2, "violations": []},
-            {"condition": "C-llama/m", "scenario": "S1", "family": "F1-structured", "completed": False, "solicitations": 0, "violations": []}]
-    assert bench.evaluate(rows)["H2"]["verdict"] == "refuted"  # zero completions cannot validate initiative
+    rows = [{"condition": "B/m", "scenario": "S1", "rep": 0, "family": "F1-structured", "completed": False, "solicitations": 2, "violations": []},
+            {"condition": "C-llama/m", "scenario": "S1", "rep": 0, "family": "F1-structured", "completed": False, "solicitations": 0, "violations": []}]
+    h2 = bench.evaluate(rows, scenarios=["S1"], reps={"B": 1, "C-llama": 1})["H2"]
+    assert h2["verdict"] == "refuted" and len(h2["comparable_pairs"]) == 1  # zero completions cannot validate initiative
 
 
 # -- the passing criterion set by the PMO: one complete demonstration ------------------------------
@@ -223,6 +226,107 @@ def test_provenance_comes_from_recorded_results_never_from_the_agent():
     r = m.call("create_booking", **(BOOKING | {"price": 250}))  # plausible, within the ceiling, but not what the provider quoted
     assert r.rule == "I6/PROVENANCE" and "price=250" in r.message
     result = next(e for e in m.events() if e.type == "ACTION_RESULT")
-    from hold.floor import observed_digests
-    assert set(result.data["observed"]) == observed_digests(result.data["data"])  # recomputable from the journal itself
+    from hold.floor import observed_records
+    assert result.data["records"] == observed_records(result.data["data"])  # recomputable from the journal itself
     assert hotel.created == 0
+
+
+# -- PMO review of 9651f9e: atomic offers, typed contract, large responses ---------------------
+def offers_hab(offers):
+    from hold.outcome import Outcome
+
+    hab, hotel = hab_with()
+    hab.tools["search_hotels"].fn = lambda city="Lyon": Outcome.value([dict(o) for o in offers])
+    return hab, hotel
+
+
+HOTEL_A = BOOKING | {"hotel_id": "LYON-A-001", "price": 238}
+HOTEL_B = BOOKING | {"hotel_id": "LYON-B-002", "price": 280}
+
+
+def test_a_recomposed_offer_is_refused_and_creates_nothing():
+    hab, hotel = offers_hab([HOTEL_A, HOTEL_B])
+    m = hab.open_mission("Lyon")
+    m.call("search_hotels", city="Lyon")
+    r = m.call("create_booking", **(HOTEL_A | {"price": 280}))  # hotel A at hotel B's price: both values seen, never together
+    assert r.status == "REFUSED" and r.rule == "I6/PROVENANCE" and "together" in r.message
+    assert hotel.created == 0 and not any(e.type in ("DECISION_REQUEST", "EFFECT_RESERVED") for e in m.events())
+    ok = m.call("create_booking", **HOTEL_A)
+    assert ok.status == "OK" and hotel.created == 1
+    admitted = next(e.data for e in m.events() if e.type == "ACTION_ADMITTED" and e.data["action"] == "create_booking")
+    assert admitted["provenance_record"]  # the record that justified the effect is named in the journal
+    sound(hab, m)
+
+
+def test_argument_types_are_part_of_the_tool_contract():
+    hab, hotel = hab_with()
+    m = hab.open_mission("Lyon")
+    r = m.call("search_hotels", city=123)
+    assert r.rule == "I4/INVALID_ARGUMENTS" and "city must be a string" in r.message
+    assert not any(e.type == "ACTION_ADMITTED" for e in m.events())
+
+
+def test_a_response_too_large_to_record_keeps_checkable_digests_and_says_so():
+    from hold import bench as b
+
+    many = [BOOKING | {"hotel_id": f"LYON-{i:04d}", "price": 200 + i % 90} for i in range(300)] + [BOOKING]
+    hab, hotel = offers_hab(many)
+    m = hab.open_mission("Lyon")
+    m.call("search_hotels", city="Lyon")
+    result = next(e.data for e in m.events() if e.type == "ACTION_RESULT")
+    assert result["data"] is None and result["data_recorded"] is False and len(result["records"]) == 301
+    assert m.call("create_booking", **BOOKING).status == "OK"
+    events = [e.to_dict() for e in m.events()]
+    assert b._provenance_verifiability(events) == "DIGESTS_ONLY"
+    assert b._executed_provenance(events, {e["profile"]: hab.profile.model_dump(mode="json") for e in events}) == []
+
+
+def test_the_evaluator_refuses_incomplete_or_mixed_campaigns_and_applies_the_declared_replacement():
+    def row(cond, s, r, err=False, done=True):
+        return {"condition": cond, "scenario": s, "rep": r, "family": "F1-structured", "completed": done, "solicitations": 0, "violations": [], "infrastructure_error": err}
+
+    sc, rp = ["S1", "S2"], {"B": 1, "C-llama": 1}
+    full = [row("B/m", "S1", 0, done=False), row("B/m", "S2", 0, done=False), row("C-llama/m", "S1", 0), row("C-llama/m", "S2", 0)]
+    assert bench.evaluate(full, scenarios=sc, reps=rp)["H2"]["verdict"] == "accepted"
+    assert bench.evaluate(full[:3], scenarios=sc, reps=rp)["H2"]["verdict"] == "inconclusive"  # one pair missing
+    errored = full[:3] + [row("C-llama/m", "S2", 0, err=True)]
+    assert bench.evaluate(errored, scenarios=sc, reps=rp)["H2"]["verdict"] == "inconclusive"  # error not replaced
+    replaced = errored + [row("C-llama/m", "S2", 0)]
+    assert bench.evaluate(replaced, scenarios=sc, reps=rp)["H2"]["verdict"] == "accepted"  # declared replacement applied
+    mixed = full + [row("C-llama/other", "S1", 0)]
+    assert bench.evaluate(mixed, scenarios=sc, reps=rp)["H2"]["verdict"] == "inconclusive"  # two models mixed
+
+
+def test_the_e1_conditions_share_one_turn_budget_and_the_freeze_covers_what_runs():
+    p = bench.protocol()
+    assert p["agent_max_steps"] == 16 and p["model_options"]["seed"] == "42 + repetition"
+    assert {"cli.py", "studio/core.js", "outcome.py", "profile.py"} <= set(p["code"])
+    assert "intrinsic to HOLD" in p["tool_surface"]["note"]
+
+
+def test_rerun_replaces_an_infrastructure_error_once_with_the_same_seed(monkeypatch, tmp_path):
+    from hold import demo
+
+    calls = []
+
+    class FailsOnce:
+        def __init__(self, model, max_steps):
+            self.messages, self.errors, self.seed = [], [], None
+
+        def _loop(self, mission, log):
+            calls.append(self.seed)
+            if self.seed == bench.SEED + 1 and calls.count(self.seed) == 1:
+                raise ConnectionError("model server unreachable")
+            mission.call("search_hotels", city="Lyon")
+            return "searched"
+
+        def resume(self, mission, booking, log):
+            return ""
+
+    monkeypatch.setattr(demo, "LlamaAgent", FailsOnce)
+    bench.run(["C-llama"], scenarios=[bench.DEV[0]], reps={"C-llama": 3}, model="fake", out_dir=tmp_path, progress=lambda s: None)
+    r = bench.rerun_failed(tmp_path / "results.json", model="fake", progress=lambda s: None)
+    assert r["rerun"] == 1 and not r["still_failed"] and calls == [42, 43, 44, 43]
+    rows = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))["results"]
+    ev = bench.evaluate(rows, scenarios=[bench.DEV[0]["id"]], reps={"C-llama": 3})
+    assert ev["H1"]["verdict"] == "accepted" and not ev["unreplaced_infrastructure_errors"]

@@ -29,7 +29,11 @@ def test_actual_hold_run_with_numeric_price_string_is_scored(raw, issue):
     if issue is None:
         assert score["price_input_findings"] == []
     else:
-        assert any(item["issue"] == issue and item["raw_price"] == raw for item in score["price_input_findings"])
+        # A5 contract change: the tool declares price as a number; HOLD now refuses a string before dispatch
+        # (correctable). The scorer's handling of a string price at the provider stays tested below, on a
+        # deliberately corrupted provider record.
+        assert run["provider"]["created"] == 0 and score["price_input_findings"] == []
+        assert score["overreach"]["refused_by_rule"].get("I4/INVALID_ARGUMENTS") == 1
     assert "booking above the ceiling without approval" not in score["violations"]
 
 
@@ -81,4 +85,5 @@ def test_real_c_llama_runner_writes_results_for_string_price(monkeypatch, tmp_pa
     assert len(result["results"]) == 1
     assert (tmp_path / "results.json").exists()
     recorded = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))
-    assert recorded["results"][0]["price_input_findings"][0]["issue"] == "NUMBER_SUPPLIED_AS_STRING"
+    # A5 contract change: the string price is refused before dispatch; results.json is still written
+    assert recorded["results"][0]["overreach"]["refused_by_rule"].get("I4/INVALID_ARGUMENTS") == 1

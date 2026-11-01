@@ -58,7 +58,7 @@ powers:
     description: Envoyer l'itinéraire final au voyageur (suppose l'hôtel confirmé).
     budget: 1
     identity: [traveler, booking_reference]
-    provenance: [booking_reference]
+    provenance: [booking_reference=receipt]
     depends_on: [create_booking]
 hesitation:
   tau_star: 0.5

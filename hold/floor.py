@@ -56,7 +56,7 @@ class ActionContext:
     confirmed_actions: set[str]  # actions dont au moins un effet est confirmé
     uncertain_actions: set[str]  # actions dont un effet est UNKNOWN ou DISPATCHING
     now: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    observed: set[str] = field(default_factory=set)  # digests of the values tool results returned so far in the mission (I6)
+    records: list[dict[str, str]] = field(default_factory=list)  # every record tool results returned so far, as {field: value digest} (I6)
 
 
 # Refusals that produced no effect and can be corrected by the agent with values it has observed.
@@ -97,13 +97,50 @@ def observed_digests(data: Any, limit: int = 2000) -> set[str]:
     return out
 
 
-def provenance_violations(power: Power, attrs: dict[str, Any], observed: set[str]) -> list[str]:
-    """I6: an effect may use, for these attributes, only values a tool result returned earlier."""
-    out = []
-    for name in power.provenance:
-        if name in attrs and value_digest(attrs[name]) not in observed:
-            out.append(f"{name}={attrs[name]!r} was never returned by an earlier tool result of this mission")
-    return out
+def observed_records(data: Any, limit: int = 500) -> list[dict[str, str]]:
+    """Every object of a tool result, as {field: value digest} for its scalar fields, in a stable order."""
+    out: list[dict[str, str]] = []
+    stack = [data]
+    while stack and len(out) < limit:
+        x = stack.pop()
+        if isinstance(x, dict):
+            rec = {}
+            for k, v in x.items():
+                if isinstance(v, (dict, list, tuple)):
+                    stack.append(v)
+                else:
+                    d = value_digest(v)
+                    if d:
+                        rec[str(k)] = d
+            if rec:
+                out.append(rec)
+        elif isinstance(x, (list, tuple)):
+            stack.extend(x)
+    return sorted(out, key=lambda r: digest(r))
+
+
+def provenance_fields(power: Power) -> list[tuple[str, str]]:
+    return [tuple(p.split("=", 1)) if "=" in p else (p, p) for p in power.provenance]  # type: ignore[misc]
+
+
+def provenance_match(power: Power, attrs: dict[str, Any], records: list[dict[str, str]]) -> tuple[dict[str, str] | None, list[str]]:
+    """I6, atomic: the declared attributes of an effect must all come from ONE record a tool result returned
+    earlier in the mission. Values seen separately in different records do not compose an offer."""
+    pairs = [(a, f) for a, f in provenance_fields(power) if a in attrs]
+    if not pairs:
+        return None, []
+    wanted = {f: value_digest(attrs[a]) for a, f in pairs}
+    for r in records:
+        if all(r.get(f) == d for f, d in wanted.items()):
+            return r, []
+    never = [a for a, f in pairs if not any(r.get(f) == wanted[f] for r in records)]
+    if never:
+        return None, [f"{a}={attrs[a]!r} was never returned by an earlier tool result of this mission" for a in never]
+    return None, ["no single record returned by an earlier tool result contains " + ", ".join(f"{a}={attrs[a]!r}" for a, _ in pairs) + " together"]
+
+
+def provenance_violations(power: Power, attrs: dict[str, Any], records: list[dict[str, str]]) -> list[str]:
+    return provenance_match(power, attrs, records)[1]
 
 
 _V = {
@@ -240,7 +277,7 @@ def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: Acti
         invalid = structural_effect_violations(power, attrs)
         if invalid:
             return Verdict(False, "I4/INVALID_ARGUMENTS", "Invalid effect attributes (not approvable): " + "; ".join(invalid), invalid)
-        unobserved = provenance_violations(power, attrs, ctx.observed)
+        unobserved = provenance_violations(power, attrs, ctx.records)
         if unobserved:
             return Verdict(False, "I6/PROVENANCE", "Effect on values never observed (not approvable): " + "; ".join(unobserved), unobserved)
         v = envelope_violations(power, attrs)

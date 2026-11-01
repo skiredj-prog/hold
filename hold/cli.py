@@ -118,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("--port", type=int, default=8787)
 
     pb = sub.add_parser("bench", help="the frozen A/B/C/C2/D comparison")
-    pb.add_argument("action", choices=["freeze", "check", "run", "evaluate"])
+    pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate"])
     pb.add_argument("--frozen", default="bench/protocol.frozen.json")
     pb.add_argument("--conditions", default="C,C2,X", help="comma separated: A,B,C-llama,C,C2,D,X")
     pb.add_argument("--model", help="Ollama model for A, B, C-llama and D (e.g. llama3.2:3b, llama3.1:8b)")
@@ -190,6 +190,14 @@ def main(argv: list[str] | None = None) -> int:
             ev = bench.evaluate(r["results"])
             print(json.dumps(ev, ensure_ascii=False, indent=1))
             print(f"Raw runs and results: {a.out}")
+            return 0
+        if a.action == "rerun":
+            ok, problems = bench.check_freeze(a.frozen)
+            if not ok:
+                print("Refusing to re-run: " + "; ".join(problems), file=sys.stderr)
+                return 1
+            target = Path(a.out) / "results.json"
+            print(json.dumps(bench.rerun_failed(target, model=a.model), ensure_ascii=False, indent=1))
             return 0
         if a.action == "evaluate":
             rows = [x for f in a.results or [] for x in json.loads(Path(f).read_text())["results"]]

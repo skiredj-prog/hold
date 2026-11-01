@@ -17,11 +17,11 @@ def profile():
 
 def ctx(**kw):
     """A controlled provenance proof: the offers these unit tests book were 'returned' by a search (I6)."""
-    from hold.floor import observed_digests
+    from hold.floor import observed_records
     from hold.testing import BOOKING
 
-    seen = observed_digests([BOOKING, dict(BOOKING, price=999), dict(BOOKING, price=998), {"booking_reference": "R"}])
-    base = dict(revoked=False, expired=False, usage={}, confirmed_actions=set(), uncertain_actions=set(), observed=seen)
+    seen = observed_records([BOOKING, dict(BOOKING, price=999), dict(BOOKING, price=998), {"receipt": "R"}])
+    base = dict(revoked=False, expired=False, usage={}, confirmed_actions=set(), uncertain_actions=set(), records=seen)
     return ActionContext(**(base | kw))
 
 

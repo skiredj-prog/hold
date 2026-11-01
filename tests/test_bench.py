@@ -27,8 +27,11 @@ def test_deterministic_conditions_on_dev_scenarios():
     assert sum(r["credit"]["floor"] for r in xs) > 0
     div = bench.first_divergence(c, c2)
     assert div["diverged"] and div["moves"] == ["VERIFY", "WAIT"] and div["delta"]["completed"] == [False, True]
-    ev = bench.evaluate(res)
+    ev = bench.evaluate(res, scenarios=[s["id"] for s in bench.DEV], reps={"C": 1, "C2": 1, "X": 2})
     assert ev["H1"]["verdict"] == "accepted"
+    # a campaign with a missing run cannot be accepted (PMO review of 9651f9e)
+    partial = bench.evaluate(res[1:], scenarios=[s["id"] for s in bench.DEV], reps={"C": 1, "C2": 1, "X": 2})
+    assert partial["H1"]["verdict"] == "inconclusive" and partial["H1"]["missing"]
 
 
 class NaiveAgent:

@@ -28,7 +28,7 @@ from typing import Any, Callable, get_type_hints
 
 from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
-from .floor import CORRECTABLE, ActionContext, Verdict, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, observed_digests, parse_time, value_digest
+from .floor import CORRECTABLE, ActionContext, Verdict, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, observed_records, parse_time, provenance_match, value_digest
 from .hesitation import boundary_position
 from .i18n import t
 from .journal import verify_chain
@@ -276,27 +276,31 @@ class Mission:
             confirmed_actions={e["action"] for e in effs if e["status"] == "CONFIRMED"},
             uncertain_actions={e["action"] for e in effs if e["status"] in ("UNKNOWN", "DISPATCHING")},
             now=self.hab.clock(),
-            observed=self._observed(),
+            records=self._records(),
         )
 
-    def _observed(self) -> set[str]:
-        """What tool results have returned in this mission: read results, and receipts of confirmed effects."""
-        out: set[str] = set()
+    def _records(self) -> list[dict[str, str]]:
+        """Every record tool results returned in this mission: read results, and receipts of confirmed effects."""
+        out: list[dict[str, str]] = []
         for e in self.events():
             if e.type == "ACTION_RESULT":
-                out.update(e.data.get("observed") or [])
+                out.extend(e.data.get("records") or [])
             elif e.type in ("EFFECT_OUTCOME", "RECONCILED", "EVIDENCE") and e.data.get("receipt") and (e.type != "EVIDENCE" or e.data.get("correlated")):
                 d = value_digest(e.data["receipt"])
                 if d:
-                    out.add(d)
+                    out.append({"receipt": d})
         return out
 
     def _arguments_problem(self, tool: _Tool, attrs: dict[str, Any]) -> str | None:
         """The call must match the tool it names: no unknown argument, no missing required one."""
-        props = set((tool.parameters or {}).get("properties", {}))
-        unexpected = sorted(k for k in attrs if k not in props)
+        schema = (tool.parameters or {}).get("properties", {})
+        unexpected = sorted(k for k in attrs if k not in schema)
         missing = sorted(k for k in (tool.parameters or {}).get("required", []) if k not in attrs)
-        parts = ([f"unexpected argument(s): {', '.join(unexpected)}"] if unexpected else []) + ([f"missing argument(s): {', '.join(missing)}"] if missing else [])
+        checks = {"string": lambda v: isinstance(v, str), "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+                  "integer": lambda v: isinstance(v, int) and not isinstance(v, bool), "boolean": lambda v: isinstance(v, bool)}
+        mistyped = sorted(f"{k} must be a {schema[k]['type']}" for k, v in attrs.items()
+                          if k in schema and schema[k].get("type") in checks and v is not None and not checks[schema[k]["type"]](v))
+        parts = ([f"unexpected argument(s): {', '.join(unexpected)}"] if unexpected else []) + ([f"missing argument(s): {', '.join(missing)}"] if missing else []) + mistyped
         return "; ".join(parts) or None
 
     def _authority_available(self) -> bool:
@@ -372,7 +376,7 @@ class Mission:
         with self.store.tx() as c:
             recorded = data if data is not None and len(canonical_json(data)) <= RECORD_LIMIT else None
             self.store.append(c, self.id, "ACTION_RESULT", "PROVIDER", {"action": power.action, "status": "OK", "data_sha": digest(data) if data is not None else None,
-                                                                        "observed": sorted(observed_digests(data)) if data is not None else [],
+                                                                        "records": observed_records(data) if data is not None else [],
                                                                         "data": recorded, "data_recorded": recorded is not None or data is None}, cause=admitted.seq)
         return ToolResult("OK", t("done", action=power.action), data=data)
 
@@ -399,8 +403,10 @@ class Mission:
                 )
             if power.budget is not None:
                 self.store.bump(c, self.id, f"power:{power.action}")
+            record, _ = provenance_match(power, attrs, self._records())
             adm = self.store.append(c, self.id, "ACTION_ADMITTED", "CORE", {"action": power.action, "kind": "effect", "grant": grant["id"] if grant else None,
-                                                                         "provenance_checked": [a for a in power.provenance if a in attrs]})
+                                                                         "provenance_checked": [a for a, _f in (p.split("=", 1) if "=" in p else (p, p) for p in power.provenance) if a in attrs],
+                                                                         "provenance_record": digest(record) if record else None})
             res = self.store.append(c, self.id, "EFFECT_RESERVED", "CORE", {"action": power.action, "effect_key": key, "operation_id": op, "attributes": attrs}, cause=adm.seq)
         try:
             out = tool.fn(**attrs, operation_id=op)

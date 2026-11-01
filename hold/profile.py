@@ -77,8 +77,18 @@ class Power(_Model):
     depends_on: list[str] = Field(default_factory=list, description="Effets qui doivent être confirmés avant cette action")
     role: Literal["support"] | None = None
     sigma: float | None = Field(default=None, ge=0, le=1)
-    provenance: list[str] = Field(default_factory=list, description="Attributes whose values must have been returned by an earlier tool result of the mission (I6)")
+    provenance: list[str] = Field(default_factory=list, description="Attributes that must come, together, from one record an earlier tool result returned (I6). 'attr' or 'attr=field' when the record names it differently")
     max_corrections: int = Field(default=2, ge=0, le=10, description="Corrected requests allowed after refusals that produced no effect")
+
+    @field_validator("provenance")
+    @classmethod
+    def _provenance(cls, v: list[str]) -> list[str]:
+        import re as _re
+
+        for item in v:
+            if not _re.fullmatch(r"[a-z][a-z0-9_]*(=[a-z][a-z0-9_]*)?", item):
+                raise ValueError(f"provenance entry {item!r}: 'attribute' or 'attribute=field'")
+        return v
 
     @model_validator(mode="after")
     def _coherent(self) -> "Power":
