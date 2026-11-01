@@ -10,7 +10,7 @@ from hold.relay.base import SimulatedRelay  # noqa: E402
 from hold.runtime import Habilitation  # noqa: E402
 from hold.testing import BOOKING, SyntheticHotel, wire  # noqa: E402
 
-PROFILE = ROOT / "profiles" / "reservation.hold.yaml"
+PROFILE = ROOT / "hold" / "profiles" / "reservation.hold.yaml"
 
 
 @pytest.fixture

@@ -129,6 +129,12 @@ class Habilitation:
             raise KeyError(f"Mission inconnue : {mission_id}")
         return Mission(self, mission_id)
 
+    def serve(self, *, host: str = "127.0.0.1", port: int = 8787, background: bool = True):
+        """Webhook WhatsApp + HOLD Studio dans le processus de l'agent (nécessite l'extra « server »)."""
+        from .server import serve
+
+        return serve(self.store, [self], host=host, port=port, background=background)
+
     def join(self, timeout: float = 30.0) -> None:
         """Attend la fin des continuations lancées en arrière-plan (tests, démonstrations)."""
         deadline = time.monotonic() + timeout
@@ -235,7 +241,7 @@ class Mission:
                 request = None
         if request:
             self._send_request(request)
-            return ToolResult("HELD", f"Hors enveloppe : {v.reason}. Decision Request envoyée à {self.profile.authority.name} ; n'essayez pas de contourner.", rule="I4/ENVELOPE", details={"question_id": request["question_id"]})
+            return ToolResult("HELD", f"{v.reason}. Decision Request envoyée à {self.profile.authority.name} ; n'essayez pas de contourner.", rule="I4/ENVELOPE", details={"question_id": request["question_id"]})
         if power.kind == "effect":
             return self._effect(tool, power, attrs, grant)
         return self._simple(tool, power, attrs)
@@ -565,9 +571,34 @@ class Mission:
                 follow = lambda: self.call(payload["action"], **attrs, _grant=gid)  # noqa: E731
             elif code == "REFUSE":
                 self.store.set_status(c, self.id, "OPEN")
-        if follow:
+        if follow and self._can_continue(payload):
             self.hab._spawn(follow)
         return {"accepted": True, "answer": code}
+
+    def _can_continue(self, payload: dict[str, Any]) -> bool:
+        """Seul le processus qui porte les outils de l'agent peut poursuivre (un serveur seul enregistre)."""
+        action = payload.get("action")
+        power = self.profile.power(action) if action else None
+        needed = [action] if action else []
+        if power and power.reconciliation:
+            needed.append(power.reconciliation.status_action)
+        return all(n in self.hab.tools for n in needed)
+
+    def resume_pending(self) -> ToolResult | None:
+        """Reprend ce qu'une réponse reçue par un autre processus a rendu possible."""
+        if self.status in CLOSED:
+            return None
+        usage = self.store.usage(self.id)
+        for e in self.store.effects(self.id):
+            if e["status"] == "UNKNOWN" and usage.get(f"directed_checks:{e['effect_key']}", 0) > 0:
+                return self.hesitate(e["effect_key"])
+        for g in self.store.read("SELECT * FROM grants WHERE mission=? AND consumed=0", (self.id,)):
+            grant = json.loads(g["payload"])
+            req = self.store.read("SELECT payload FROM requests WHERE question_id=?", (grant["question_id"],))
+            if req:
+                attrs = json.loads(req[0]["payload"]).get("attrs") or {}
+                return self.call(grant["action"], **attrs, _grant=g["id"])
+        return None
 
     # -- révocation et clôture -----------------------------------------------------------------------
     def _revoke(self, c, *, by: str, channel: str, cause: int | None = None) -> None:
@@ -609,6 +640,9 @@ class Mission:
         while time.monotonic() < deadline:
             if self.status not in ("HELD", "AWAITING_AUTHORITY"):
                 break
+            lock = self.hab._loops.get(self.id)
+            if self.status == "HELD" and not (lock and lock.locked()):
+                self.resume_pending()
             time.sleep(poll)
         return self.status
 
