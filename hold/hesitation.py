@@ -91,7 +91,7 @@ def boundary_position(
     for name in h.ladder:
         if name == "VERIFY":
             if not rec:
-                paths.append(PathState(name, False, "aucune réconciliation déclarée pour cet effet", 0.0, "agent", False))
+                paths.append(PathState(name, False, "no reconciliation declared for this effect", 0.0, "agent", False))
                 continue
             granted = usage.get(f"extra_checks:{effect_key}", 0)
             used = usage.get(f"checks:{effect_key}", 0)
@@ -100,20 +100,20 @@ def boundary_position(
             ok = left > 0 and not revoked
             directed = ok and usage.get(f"directed_checks:{effect_key}", 0) > 0
             if directed:
-                reason = "contrôle accordé par l'autorité"
+                reason = "check granted by the authority"
             else:
-                reason = f"{left} contrôle(s) restant(s)" if ok else ("mandat révoqué" if revoked else "contrôles épuisés")
+                reason = f"{left} check(s) left" if ok else ("mandate revoked" if revoked else "checks exhausted")
             paths.append(PathState(name, ok, reason, sigma, "agent", sigma >= tau, directed))
         elif name == "CONTACT_SUPPORT":
             sup = profile.support
             if not sup:
-                paths.append(PathState(name, False, "aucun pouvoir de contact « support » dans le profil", 0.0, "mandate", False))
+                paths.append(PathState(name, False, "no support contact power in the profile", 0.0, "mandate", False))
                 continue
             used = usage.get(f"power:{sup.action}", 0)
             left = None if sup.budget is None else sup.budget - used
             sigma = sup.sigma if sup.sigma is not None else 0.5
             ok = (left is None or left > 0) and not revoked
-            reason = ("support joignable" if left is None else f"{left} contact(s) restant(s)") if ok else ("mandat révoqué" if revoked else "budget de contact épuisé")
+            reason = ("support reachable" if left is None else f"{left} contact(s) left") if ok else ("mandate revoked" if revoked else "contact budget exhausted")
             paths.append(PathState(name, ok, reason, sigma, "mandate", sigma >= tau))
         elif name == "ASK_AUTHORITY":
             a = profile.authority
@@ -121,18 +121,18 @@ def boundary_position(
             left = a.max_requests - used
             ok = authority_available and not open_request and left > 0 and not revoked
             if revoked:
-                reason = "mandat révoqué"
+                reason = "mandate revoked"
             elif not authority_available:
-                reason = "autorité injoignable (canal non configuré)"
+                reason = "authority unreachable (no channel configured)"
             elif open_request:
-                reason = "une demande est déjà ouverte"
+                reason = "a request is already open"
             elif left <= 0:
-                reason = "demandes à l'autorité épuisées"
+                reason = "requests to the authority exhausted"
             else:
-                reason = f"{a.name} joignable par {a.channel}"
+                reason = f"{a.name} reachable on {a.channel}"
             paths.append(PathState(name, ok, reason, a.sigma, "authority", a.sigma >= tau))
         elif name == "PRESERVE":
-            paths.append(PathState(name, True, "toujours possible : conserver l'état sans agir", 0.0, "none", False))
+            paths.append(PathState(name, True, "always possible: keep the state without acting", 0.0, "none", False))
 
     restorable = any(p.open and p.reaches_tau and p.authority in ("agent", "mandate") for p in paths)
     return BoundaryPosition(

@@ -81,15 +81,15 @@ def compute_hash(e: Event) -> str:
 def validate_data(type_: str, data: dict[str, Any]) -> None:
     required = EVENT_TYPES.get(type_)
     if required is None:
-        raise ValueError(f"Type d'événement inconnu : {type_}")
+        raise ValueError(f"Unknown event type: {type_}")
     missing = required - set(data)
     if missing:
-        raise ValueError(f"{type_} : champs manquants {sorted(missing)}")
+        raise ValueError(f"{type_}: missing fields {sorted(missing)}")
 
 
 def make_event(*, mission: str, seq: int, at: str, type_: str, actor: str, cause: int | None, profile: str, revision: int, data: dict, prev: str) -> Event:
     if actor not in ACTORS:
-        raise ValueError(f"Acteur inconnu : {actor}")
+        raise ValueError(f"Unknown actor: {actor}")
     validate_data(type_, data)
     e = Event(v=ENVELOPE_VERSION, mission=mission, seq=seq, at=at, type=type_, actor=actor, cause=cause, profile=profile, revision=revision, core=CORE_VERSION, data=data, prev=prev)
     return Event(**{**e.to_dict(), "hash": compute_hash(e)})
@@ -109,13 +109,13 @@ def verify_chain(events: list[Event] | list[dict]) -> ChainReport:
     for i, raw in enumerate(events):
         e = raw if isinstance(raw, Event) else Event(**raw)
         if e.v != ENVELOPE_VERSION:
-            return ChainReport(False, len(events), prev, e.seq, f"version d'enveloppe inconnue {e.v}")
+            return ChainReport(False, len(events), prev, e.seq, f"unknown envelope version {e.v}")
         if e.seq != i + 1:
-            return ChainReport(False, len(events), prev, e.seq, "séquence non contiguë")
+            return ChainReport(False, len(events), prev, e.seq, "non-contiguous sequence")
         if e.prev != prev:
-            return ChainReport(False, len(events), prev, e.seq, "chaînage rompu")
+            return ChainReport(False, len(events), prev, e.seq, "broken chain")
         if compute_hash(e) != e.hash:
-            return ChainReport(False, len(events), prev, e.seq, "empreinte invalide")
+            return ChainReport(False, len(events), prev, e.seq, "invalid hash")
         try:
             validate_data(e.type, e.data)
         except ValueError as err:

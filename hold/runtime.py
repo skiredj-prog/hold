@@ -30,6 +30,7 @@ from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
 from .floor import ActionContext, admit_action, admit_path, effect_key, envelope_violations
 from .hesitation import boundary_position, judge
+from .i18n import t
 from .journal import verify_chain
 from .outcome import Outcome, ToolResult
 from .profile import Power, Profile, load_profile
@@ -88,9 +89,9 @@ class Habilitation:
         def deco(fn: Callable[..., Any]):
             power = self.profile.power(action)
             if not power:
-                raise ValueError(f"Aucun pouvoir « {action} » dans le profil {self.profile.id}")
+                raise ValueError(f"No power \"{action}\" in profile {self.profile.id}")
             if power.kind != kind:
-                raise ValueError(f"« {action} » est déclaré « {power.kind} » dans le profil, pas « {kind} »")
+                raise ValueError(f"\"{action}\" is declared \"{power.kind}\" in the profile, not \"{kind}\"")
             self.tools[action] = _Tool(action, kind, fn, description or power.description or (fn.__doc__ or "").strip(), parameters or _schema_from_signature(fn))
             return fn
 
@@ -126,7 +127,7 @@ class Habilitation:
 
     def mission(self, mission_id: str) -> "Mission":
         if not self.store.mission(mission_id):
-            raise KeyError(f"Mission inconnue : {mission_id}")
+            raise KeyError(f"Unknown mission: {mission_id}")
         return Mission(self, mission_id)
 
     def serve(self, *, host: str = "127.0.0.1", port: int = 8787, background: bool = True):
@@ -217,7 +218,7 @@ class Mission:
     def call(self, action: str, **attrs: Any) -> ToolResult:
         grant_id = attrs.pop("_grant", None)
         if self.status in CLOSED:
-            return ToolResult("CLOSED" if self.status != "REVOKED" else "REVOKED", f"Mission {self.status} : aucune action.", rule="I4")
+            return ToolResult("CLOSED" if self.status != "REVOKED" else "REVOKED", t("closed", status=self.status), rule="I4")
         tool = self.hab.tools.get(action)
         power = self.profile.power(action)
         grant = self._grant(grant_id) if grant_id else None
@@ -230,7 +231,7 @@ class Mission:
         with self.store.tx() as c:
             v = admit_action(self.profile, action, attrs, ctx, grant_digest=(grant or {}).get("attrs_digest"))
             if v.admitted and tool is None:
-                v = type(v)(False, "NO_IMPLEMENTATION", f"Aucune implémentation enregistrée pour « {action} ».")
+                v = type(v)(False, "NO_IMPLEMENTATION", f"No implementation registered for \"{action}\".")
             if not v.admitted:
                 breach = v.rule == "I4/ENVELOPE" and self.profile.hesitation.envelope_breach == "ask_authority" and self._authority_available() and not self.open_request()
                 self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": action, "rule": v.rule, "reason": v.reason, "violations": v.violations})
@@ -241,7 +242,7 @@ class Mission:
                 request = None
         if request:
             self._send_request(request)
-            return ToolResult("HELD", f"{v.reason}. Decision Request envoyée à {self.profile.authority.name} ; n'essayez pas de contourner.", rule="I4/ENVELOPE", details={"question_id": request["question_id"]})
+            return ToolResult("HELD", t("envelope_held", reason=v.reason.rstrip("."), authority=self.profile.authority.name), rule="I4/ENVELOPE", details={"question_id": request["question_id"]})
         if power.kind == "effect":
             return self._effect(tool, power, attrs, grant)
         return self._simple(tool, power, attrs)
@@ -256,11 +257,11 @@ class Mission:
         except Exception as e:  # noqa: BLE001
             with self.store.tx() as c:
                 self.store.append(c, self.id, "ACTION_RESULT", "PROVIDER", {"action": power.action, "status": "ERROR", "error": f"{type(e).__name__}: {e}"}, cause=admitted.seq)
-            return ToolResult("FAILED", f"{power.action} a échoué : {e}")
+            return ToolResult("FAILED", t("failed", action=power.action, error=e))
         data = out.data if isinstance(out, Outcome) else out
         with self.store.tx() as c:
             self.store.append(c, self.id, "ACTION_RESULT", "PROVIDER", {"action": power.action, "status": "OK", "data_sha": digest(data) if data is not None else None}, cause=admitted.seq)
-        return ToolResult("OK", f"{power.action} : terminé.", data=data)
+        return ToolResult("OK", t("done", action=power.action), data=data)
 
     def _grant(self, grant_id: str) -> dict[str, Any] | None:
         rows = self.store.read("SELECT * FROM grants WHERE id=? AND mission=? AND consumed=0", (grant_id, self.id))
@@ -302,14 +303,14 @@ class Mission:
                 c.execute("UPDATE effects SET status='CONFIRMED', receipt=?, updated_at=? WHERE effect_key=?", (out.receipt, now_iso(), key))
                 e = self.store.append(c, self.id, "EFFECT_OUTCOME", "PROVIDER", {"effect_key": key, "operation_id": op, "status": "CONFIRMED", "receipt": out.receipt}, cause=cause)
                 self.store.append(c, self.id, "EVIDENCE", "PROVIDER", {"effect_key": key, "source": "provider", "kind": "RECEIPT", "operation_id": op, "receipt": out.receipt, "correlated": True}, cause=e.seq)
-                return ToolResult("OK", f"{power.action} confirmé (reçu {out.receipt}).", data={"receipt": out.receipt, "operation_id": op})
+                return ToolResult("OK", t("confirmed", action=power.action, receipt=out.receipt), data={"receipt": out.receipt, "operation_id": op})
             if out.status == "REJECTED":
                 c.execute("UPDATE effects SET status='FAILED_PROVEN', updated_at=? WHERE effect_key=?", (now_iso(), key))
                 if power.budget is not None:
-                    self.store.bump(c, self.id, f"power:{power.action}", -1)  # rien n'a été créé : le budget est rendu
+                    self.store.bump(c, self.id, f"power:{power.action}", -1)  # nothing was created: the budget is given back
                 e = self.store.append(c, self.id, "EFFECT_OUTCOME", "PROVIDER", {"effect_key": key, "operation_id": op, "status": "FAILED_PROVEN", "reason": out.reason}, cause=cause)
                 self.store.append(c, self.id, "EVIDENCE", "PROVIDER", {"effect_key": key, "source": "provider", "kind": "PROVEN_REFUSAL", "operation_id": op, "reason": out.reason, "correlated": True}, cause=e.seq)
-                return ToolResult("FAILED", f"{power.action} refusé avant création : {out.reason}. Un nouvel essai est admissible.", data={"reason": out.reason})
+                return ToolResult("FAILED", t("rejected", action=power.action, reason=out.reason), data={"reason": out.reason})
             c.execute("UPDATE effects SET status='UNKNOWN', updated_at=? WHERE effect_key=?", (now_iso(), key))
             e = self.store.append(c, self.id, "EFFECT_OUTCOME", "PROVIDER", {"effect_key": key, "operation_id": op, "status": "UNKNOWN", "reason": out.reason}, cause=cause)
             scope = self._dependents(power.action)
@@ -320,9 +321,9 @@ class Mission:
     def _equivalent(self, power: Power, existing) -> ToolResult:
         with self.store.tx() as c:
             if existing["status"] == "CONFIRMED":
-                self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I1", "reason": "Effet équivalent déjà confirmé : rien n'est répété.", "effect_key": existing["effect_key"]})
-                return ToolResult("ALREADY_CONFIRMED", f"Déjà fait et confirmé (reçu {existing['receipt']}). Rien n'a été répété.", data={"receipt": existing["receipt"], "operation_id": existing["operation_id"]}, rule="I1")
-            self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I1", "reason": "Effet équivalent au résultat inconnu : HOLD en cours.", "effect_key": existing["effect_key"]})
+                self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I1", "reason": "Equivalent effect already confirmed: nothing is repeated.", "effect_key": existing["effect_key"]})
+                return ToolResult("ALREADY_CONFIRMED", t("already", receipt=existing["receipt"]), data={"receipt": existing["receipt"], "operation_id": existing["operation_id"]}, rule="I1")
+            self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I1", "reason": "Equivalent effect with an unknown outcome: HOLD in progress.", "effect_key": existing["effect_key"]})
         return self._held_message(power.action, existing["operation_id"], rule="I1")
 
     def _dependents(self, action: str) -> list[str]:
@@ -338,11 +339,10 @@ class Mission:
 
     def _held_message(self, action: str, op: str, *, rule: str | None = None) -> ToolResult:
         req = self.open_request()
-        tail = f" Decision Request ouverte auprès de {self.profile.authority.name}." if req else ""
+        tail = t("held_request", authority=self.profile.authority.name) if req else ""
         return ToolResult(
             "HELD",
-            f"HOLD : le résultat de {action} ({op}) est inconnu. Ne réessayez pas et ne créez rien d'équivalent ; "
-            f"HOLD conduit la réconciliation. Les actions dépendantes sont suspendues, le travail indépendant peut continuer.{tail}",
+            t("held", action=action, op=op) + tail,
             rule=rule, details={"operation_id": op, "question_id": req["question_id"] if req else None},
         )
 
@@ -379,7 +379,7 @@ class Mission:
         start_round = sum(1 for e in self.events() if e.type == "DECISION" and e.data.get("position", {}).get("effect_key") == key)
         for rnd in range(start_round + 1, start_round + h.max_rounds + 1):
             if self.status in CLOSED:
-                return ToolResult("CLOSED", f"Mission {self.status}.")
+                return ToolResult("CLOSED", t("closed", status=self.status))
             pos = self._position(key)
             eff = self.store.effect(key)
             if not pos["threatened"]:
@@ -410,7 +410,7 @@ class Mission:
                 elif path == "ASK_AUTHORITY":
                     request = self._open_request(c, "UNKNOWN_EFFECT", effect_key=key, cause=d_ev.seq)
                 elif path == "PRESERVE":
-                    self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": "aucun chemin ouvert n'atteint τ*" if verdict.reference == "PRESERVE" else "conservation choisie"}, cause=d_ev.seq)
+                    self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": "no open path reaches tau*" if verdict.reference == "PRESERVE" else "preservation chosen"}, cause=d_ev.seq)
                     self.store.set_status(c, self.id, "HELD")
             if path == "ASK_AUTHORITY":
                 self._send_request(request)
@@ -421,7 +421,7 @@ class Mission:
             if result is not None:
                 return result
         with self.store.tx() as c:
-            self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": f"limite de {h.max_rounds} tours d'hésitation"})
+            self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": f"limit of {h.max_rounds} hesitation rounds"})
         eff = self.store.effect(key)
         return self._held_message(eff["action"], eff["operation_id"])
 
@@ -434,7 +434,7 @@ class Mission:
         else:
             sup = self.profile.support
             sup_tool = self.hab.tools.get(sup.action) if sup else None
-            question = f"Pouvez-vous retrouver la réservation liée à l'opération {op} ? Nous n'avons reçu aucune confirmation."
+            question = f"Can you find the record for operation {op}? We received no confirmation."
             out = self._safe(sup_tool.fn, question=question, operation_id=op) if sup_tool else Outcome.unknown("aucun outil de support enregistré")
         correlated = out.status in ("CONFIRMED", "REPLY") and bool(out.receipt) and out.operation_id == op
         with self.store.tx() as c:
@@ -467,7 +467,7 @@ class Mission:
                 self.store.append(c, self.id, "RESUMED", "CORE", {"effect_key": key, "receipt": eff["receipt"], "autonomous": self.profile.hesitation.autonomous_resume})
             if self.status in ("HELD", "AWAITING_AUTHORITY"):
                 self.store.set_status(c, self.id, "OPEN")
-        return ToolResult("OK", f"{eff['action']} confirmé après réconciliation (reçu {eff['receipt']}). Rien n'a été répété ; la mission reprend.", data={"receipt": eff["receipt"], "operation_id": eff["operation_id"], "reconciled": True})
+        return ToolResult("OK", t("reconciled", action=eff["action"], receipt=eff["receipt"]), data={"receipt": eff["receipt"], "operation_id": eff["operation_id"], "reconciled": True})
 
     # -- Decision Requests -------------------------------------------------------------------------
     def _open_request(self, c, kind: str, *, effect_key: str | None = None, action: str | None = None, attrs: dict | None = None, violations: list[str] | None = None, cause: int | None = None) -> dict[str, Any]:
@@ -494,6 +494,8 @@ class Mission:
             payload = {"question_id": qid, "kind": kind, "effect_key": effect_key, "action": eff["action"], "operation_id": eff["operation_id"], "question": question}
         else:
             codes = ["APPROVE_ONCE", "REFUSE"] + (["REVOKE"] if a.can_revoke else [])
+            power = self.profile.power(action)
+            violations = envelope_violations(power, attrs or {}, a.locale) if power else violations
             question = (
                 f"L'agent demande {action} hors de son enveloppe : {' ; '.join(violations or [])}. Autoriser cette exécution unique, à l'identique ?"
                 if a.locale == "fr" else

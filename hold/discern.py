@@ -51,7 +51,7 @@ class ReferenceDiscerner:
 
     def propose(self, position: dict[str, Any], context: dict[str, Any]) -> Proposal:
         reaching = [p["name"] for p in position["paths"] if p["open"] and p["reaches_tau"]]
-        return Proposal("reference", position["reference"], position["effect_state"], reaching, "Règle de moindre autorité (directive de l'autorité d'abord).")
+        return Proposal("reference", position["reference"], position["effect_state"], reaching, "Least-authority rule (authority directive first).")
 
 
 SYSTEM_PROMPT = """You are the hesitation layer of an autonomous agent. An external action may have happened, but its result is unknown. You never act yourself: you choose one path, and a deterministic floor admits or refuses it.
@@ -118,7 +118,7 @@ class LlamaDiscerner:
             for m in r.json().get("models", []):
                 if m.get("name") in (self.model, f"{self.model}:latest"):
                     return True, m.get("digest"), None
-            return False, None, "modèle non téléchargé"
+            return False, None, "model not pulled"
         except Exception as e:  # noqa: BLE001 — l'indisponibilité est une information, pas une panne
             return False, None, str(e)
 
@@ -149,7 +149,7 @@ class LlamaDiscerner:
             out = json.loads(raw)
             choice = out.get("choice")
             if choice not in PATHS:
-                return Proposal("llama", None, model=self.model, input_sha=input_sha, output_sha=sha256_hex(raw), duration_ms=ms, error="choix hors schéma")
+                return Proposal("llama", None, model=self.model, input_sha=input_sha, output_sha=sha256_hex(raw), duration_ms=ms, error="choice outside the schema")
             return Proposal(
                 "llama", choice, out.get("perceived_state"), list(out.get("paths_reaching_tau") or []), str(out.get("rationale", ""))[:500],
                 model=self.model, input_sha=input_sha, output_sha=sha256_hex(raw), duration_ms=ms,

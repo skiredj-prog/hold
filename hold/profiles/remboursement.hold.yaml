@@ -1,0 +1,61 @@
+hold: habilitation/v1
+id: remboursement-client
+title: Remboursement client
+description: >-
+  L'agent traite seul les remboursements sous le plafond, vérifie un remboursement incertain
+  auprès du prestataire de paiement, et laisse l'autorité trancher au-delà de son enveloppe.
+revision: 1
+issued_at: "2026-11-01T12:00:00Z"
+expires_at: "2026-12-31T23:59:59Z"
+authority:
+  name: Responsable du service client
+  channel: whatsapp
+  contact: "212600000000"
+  sigma: 0.95
+  can_revoke: true
+  max_extra_checks: 1
+  max_requests: 2
+  locale: fr
+powers:
+  - action: read_order
+    kind: read
+    description: Lire la commande et l'historique du client.
+  - action: issue_refund
+    kind: effect
+    description: Rembourser sur le moyen de paiement d'origine.
+    budget: 3
+    identity: [order_id, customer_id]
+    envelope:
+      max_amount: { amount: 150, currency: EUR }
+      amount_field: amount
+      currency_field: currency
+      allowed:
+        method: [original_payment]
+      required: [order_id, customer_id, amount, currency, method]
+    reconciliation:
+      status_action: refund_status
+      max_checks: 3
+      sigma: 0.85
+      decay: 0.5
+  - action: refund_status
+    kind: status
+    description: Consulter le statut d'un remboursement par identifiant d'opération.
+  - action: contact_psp
+    kind: contact
+    role: support
+    budget: 1
+    sigma: 0.6
+    description: Écrire au prestataire de paiement.
+  - action: notify_customer
+    kind: effect
+    description: Prévenir le client du remboursement confirmé.
+    budget: 3
+    identity: [order_id, customer_id]
+    depends_on: [issue_refund]
+hesitation:
+  tau_star: 0.5
+  ladder: [VERIFY, CONTACT_SUPPORT, ASK_AUTHORITY, PRESERVE]
+  on_refused_proposal: reference
+  autonomous_resume: true
+  max_rounds: 8
+  envelope_breach: ask_authority

@@ -30,7 +30,7 @@ class Outcome:
         return Outcome("REJECTED", reason=reason)
 
     @staticmethod
-    def not_found(reason: str = "introuvable") -> "Outcome":
+    def not_found(reason: str = "not found") -> "Outcome":
         """« Introuvable » ne prouve pas l'échec : l'effet peut exister sans être visible."""
         return Outcome("NOT_FOUND", reason=reason)
 

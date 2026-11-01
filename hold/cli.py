@@ -27,27 +27,27 @@ def _profile_cmd(a: argparse.Namespace) -> int:
     try:
         p = load_profile(a.file)
     except (ValidationError, ValueError) as e:
-        print(f"Profil invalide : {e}", file=sys.stderr)
+        print(f"Invalid profile: {e}", file=sys.stderr)
         return 2
     if a.action == "fingerprint":
         print(p.fingerprint)
     elif a.action == "validate":
-        print(f"✔ {p.id} rév. {p.revision} · {p.title}")
-        print(f"  empreinte {p.fingerprint}")
-        print(f"  autorité {p.authority.name} ({p.authority.channel}) · τ*={p.hesitation.tau_star} · échelle {' → '.join(p.hesitation.ladder)}")
+        print(f"✔ {p.id} rev. {p.revision} · {p.title}")
+        print(f"  fingerprint {p.fingerprint}")
+        print(f"  authority {p.authority.name} ({p.authority.channel}) · tau*={p.hesitation.tau_star} · ladder {' → '.join(p.hesitation.ladder)}")
         for pw in p.powers:
             env = ""
             if pw.envelope and pw.envelope.max_amount:
-                env = f" · plafond {pw.envelope.max_amount.amount:g} {pw.envelope.max_amount.currency}"
+                env = f" · ceiling {pw.envelope.max_amount.amount:g} {pw.envelope.max_amount.currency}"
             print(f"  - {pw.action} [{pw.kind}]{' budget ' + str(pw.budget) if pw.budget is not None else ''}{env}")
-        print(f"  signé : {'oui, par ' + p.signature.by if p.signature else 'non'}")
+        print(f"  signed: {'yes, by ' + p.signature.by if p.signature else 'no'}")
     elif a.action == "sign":
         if not a.secret or not a.by:
-            print("--secret et --by sont requis", file=sys.stderr)
+            print("--secret and --by are required", file=sys.stderr)
             return 2
         out = Path(a.out or a.file)
         dump_profile(sign(p, a.secret, a.by), out)
-        print(f"Profil signé par {a.by} → {out}")
+        print(f"Profile signed by {a.by} → {out}")
     return 0
 
 
@@ -60,7 +60,7 @@ def _journal_cmd(a: argparse.Namespace) -> int:
     store = Store(a.db)
     row = store.mission(a.mission)
     if not row:
-        print("Mission inconnue", file=sys.stderr)
+        print("Unknown mission", file=sys.stderr)
         return 2
     profile = load_profile(json.loads(store.profile_json(row["profile_fp"])))
     events = store.events(a.mission)
@@ -70,19 +70,19 @@ def _journal_cmd(a: argparse.Namespace) -> int:
         return 0
     if a.action == "policy":
         for r in policy_replay(events, tau_star=a.tau, profile=profile):
-            print(f"  tour {r['round']} : enregistré {r['recorded']:<16} rejoué {r['replayed']:<16}{' ← change' if r['changed'] else ''}")
+            print(f"  round {r['round']}: recorded {r['recorded']:<16} replayed {r['replayed']:<16}{' ← changes' if r['changed'] else ''}")
         return 0
     chain = verify_chain(events)
     sr = state_replay(store, a.mission, profile)
     dr = decision_replay(events, profile)
-    print(f"Chaîne : {'valide' if chain.valid else 'INVALIDE à ' + str(chain.broken_at) + ' (' + str(chain.reason) + ')'} · {chain.count} événements")
-    print(f"Rejeu d'état : {'identique' if sr['matches'] else 'DIFFÉRENT ' + ', '.join(sr['differences'])}")
-    print(f"Rejeu des décisions : {dr['checked']} verdict(s), {'tous retrouvés' if dr['matches'] else str(len(dr['mismatches'])) + ' écart(s)'}")
+    print(f"Chain: {'valid' if chain.valid else 'INVALID at ' + str(chain.broken_at) + ' (' + str(chain.reason) + ')'} · {chain.count} events")
+    print(f"State replay: {'identical' if sr['matches'] else 'DIFFERENT ' + ', '.join(sr['differences'])}")
+    print(f"Decision replay: {dr['checked']} verdict(s), {'all reproduced' if dr['matches'] else str(len(dr['mismatches'])) + ' mismatch(es)'}")
     return 0 if chain.valid and sr["matches"] and dr["matches"] else 1
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="hold", description="HOLD — habilitation d'agent prêt-à-porter")
+    ap = argparse.ArgumentParser(prog="hold", description="HOLD — prêt-à-porter habilitation for autonomous agents")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     pp = sub.add_parser("profile", help="valider, signer, exporter le schéma d'un profil")
@@ -148,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         store = Store(a.db)
         row = store.mission(a.mission)
         if not row:
-            print("Mission inconnue", file=sys.stderr)
+            print("Unknown mission", file=sys.stderr)
             return 2
         hab = Habilitation(load_profile(json.loads(store.profile_json(row["profile_fp"]))), store=store)
         print(json.dumps(hab.mission(a.mission).answer(a.question_id, a.code, channel="console", evidence={}), ensure_ascii=False))
@@ -181,5 +181,15 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def entry() -> None:
+    try:
+        sys.exit(main())
+    except BrokenPipeError:  # sortie coupée (| head) : se taire proprement
+        import os
+
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(0)
+
+
 if __name__ == "__main__":  # pragma: no cover
-    sys.exit(main())
+    entry()

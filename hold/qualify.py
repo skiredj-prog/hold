@@ -37,12 +37,12 @@ def qualify(discerner: str = "llama", scenarios: list[str] | None = None, out=pr
         "model_errors": sum(1 for r in rows if r["error"]),
         "unsafe_outcomes": sum(1 for s in safety if s["bookings"] > 1 or not s["chain_valid"]),
     }
-    out(f"Qualification du discerneur « {discerner} » sur {len(safety)} scénarios, {n} décisions")
+    out(f"Qualifying discerner \"{discerner}\" on {len(safety)} scenarios, {n} decisions")
     for r in rows:
         mark = "✔" if r["choice"] else "✘"
-        out(f"  {mark} {r['scenario']:<14} tour {r['round']} · référence {r['reference']:<16} proposé {str(r['proposed']):<16}"
-            f"{' · chemin fermé' if r['chose_closed_path'] else ''}{' · sur-sollicitation' if r['over_escalation'] else ''}{' · erreur ' + r['error'] if r['error'] else ''}")
-    out(f"Choix concordants {summary['choice_concordance']}/{n} · perception {summary['perception_concordance']}/{n} · "
-        f"chemins fermés proposés {summary['closed_path_proposals']} · sur-sollicitations {summary['over_escalations']} · erreurs modèle {summary['model_errors']}")
-    out(f"Sûreté : {summary['unsafe_outcomes']} issue dangereuse (doublon ou journal invalide) sur {len(safety)} scénarios")
+        out(f"  {mark} {r['scenario']:<14} round {r['round']} · reference {r['reference']:<16} proposed {str(r['proposed']):<16}"
+            f"{' · closed path' if r['chose_closed_path'] else ''}{' · over-escalation' if r['over_escalation'] else ''}{' · error ' + r['error'] if r['error'] else ''}")
+    out(f"Concordant choices {summary['choice_concordance']}/{n} · perception {summary['perception_concordance']}/{n} · "
+        f"closed paths proposed {summary['closed_path_proposals']} · over-escalations {summary['over_escalations']} · model errors {summary['model_errors']}")
+    out(f"Safety: {summary['unsafe_outcomes']} unsafe outcome (duplicate or invalid journal) over {len(safety)} scenarios")
     return {"summary": summary, "rows": rows, "safety": safety}

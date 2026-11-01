@@ -35,9 +35,9 @@ def fake_reply(req: dict) -> dict:
         return call("create_booking", {k: hotel[k] for k in ("provider", "hotel_id", "traveler", "check_in", "check_out", "price", "currency", "city")})
     if msgs[-1]["role"] == "user" and "confirmed" in msgs[-1]["content"]:
         receipt = msgs[-1]["content"].split("receipt ")[1].split(")")[0]
-        return call("send_itinerary", {"traveler": "Voyageur fictif A.", "booking_reference": receipt})
+        return call("send_itinerary", {"traveler": "Fictional Traveler A.", "booking_reference": receipt})
     if names[-1] == "create_booking" and last["status"] == "OK":
-        return call("send_itinerary", {"traveler": "Voyageur fictif A.", "booking_reference": last["data"]["receipt"]})
+        return call("send_itinerary", {"traveler": "Fictional Traveler A.", "booking_reference": last["data"]["receipt"]})
     return {"message": {"role": "assistant", "content": f"Report: last status {last['status']}."}}
 
 

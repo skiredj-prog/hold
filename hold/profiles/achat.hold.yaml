@@ -1,0 +1,58 @@
+hold: habilitation/v1
+id: achat-fournisseur
+title: Achat fournisseur
+description: >-
+  L'agent passe les commandes de réapprovisionnement chez les fournisseurs référencés, dans la
+  limite du montant et des dates de livraison fixés ; il hésite plus tôt (τ* plus haut) car une
+  commande se défait mal.
+revision: 1
+issued_at: "2026-11-01T12:00:00Z"
+expires_at: "2027-01-31T23:59:59Z"
+authority:
+  name: Direction des achats
+  channel: whatsapp
+  contact: "212600000000"
+  sigma: 0.95
+  can_revoke: true
+  max_extra_checks: 1
+  max_requests: 2
+  locale: fr
+powers:
+  - action: read_catalog
+    kind: read
+    description: Consulter le catalogue et les prix des fournisseurs référencés.
+  - action: place_order
+    kind: effect
+    description: Passer une commande ferme chez un fournisseur référencé.
+    budget: 2
+    identity: [supplier_id, sku, delivery_date]
+    envelope:
+      max_amount: { amount: 20000, currency: MAD }
+      amount_field: total
+      currency_field: currency
+      allowed:
+        supplier_id: [SUP-001, SUP-007]
+      windows:
+        delivery_date: { start: "2026-11-10", end: "2026-12-20" }
+      required: [supplier_id, sku, quantity, total, currency, delivery_date]
+    reconciliation:
+      status_action: order_status
+      max_checks: 2
+      sigma: 0.8
+      decay: 0.5
+  - action: order_status
+    kind: status
+    description: Consulter le statut d'une commande par identifiant d'opération.
+  - action: call_supplier
+    kind: contact
+    role: support
+    budget: 1
+    sigma: 0.75
+    description: Joindre le commercial du fournisseur.
+hesitation:
+  tau_star: 0.6
+  ladder: [VERIFY, CONTACT_SUPPORT, ASK_AUTHORITY, PRESERVE]
+  on_refused_proposal: reference
+  autonomous_resume: true
+  max_rounds: 8
+  envelope_breach: ask_authority

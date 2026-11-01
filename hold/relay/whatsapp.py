@@ -170,7 +170,7 @@ class WhatsAppRelay:
             ok, mid, code, err = self._post(template_message(authority.contact, self.config, mission_id, request))
             return SendResult(ok, self.mode, mid, None if ok else f"{code} {err}", via="template")
         if not ok and code == OUTSIDE_WINDOW:
-            err = f"{err} (hors fenêtre de 24 h : l'autorité doit d'abord écrire au numéro de l'entreprise)"
+            err = f"{err} (outside the 24 h window: the authority must first message the business number)"
         return SendResult(ok, self.mode, mid, None if ok else f"{code or '—'} {err}")
 
     def send_text(self, *, mission_id: str, authority: Authority, text: str) -> SendResult:

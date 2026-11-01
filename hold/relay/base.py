@@ -86,7 +86,7 @@ class ConsoleRelay:
 
     def send_request(self, *, mission_id: str, mission_title: str, request: dict[str, Any], authority: Authority) -> SendResult:
         opts = ", ".join(o["code"] for o in request["options"])
-        print(f"\n[HOLD] Decision Request {request['question_id']} · {mission_title}\n       {request['question']}\n       Options : {opts}")
+        print(f"\n[HOLD] Decision Request {request['question_id']} · {mission_title}\n       {request['question']}\n       Options: {opts}")
         return SendResult(True, self.mode, request["question_id"])
 
     def send_text(self, *, mission_id: str, authority: Authority, text: str) -> SendResult:

@@ -61,7 +61,7 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
         host = request.client.host if request.client else ""
         if host in LOOPBACK and not any(h in request.headers for h in FORWARD_HEADERS):
             return
-        raise HTTPException(403, "API du Studio réservée au poste local (ou jeton HOLD_STUDIO_TOKEN).")
+        raise HTTPException(403, "Studio API is local only (or use HOLD_STUDIO_TOKEN).")
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:
@@ -119,7 +119,7 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
         studio_guard(request)
         h = resolve(mission_id)
         if not h:
-            raise HTTPException(404, "Mission inconnue")
+            raise HTTPException(404, "Unknown mission")
         m = h.mission(mission_id)
         journal = export_journal(store, mission_id)
         chain = m.verify()
@@ -142,7 +142,7 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
         body = await request.json()
         h = resolve(mission_id)
         if not h:
-            raise HTTPException(404, "Mission inconnue")
+            raise HTTPException(404, "Unknown mission")
         return h.mission(mission_id).answer(str(body.get("question_id", "")), str(body.get("code", "")), channel="console", evidence={})
 
     @app.post("/api/missions/{mission_id}/simulate-tap")
@@ -150,12 +150,12 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
         """Mode simulé : fabrique le webhook que Meta enverrait et le fait suivre le même traitement."""
         studio_guard(request)
         if relay is None or getattr(relay, "mode", "") != "simulated":
-            raise HTTPException(409, "Disponible seulement avec un relais WhatsApp simulé.")
+            raise HTTPException(409, "Only available with a simulated WhatsApp relay.")
         body = await request.json()
         h = resolve(mission_id)
         req = h.mission(mission_id).open_request() if h else None
         if not req:
-            raise HTTPException(409, "Aucune Decision Request ouverte.")
+            raise HTTPException(409, "No open Decision Request.")
         sender = h.profile.authority.contact if not body.get("stranger") else "15550000000"
         code = str(body.get("code", ""))
         title = next((o["title"] for o in req["options"] if o["code"] == code), code)
@@ -167,7 +167,7 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
         page = STUDIO / "index.html"
         if page.exists():
             return FileResponse(page, media_type="text/html; charset=utf-8")
-        return HTMLResponse("<h1>HOLD</h1><p>Studio non installé.</p>")
+        return HTMLResponse("<h1>HOLD</h1><p>Studio is not installed.</p>")
 
     app.state.inbound = inbound
     return app

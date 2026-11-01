@@ -42,11 +42,11 @@ def test_profile_fingerprint_revision_signature(profile):
 @pytest.mark.parametrize(
     "mutate, message",
     [
-        (lambda d: d["powers"][2].pop("identity"), "identité"),
+        (lambda d: d["powers"][2].pop("identity"), "identity"),
         (lambda d: d["powers"][2]["reconciliation"].update(status_action="search_hotels"), "status"),
         (lambda d: d["hesitation"].update(ladder=["PRESERVE", "VERIFY"]), "PRESERVE"),
-        (lambda d: d["authority"].pop("contact"), "numéro"),
-        (lambda d: d["powers"][5].update(depends_on=["venue_info"]), "dépendance"),
+        (lambda d: d["authority"].pop("contact"), "number"),
+        (lambda d: d["powers"][5].update(depends_on=["venue_info"]), "dependency"),
         (lambda d: d.update(unknown_field=1), "Extra"),
     ],
 )
@@ -61,8 +61,9 @@ def test_envelope_bounds_the_content_of_the_effect(profile, booking):
     power = profile.power("create_booking")
     assert envelope_violations(power, booking) == []
     v = envelope_violations(power, booking | {"price": 340, "city": "Paris", "check_in": "2026-12-01", "currency": "USD"})
-    assert any("plafond" in x for x in v) and any("city" in x for x in v) and any("check_in" in x for x in v) and any("devise" in x for x in v)
-    assert any("requis" in x for x in envelope_violations(power, {k: val for k, val in booking.items() if k != "traveler"}))
+    assert any("ceiling" in x for x in v) and any("city" in x for x in v) and any("check_in" in x for x in v) and any("currency" in x for x in v)
+    assert any("plafond" in x for x in envelope_violations(power, booking | {"price": 340}, "fr"))
+    assert any("required" in x for x in envelope_violations(power, {k: val for k, val in booking.items() if k != "traveler"}))
 
 
 def test_admission_rules(profile, booking):
@@ -84,7 +85,7 @@ def test_admission_rules(profile, booking):
 def test_effect_identity_ignores_case_spaces_and_extra_fields(booking):
     ident = ["provider", "hotel_id", "traveler", "check_in", "check_out"]
     a = effect_key("m1", "create_booking", ident, booking)
-    b = effect_key("m1", "create_booking", ident, booking | {"hotel_id": "  lyon-eurexpo-042 ", "traveler": "VOYAGEUR  FICTIF A.", "hotel_name": "autre nom"})
+    b = effect_key("m1", "create_booking", ident, booking | {"hotel_id": "  lyon-eurexpo-042 ", "traveler": "FICTIONAL  TRAVELER A.", "hotel_name": "another name"})
     assert a == b
     assert a != effect_key("m2", "create_booking", ident, booking)
 

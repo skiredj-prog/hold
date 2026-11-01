@@ -126,8 +126,9 @@ def test_studio_api_is_local_only_and_validates_profiles(world):
     detail = client.get(f"/api/missions/{m.id}").json()
     assert detail["verification"]["chain"]["valid"] and detail["verification"]["state"]["matches"] and detail["verification"]["decisions"]["matches"]
     cat = client.get("/api/catalog").json()
-    assert cat["templates"][0]["id"] == "reservation-voyage" and "properties" in cat["schema"]
-    good = cat["templates"][0]["profile"]
+    ids = [x["id"] for x in cat["templates"]]
+    assert {"reservation-voyage", "remboursement-client", "achat-fournisseur"} <= set(ids) and "properties" in cat["schema"]
+    good = next(x for x in cat["templates"] if x["id"] == "reservation-voyage")["profile"]
     assert client.post("/api/profiles/validate", json=good).json()["fingerprint"] == hab.profile.fingerprint
     bad = good | {"hesitation": good["hesitation"] | {"ladder": ["VERIFY"]}}
     assert not client.post("/api/profiles/validate", json=bad).json()["valid"]

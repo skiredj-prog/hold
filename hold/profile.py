@@ -42,7 +42,7 @@ class DateWindow(_Model):
     @model_validator(mode="after")
     def _ordered(self) -> "DateWindow":
         if self.start > self.end:
-            raise ValueError("La fenêtre commence après sa fin")
+            raise ValueError("The window starts after it ends")
         return self
 
 
@@ -82,12 +82,12 @@ class Power(_Model):
     def _coherent(self) -> "Power":
         if self.kind == "effect":
             if not self.identity:
-                raise ValueError(f"{self.action} : un effet doit déclarer ses attributs d'identité")
+                raise ValueError(f"{self.action}: an effect must declare its identity attributes")
         else:
             if self.envelope or self.reconciliation or self.identity:
-                raise ValueError(f"{self.action} : enveloppe, identité et réconciliation sont réservées aux effets")
+                raise ValueError(f"{self.action}: envelope, identity and reconciliation are reserved to effects")
         if self.role == "support" and self.kind != "contact":
-            raise ValueError(f"{self.action} : le rôle « support » exige un pouvoir de contact")
+            raise ValueError(f"{self.action}: the support role requires a contact power")
         return self
 
 
@@ -112,13 +112,13 @@ class Authority(_Model):
         if d.startswith("00"):
             d = d[2:]
         if not d.isdigit() or not (8 <= len(d) <= 15) or d.startswith("0"):
-            raise ValueError("Numéro international invalide")
+            raise ValueError("Invalid international number")
         return d
 
     @model_validator(mode="after")
     def _reachable(self) -> "Authority":
         if self.channel == "whatsapp" and not self.contact:
-            raise ValueError("Le canal WhatsApp exige le numéro de l'autorité")
+            raise ValueError("The WhatsApp channel requires the authority's number")
         return self
 
 
@@ -136,9 +136,9 @@ class Hesitation(_Model):
     @classmethod
     def _ladder(cls, v: list[str]) -> list[str]:
         if len(set(v)) != len(v):
-            raise ValueError("Chemin en double dans l'échelle")
+            raise ValueError("Duplicate path in the ladder")
         if not v or v[-1] != "PRESERVE":
-            raise ValueError("PRESERVE doit être le dernier chemin de l'échelle")
+            raise ValueError("PRESERVE must be the last path of the ladder")
         return v
 
 
@@ -166,20 +166,20 @@ class Profile(_Model):
     def _references(self) -> "Profile":
         names = [p.action for p in self.powers]
         if len(set(names)) != len(names):
-            raise ValueError("Deux pouvoirs portent la même action")
+            raise ValueError("Two powers share the same action")
         by = {p.action: p for p in self.powers}
         for p in self.powers:
             if p.reconciliation:
                 s = by.get(p.reconciliation.status_action)
                 if not s or s.kind != "status":
-                    raise ValueError(f"{p.action} : la réconciliation exige un pouvoir « status » nommé {p.reconciliation.status_action}")
+                    raise ValueError(f"{p.action}: reconciliation requires a status power named {p.reconciliation.status_action}")
             for d in p.depends_on:
                 if d not in by or by[d].kind != "effect":
-                    raise ValueError(f"{p.action} : dépendance inconnue ou qui n'est pas un effet ({d})")
+                    raise ValueError(f"{p.action}: unknown dependency, or not an effect ({d})")
         if sum(1 for p in self.powers if p.role == "support") > 1:
-            raise ValueError("Un seul pouvoir peut tenir le rôle « support »")
+            raise ValueError("Only one power can hold the support role")
         if self.expires_at and self.expires_at <= self.issued_at:
-            raise ValueError("Le profil expire avant d'être émis")
+            raise ValueError("The profile expires before it is issued")
         return self
 
     # -- lecture -------------------------------------------------------------
@@ -242,7 +242,7 @@ def load_profile(source: str | Path | dict, *, secret: str | None = None, requir
     profile = Profile.model_validate(data)
     if require_signature or (secret and profile.signature):
         if not secret or not signature_valid(profile, secret):
-            raise ValueError("Signature du profil absente ou invalide")
+            raise ValueError("Profile signature missing or invalid")
     return profile
 
 

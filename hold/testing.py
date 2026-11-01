@@ -32,14 +32,14 @@ class SyntheticHotel:
         with self._lock:
             if self.create_mode == "reject":
                 self.requests.append({"kind": "CREATE", "operation_id": operation_id, "response": "REJECTED"})
-                return Outcome.rejected("Chambre indisponible (refus avant création)")
+                return Outcome.rejected("No room available (refused before creation)")
             receipt = f"RCPT-{secrets.token_hex(3).upper()}"
             self.bookings.append({"operation_id": operation_id, "receipt": receipt, "attrs": attrs, "checks": 0})
             self.requests.append({"kind": "CREATE", "operation_id": operation_id, "response": "CREATED" if self.create_mode == "respond" else "LOST_RESPONSE"})
         if self.create_mode == "respond":
             return Outcome.confirmed(receipt, operation_id=operation_id)
         time.sleep(self.timeout_s)
-        raise TimeoutError(f"aucune réponse du fournisseur après {self.timeout_s:g} s")
+        raise TimeoutError(f"no answer from the provider after {self.timeout_s:g} s")
 
     def status(self, operation_id: str) -> Outcome:
         with self._lock:
@@ -56,11 +56,11 @@ class SyntheticHotel:
         with self._lock:
             self.requests.append({"kind": "SUPPORT", "operation_id": operation_id, "response": self.support_mode})
             if self.support_mode == "unavailable":
-                raise ConnectionError("support injoignable")
+                raise ConnectionError("support unreachable")
             b = next((x for x in self.bookings if x["operation_id"] == operation_id), None)
             if self.support_mode == "finds" and b:
-                return Outcome.reply(f"Réservation trouvée : {b['receipt']}.", operation_id=operation_id, receipt=b["receipt"])
-            return Outcome.reply("Nous transmettons votre demande à l'équipe concernée.")
+                return Outcome.reply(f"Booking found: {b['receipt']}.", operation_id=operation_id, receipt=b["receipt"])
+            return Outcome.reply("We are forwarding your request to the relevant team.")
 
     @property
     def created(self) -> int:
@@ -70,9 +70,9 @@ class SyntheticHotel:
 BOOKING = {
     "provider": "hotel-synthetique",
     "hotel_id": "LYON-EUREXPO-042",
-    "hotel_name": "Hôtel fictif Eurexpo Lyon",
+    "hotel_name": "Fictional Eurexpo Lyon Hotel",
     "city": "Lyon",
-    "traveler": "Voyageur fictif A.",
+    "traveler": "Fictional Traveler A.",
     "check_in": "2026-11-17",
     "check_out": "2026-11-19",
     "price": 238,
@@ -85,11 +85,11 @@ def wire(hab, hotel: SyntheticHotel) -> None:
 
     @hab.read("search_hotels")
     def search_hotels(city: str = "Lyon") -> Any:
-        return Outcome.value([BOOKING | {"distance": "900 m du hall 4"}])
+        return Outcome.value([BOOKING | {"distance": "900 m from hall 4"}])
 
     @hab.read("venue_info")
     def venue_info() -> Any:
-        return Outcome.value({"lieu": "Parc des expositions fictif", "horaires": "9 h – 18 h"})
+        return Outcome.value({"venue": "Fictional exhibition centre", "hours": "9:00–18:00"})
 
     @hab.effect("create_booking")
     def create_booking(provider: str, hotel_id: str, traveler: str, check_in: str, check_out: str, price: float, currency: str, city: str, hotel_name: str = "", operation_id: str = "") -> Outcome:

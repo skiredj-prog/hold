@@ -27,7 +27,7 @@ def test_lost_response_is_reconciled_without_repeating(make, booking):
     assert r.status == "OK" and r.data["reconciled"]
     assert hotel.created == 1
     assert m.call("create_booking", **booking).status == "ALREADY_CONFIRMED"
-    assert m.call("create_booking", **booking | {"traveler": "voyageur fictif a."}).status == "ALREADY_CONFIRMED"
+    assert m.call("create_booking", **booking | {"traveler": "fictional traveler a."}).status == "ALREADY_CONFIRMED"
     assert hotel.created == 1
     assert m.call("send_itinerary", traveler="A", booking_reference=r.data["receipt"]).status == "OK"
     assert [e.data["verdict"]["applied"] for e in m.events() if e.type == "DECISION"] == ["VERIFY", "VERIFY"]
@@ -193,4 +193,4 @@ def test_tampering_is_detected_and_policy_replay_is_counterfactual(make, booking
         ev["data"]["status"] = "CONFIRMED"
         c.execute("UPDATE events SET json=? WHERE mission=? AND seq=?", (json.dumps(ev), m.id, row["seq"]))
     report = m.verify()
-    assert not report.valid and report.reason == "empreinte invalide"
+    assert not report.valid and report.reason == "invalid hash"
