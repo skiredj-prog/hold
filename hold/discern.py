@@ -49,6 +49,9 @@ class ReferenceDiscerner:
 
     name = "reference"
 
+    def describe(self) -> dict[str, Any]:
+        return {"name": self.name, "kind": "rule", "note": "least-authority cascade; not a model"}
+
     def propose(self, position: dict[str, Any], context: dict[str, Any]) -> Proposal:
         reaching = [p["name"] for p in position["paths"] if p["open"] and p["reaches_tau"]]
         return Proposal("reference", position["reference"], position["effect_state"], reaching, "Least-authority rule (authority directive first).")
@@ -111,6 +114,9 @@ class LlamaDiscerner:
         self.base_url = (base_url or os.environ.get("LLAMA_BASE_URL", "http://127.0.0.1:11434")).rstrip("/")
         self.timeout_s = timeout_s
         self.options = {"temperature": 0, "seed": 42, "num_ctx": 4096, "num_predict": 400}
+
+    def describe(self) -> dict[str, Any]:
+        return {"name": self.name, "kind": "model", "model": self.model, "options": self.options, "prompt_sha256": sha256_hex(SYSTEM_PROMPT)}
 
     def available(self) -> tuple[bool, str | None, str | None]:
         try:

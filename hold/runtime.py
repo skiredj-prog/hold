@@ -57,6 +57,24 @@ class _Tool:
     fn: Callable[..., Any]
     description: str
     parameters: dict[str, Any]
+    idempotency: str = "none"  # "operation_id": the provider honors the operation_id as an idempotency key (declared, not verified)
+    verified_by: str | None = None
+
+
+# What HOLD can and cannot claim about an external effect. Three separate guarantees, never "exactly once".
+GUARANTEES = {
+    "dispatch": "At-most-once dispatch inside the HOLD boundary: every runtime sharing one HOLD store (threads, processes on one host). Not across separate stores or hosts.",
+    "provider": "Provider-side duplicate prevention only where the provider honors the operation_id as an idempotency key: declared by the runtime binding, not verified by HOLD unless a verification is cited.",
+    "outcome": "An effect is CONFIRMED only with evidence correlated to its operation_id, FAILED_PROVEN only on an explicit refusal before creation, and otherwise explicitly UNKNOWN.",
+}
+
+
+def effect_guarantees(effect: dict[str, Any], tool: "_Tool | None") -> dict[str, Any]:
+    outcome = {"CONFIRMED": "CONFIRMED_CORRELATED", "FAILED_PROVEN": "PROVEN_NOT_EXECUTED"}.get(effect["status"], "UNKNOWN")
+    provider = "NOT_DECLARED"
+    if tool and tool.idempotency == "operation_id":
+        provider = "VERIFIED" if tool.verified_by else "DECLARED"
+    return {"dispatch": "AT_MOST_ONCE_IN_BOUNDARY", "dispatches": effect["attempts"], "provider": provider, "outcome": outcome}
 
 
 def _schema_from_signature(fn: Callable[..., Any]) -> dict[str, Any]:
@@ -96,14 +114,17 @@ class Habilitation:
         self._threads: list[threading.Thread] = []
 
     # -- enregistrement des outils (le profil gouverne) --------------------------------------
-    def _register(self, kind: str, action: str, description: str | None, parameters: dict | None):
+    def _register(self, kind: str, action: str, description: str | None, parameters: dict | None, idempotency: str = "none", verified_by: str | None = None):
+        if idempotency not in ("none", "operation_id"):
+            raise ValueError("idempotency must be \"none\" or \"operation_id\"")
+
         def deco(fn: Callable[..., Any]):
             power = self.profile.power(action)
             if not power:
                 raise ValueError(f"No power \"{action}\" in profile {self.profile.id}")
             if power.kind != kind:
                 raise ValueError(f"\"{action}\" is declared \"{power.kind}\" in the profile, not \"{kind}\"")
-            self.tools[action] = _Tool(action, kind, fn, description or power.description or (fn.__doc__ or "").strip(), parameters or _schema_from_signature(fn))
+            self.tools[action] = _Tool(action, kind, fn, description or power.description or (fn.__doc__ or "").strip(), parameters or _schema_from_signature(fn), idempotency, verified_by)
             return fn
 
         return deco
@@ -111,8 +132,10 @@ class Habilitation:
     def read(self, action: str, *, description: str | None = None, parameters: dict | None = None):
         return self._register("read", action, description, parameters)
 
-    def effect(self, action: str, *, description: str | None = None, parameters: dict | None = None):
-        return self._register("effect", action, description, parameters)
+    def effect(self, action: str, *, description: str | None = None, parameters: dict | None = None, idempotency: str = "none", verified_by: str | None = None):
+        """`idempotency="operation_id"`: you declare that your provider deduplicates on the operation_id
+        HOLD passes. HOLD records the declaration; `verified_by` cites how it was verified (a test, a contract)."""
+        return self._register("effect", action, description, parameters, idempotency, verified_by)
 
     def status(self, action: str):
         return self._register("status", action, None, {"type": "object", "properties": {}})
@@ -124,7 +147,21 @@ class Habilitation:
         return [p.action for p in self.profile.powers if p.action not in self.tools]
 
     # -- missions -----------------------------------------------------------------------------
-    def open_mission(self, title: str, mission_id: str | None = None) -> "Mission":
+    def binding(self, agent: dict[str, Any] | None = None) -> dict[str, Any]:
+        """The runtime binding: what this process attaches to the profile. Journaled, never part of the profile."""
+        from .journal import CORE_VERSION
+
+        describe = getattr(self.discerner, "describe", None)
+        return {
+            "core": CORE_VERSION,
+            "agent": agent,
+            "discerner": describe() if describe else {"name": getattr(self.discerner, "name", type(self.discerner).__name__)},
+            "relay": {"channel": self.relay.channel, "mode": getattr(self.relay, "mode", None)} if self.relay else None,
+            "tools": [{"action": t.action, "kind": t.kind, "idempotency": t.idempotency, "verified_by": t.verified_by} for t in self.tools.values()],
+            "missing": self.missing_tools(),
+        }
+
+    def open_mission(self, title: str, mission_id: str | None = None, *, agent: dict[str, Any] | None = None) -> "Mission":
         mid = mission_id or f"m_{secrets.token_hex(6)}"
         body = canonical_json(self.profile.model_dump(mode="json", exclude_none=True))
         with self.store.tx() as c:
@@ -134,6 +171,7 @@ class Habilitation:
                 "fingerprint": self.profile.fingerprint, "revision": self.profile.revision, "profile": self.profile.id,
                 "signed": bool(self.profile.signature), "authority": self.profile.authority.name,
             })
+            self.store.append(c, mid, "RUNTIME_BOUND", "CORE", self.binding(agent))
         return Mission(self, mid)
 
     def mission(self, mission_id: str, *, adopt: bool = False) -> "Mission":
@@ -201,7 +239,11 @@ class Mission:
         return self.row["title"]
 
     def effects(self) -> list[dict[str, Any]]:
-        return [dict(r) | {"attributes": json.loads(r["attributes"])} for r in self.store.effects(self.id)]
+        out = []
+        for r in self.store.effects(self.id):
+            e = dict(r) | {"attributes": json.loads(r["attributes"])}
+            out.append(e | {"guarantees": effect_guarantees(e, self.hab.tools.get(e["action"]))})
+        return out
 
     def open_request(self) -> dict[str, Any] | None:
         rows = self.store.read("SELECT * FROM requests WHERE mission=? AND status='OPEN' ORDER BY created_at DESC LIMIT 1", (self.id,))

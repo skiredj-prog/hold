@@ -25,6 +25,7 @@ ACTORS = {"CORE", "AGENT", "DISCERNER", "AUTHORITY", "PROVIDER", "RELAY"}
 EVENT_TYPES: dict[str, set[str]] = {
     "MISSION_OPENED": {"title"},
     "PROFILE_ATTACHED": {"fingerprint", "revision", "profile"},
+    "RUNTIME_BOUND": {"core", "discerner", "tools"},
     "ACTION_ADMITTED": {"action", "kind"},
     "ACTION_REFUSED": {"action", "rule", "reason"},
     "ACTION_RESULT": {"action", "status"},

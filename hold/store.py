@@ -53,7 +53,7 @@ def now_iso() -> str:
 class Store:
     def __init__(self, path: str = "hold.db"):
         self.path = path
-        self._conn = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
+        self._conn = sqlite3.connect(path, check_same_thread=False, isolation_level=None, timeout=15.0)
         self._conn.row_factory = sqlite3.Row
         self._lock = threading.RLock()
         if path != ":memory:":
