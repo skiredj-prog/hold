@@ -117,8 +117,13 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("--host", default="127.0.0.1")
     ps.add_argument("--port", type=int, default=8787)
 
-    pq = sub.add_parser("qualify", help="qualifier un discerneur (Llama) contre la référence")
-    pq.add_argument("--discerner", default="llama", choices=["llama", "reference"])
+    pb = sub.add_parser("bench", help="the frozen A/B/C/C2/D comparison")
+    pb.add_argument("action", choices=["freeze", "check", "run", "evaluate"])
+    pb.add_argument("--frozen", default="bench/protocol.frozen.json")
+    pb.add_argument("--conditions", default="C,C2,X", help="comma separated: A,B,C-llama,C,C2,D,X")
+    pb.add_argument("--model", help="Ollama model for A, B, C-llama and D (e.g. llama3.2:3b, llama3.1:8b)")
+    pb.add_argument("--out", default="bench/results/run")
+    pb.add_argument("--results", nargs="*", help="results.json files to evaluate together")
 
     pd = sub.add_parser("demo", help="le piège de la double réservation")
     pd.add_argument("--scenario", default="authority", choices=["lost-response", "support", "authority", "never", "envelope"])
@@ -164,14 +169,32 @@ def main(argv: list[str] | None = None) -> int:
         print(f"HOLD Studio : http://{a.host}:{a.port}")
         serve(Store(a.db), [], host=a.host, port=a.port, background=False)
         return 0
-    if a.cmd == "qualify":
-        import os
+    if a.cmd == "bench":
+        from . import bench
 
-        from .qualify import qualify
-
-        os.environ.setdefault("HOLD_DEMO_TIMEOUT", "0.2")
-        r = qualify(a.discerner)
-        return 0 if r["summary"]["unsafe_outcomes"] == 0 else 1
+        if a.action == "freeze":
+            Path(a.frozen).parent.mkdir(parents=True, exist_ok=True)
+            f = bench.freeze(a.frozen)
+            print(f"Protocol frozen: {a.frozen}\nSHA-256 {f['sha256']}")
+            return 0
+        if a.action == "check":
+            ok, problems = bench.check_freeze(a.frozen)
+            print("Frozen protocol matches the code." if ok else "\n".join(problems))
+            return 0 if ok else 1
+        if a.action == "run":
+            conds = [c.strip() for c in a.conditions.split(",") if c.strip()]
+            if any(c in ("A", "B", "C-llama", "D") for c in conds) and not a.model:
+                print("--model is required for A, B, C-llama and D", file=sys.stderr)
+                return 2
+            r = bench.run(conds, model=a.model, frozen=a.frozen, out_dir=a.out)
+            ev = bench.evaluate(r["results"])
+            print(json.dumps(ev, ensure_ascii=False, indent=1))
+            print(f"Raw runs and results: {a.out}")
+            return 0
+        if a.action == "evaluate":
+            rows = [x for f in a.results or [] for x in json.loads(Path(f).read_text())["results"]]
+            print(json.dumps(bench.evaluate(rows), ensure_ascii=False, indent=1))
+            return 0
     if a.cmd == "demo":
         from .demo import SCENARIOS, run, run_baseline
         from .testing import BOOKING, SyntheticHotel

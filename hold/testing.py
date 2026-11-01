@@ -32,6 +32,18 @@ class SyntheticHotel:
     visible_after_s: float | None = None  # if set: visible this many seconds after creation (lag), instead of after N checks
     status_note: str | None = None  # free text the status service adds to a "not found" answer
     clock: Callable[[], datetime] = field(default=lambda: datetime.now(timezone.utc), repr=False)
+    support_text: str | None = None  # what an unhelpful support says (default: forwarding to the team)
+    latency: dict[str, float] = field(default_factory=dict)  # simulated seconds per call (create/status/support), if the clock can advance
+
+    def _spend(self, kind: str) -> None:
+        s = self.latency.get(kind)
+        if s and hasattr(self.clock, "advance"):
+            self.clock.advance(s)
+
+    def _visible(self, b: dict[str, Any]) -> bool:
+        if self.visible_after_s is not None:
+            return (self.clock() - b["created_at"]).total_seconds() >= self.visible_after_s
+        return self.visible_after is not None and b["checks"] >= self.visible_after
     bookings: list[dict[str, Any]] = field(default_factory=list)
     requests: list[dict[str, Any]] = field(default_factory=list)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
@@ -48,10 +60,12 @@ class SyntheticHotel:
             receipt = f"RCPT-{secrets.token_hex(3).upper()}"
             self.bookings.append({"operation_id": operation_id, "receipt": receipt, "attrs": attrs, "checks": 0, "created_at": self.clock()})
             self.requests.append({"kind": "CREATE", "operation_id": operation_id, "response": "CREATED" if self.create_mode == "respond" else "LOST_RESPONSE"})
+        self._spend("create")
         if self.create_mode == "respond":
             return Outcome.confirmed(receipt, operation_id=operation_id)
-        time.sleep(self.timeout_s)
-        raise TimeoutError(f"no answer from the provider after {self.timeout_s:g} s")
+        if self.timeout_s:
+            time.sleep(self.timeout_s)
+        raise TimeoutError(f"no answer from the provider after {self.latency.get('create') or self.timeout_s:g} s")
 
     def status(self, operation_id: str) -> Outcome:
         with self._lock:
@@ -61,10 +75,8 @@ class SyntheticHotel:
                 self.requests.append({"kind": "STATUS", "operation_id": operation_id, "response": "NOT_FOUND"})
                 return Outcome.not_found(note)
             b["checks"] += 1
-            if self.visible_after_s is not None:
-                visible = (self.clock() - b["created_at"]).total_seconds() >= self.visible_after_s
-            else:
-                visible = self.visible_after is not None and b["checks"] >= self.visible_after
+            visible = self._visible(b)
+            self._spend("status")
             self.requests.append({"kind": "STATUS", "operation_id": operation_id, "response": "CONFIRMED" if visible else "NOT_FOUND"})
             return Outcome.confirmed(b["receipt"], operation_id=operation_id) if visible else Outcome.not_found(note)
 
@@ -74,9 +86,21 @@ class SyntheticHotel:
             if self.support_mode == "unavailable":
                 raise ConnectionError("support unreachable")
             b = next((x for x in self.bookings if x["operation_id"] == operation_id), None)
+            self._spend("support")
             if self.support_mode == "finds" and b:
                 return Outcome.reply(f"Booking found: {b['receipt']}.", operation_id=operation_id, receipt=b["receipt"])
-            return Outcome.reply("We are forwarding your request to the relevant team.")
+            return Outcome.reply(self.support_text or "We are forwarding your request to the relevant team.")
+
+    def lookup(self, hotel_id: str, traveler: str, check_in: str) -> Outcome:
+        """Status by attributes, for an agent without operation ids (no HOLD)."""
+        with self._lock:
+            norm = lambda s: " ".join(str(s).lower().split())  # noqa: E731
+            b = next((x for x in self.bookings if norm(x["attrs"].get("hotel_id")) == norm(hotel_id) and norm(x["attrs"].get("traveler")) == norm(traveler) and str(x["attrs"].get("check_in")) == str(check_in)), None)
+            if b:
+                b["checks"] += 1
+            visible = bool(b) and self._visible(b)
+            self._spend("status")
+            return Outcome.confirmed(b["receipt"]) if visible else Outcome.not_found(self.status_note or "not found")
 
     @property
     def created(self) -> int:
