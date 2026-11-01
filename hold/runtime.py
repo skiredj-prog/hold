@@ -157,6 +157,7 @@ class Habilitation:
             "agent": agent,
             "discerner": describe() if describe else {"name": getattr(self.discerner, "name", type(self.discerner).__name__)},
             "relay": {"channel": self.relay.channel, "mode": getattr(self.relay, "mode", None)} if self.relay else None,
+            "authority_reachable": bool(self.relay and self.relay.available(self.profile.authority)),
             "tools": [{"action": t.action, "kind": t.kind, "idempotency": t.idempotency, "verified_by": t.verified_by} for t in self.tools.values()],
             "missing": self.missing_tools(),
         }
@@ -191,6 +192,7 @@ class Habilitation:
                     "fingerprint": self.profile.fingerprint, "revision": self.profile.revision, "profile": self.profile.id,
                     "signed": bool(self.profile.signature), "authority": self.profile.authority.name, "supersedes": row["profile_fp"],
                 })
+                self.store.append(c, mission_id, "RUNTIME_BOUND", "CORE", self.binding())
         return Mission(self, mission_id)
 
     def serve(self, *, host: str = "127.0.0.1", port: int = 8787, background: bool = True):

@@ -3,7 +3,7 @@ import threading
 
 from hold.discern import Proposal
 from hold.hesitation import true_map
-from hold.replay import decision_replay, export_journal, policy_replay, state_replay
+from hold.replay import decision_replay, export_journal, journal_profiles, policy_replay, state_replay, verify_decisions
 from hold.testing import BOOKING
 
 
@@ -14,6 +14,10 @@ def assert_sound(hab, m):
     assert sr["matches"], sr["differences"]
     dr = decision_replay(m.events(), hab.profile)
     assert dr["matches"], dr["mismatches"]
+    vd = verify_decisions(m.events(), journal_profiles(hab.store, m.events()))
+    assert vd["positions"]["matches"], vd["positions"]["mismatches"]
+    assert vd["decisions"]["matches"], vd["decisions"]["mismatches"]
+    assert vd["status"]["matches"], vd["status"]["mismatches"]
 
 
 def types(m):
@@ -184,6 +188,9 @@ def test_stale_position_is_refused_and_reread(make, booking):
     assert first["verdict"]["rule"] == "I5" and first["verdict"]["applied"] is None
     assert r.status in ("OK", "HELD")
     assert decision_replay(m.events(), hab.profile)["matches"]
+    # the change was made behind the journal's back: recomputing from the history exposes it
+    vd = verify_decisions(m.events(), hab.profile)
+    assert not vd["positions"]["matches"]
 
 
 def test_tampering_is_detected_and_policy_replay_is_counterfactual(make, booking):

@@ -8,7 +8,7 @@ import pytest
 
 from hold.profile import revise
 from hold.relay.base import SimulatedRelay
-from hold.replay import decision_replay, journal_profiles, state_replay
+from hold.replay import decision_replay, journal_profiles, state_replay, verify_decisions
 from hold.runtime import Habilitation, ProfileMismatch
 from hold.testing import SyntheticHotel, wire
 
@@ -41,6 +41,10 @@ def sound(hab, m):
     assert sr["matches"], sr["differences"]
     dr = decision_replay(m.events(), journal_profiles(hab.store, m.events()))
     assert dr["matches"], dr["mismatches"]
+    vd = verify_decisions(m.events(), journal_profiles(hab.store, m.events()))
+    assert vd["positions"]["matches"], vd["positions"]["mismatches"]
+    assert vd["decisions"]["matches"], vd["decisions"]["mismatches"]
+    assert vd["status"]["matches"], vd["status"]["mismatches"]
 
 
 def types(m):

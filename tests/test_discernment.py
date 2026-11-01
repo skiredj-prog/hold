@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from hold.discern import Proposal, ReferenceDiscerner
 from hold.hesitation import true_map
 from hold.relay.base import SimulatedRelay
-from hold.replay import decision_replay, state_replay
+from hold.replay import decision_replay, state_replay, journal_profiles, verify_decisions
 from hold.runtime import Habilitation
 from hold.testing import SyntheticHotel, wire
 
@@ -44,6 +44,10 @@ def sound(hab, m):
     assert state_replay(hab.store, m.id, hab.profile)["matches"]
     dr = decision_replay(m.events(), hab.profile)
     assert dr["matches"], dr["mismatches"]
+    vd = verify_decisions(m.events(), journal_profiles(hab.store, m.events()))
+    assert vd["positions"]["matches"], vd["positions"]["mismatches"]
+    assert vd["decisions"]["matches"], vd["decisions"]["mismatches"]
+    assert vd["status"]["matches"], vd["status"]["mismatches"]
 
 
 class Fixed:
