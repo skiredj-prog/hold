@@ -210,7 +210,8 @@ def main(argv: list[str] | None = None) -> int:
             frozen_sha = json.loads(Path(a.frozen).read_text(encoding="utf-8"))["sha256"]
             rows = [x for f in a.results or [] for x in json.loads(Path(f).read_text(encoding="utf-8"))["results"]]
             ev = bench.evaluate(rows, expected_protocol=frozen_sha, strict=True)
-            print(json.dumps(ev, ensure_ascii=False, indent=1))
+            # the digest of the anchor that was validated, to be compared with the one in the independent register
+            print(json.dumps({"anchor": {"frozen": a.frozen, "sha256": frozen_sha}} | ev, ensure_ascii=False, indent=1))
             if not ev["identity"]["valid"]:
                 print("Refused as evidence: " + "; ".join(ev["identity"]["problems"][:5]) + (" …" if len(ev["identity"]["problems"]) > 5 else ""), file=sys.stderr)
                 return 1

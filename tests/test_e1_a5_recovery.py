@@ -545,6 +545,28 @@ def test_the_qualification_cli_refuses_an_incomplete_anchor_before_reading_resul
         assert refused.stdout == "", name
 
 
+def test_every_module_the_bench_loads_is_inside_the_frozen_perimeter():
+    import subprocess
+    import sys
+
+    from conftest import ROOT
+
+    probe = ("import sys, hold.cli, hold.bench, hold.demo; from pathlib import Path; root = Path(hold.__file__).resolve().parent; "
+             "print('\\n'.join(sorted(Path(m.__file__).resolve().relative_to(root).as_posix() for m in list(sys.modules.values()) "
+             "if getattr(m, '__file__', None) and Path(m.__file__).resolve().is_relative_to(root))))")
+    loaded = subprocess.run([sys.executable, "-c", probe], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
+    assert loaded and set(loaded) <= set(bench.CODE), sorted(set(loaded) - set(bench.CODE))
+
+
+def test_the_language_of_hold_messages_to_the_agent_is_frozen(tmp_path, monkeypatch):
+    monkeypatch.delenv("HOLD_LANG", raising=False)
+    f = tmp_path / "frozen.json"
+    assert bench.freeze(f)["protocol"]["hold_messages_language"] == "en"
+    monkeypatch.setenv("HOLD_LANG", "fr")  # C-llama would read French tool results: another input than the frozen one
+    ok, problems = bench.check_freeze(f)
+    assert not ok and "differing protocol entries: hold_messages_language" in problems
+
+
 def test_rows_written_by_the_runner_and_its_replacement_pass_strict_identity(monkeypatch, tmp_path):
     from hold import demo
 

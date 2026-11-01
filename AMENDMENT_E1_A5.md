@@ -36,7 +36,7 @@ Status: **exploratory**. A5 was designed after observing the A4 failure on `llam
 Provenance is established by HOLD from the recorded tool results, never from what the model asserts: a value the agent typed into a read, or a plausible value the provider never quoted, is refused (tested).
 
 ## Verification at this checkpoint
-- Checkpoint 6: **125 tests** pass on the **real template with I6 active** (checkpoint 5: 123; 4: 121; 3: 114; 2: 108; 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
+- Checkpoint 6: **127 tests** pass on the **real template with I6 active** (checkpoint 5: 123; 4: 121; 3: 114; 2: 108; 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
 - The PMO passing criterion is met by one complete demonstration (`hold demo --scenario a5-recovery`, test `test_demonstration_observe_verify_engage_recover_without_repeating`), replaying the A4 first turn verbatim:
   1. the search is executed, the two calls issued with it come back unexecuted;
   2. the invented booking is refused twice as correctable (`I4/INVALID_ARGUMENTS`, then `I6/PROVENANCE`), and the corrected booking is admitted with `provenance_checked = provider, hotel_id, price, currency`;
@@ -102,6 +102,13 @@ Nothing else changed: HOLD, I6, the harness, the hypotheses and the A5 predictio
 
 Both new tests fail on `479236b` and pass here. HOLD, I6, the harness, the hypotheses and the A5 predictions are unchanged.
 
+### Separate commit: what the perimeter declares (found while closing the reserve, can be reverted on its own)
+Exact equality closes an anchor that drops declared components; it does not make the declared list complete. Two inputs of the runs were outside it:
+- **Modules.** The bench and its CLI load six modules that `CODE` did not fingerprint: `canonical.py` (the digests used by I6, the journal and the anchor itself), `i18n.py` (the text of the tool results HOLD returns to the agent), `relay/base.py` (the simulated authority), `relay/__init__.py`, `relay/whatsapp.py`, `__init__.py`. They are now in `CODE`, and `test_every_module_the_bench_loads_is_inside_the_frozen_perimeter` fails if a module loaded by `hold.cli`, `hold.bench` or `hold.demo` is ever left outside.
+- **Language.** The messages HOLD returns to the agent in C-llama follow the `HOLD_LANG` environment variable; A4's runs were in English, but nothing recorded or enforced it. The protocol now records `hold_messages_language`; a run, re-run or evaluation under another language is refused by the same check (`test_the_language_of_hold_messages_to_the_agent_is_frozen`). When the protocol differs, the differing entries are now named.
+
+`bench evaluate` also prints the digest of the anchor it validated (`anchor.sha256`), for comparison with the independent register below.
+
 ## Known limits (stated, not solved)
 - I6 binds attributes to a record by field name (or an explicit `attr=field` mapping), from a declared source tool; it trusts that tool to speak for the provider, and a provider whose records name fields differently needs the mapping in the profile.
 - I6 proves a value set was returned together; it does not prove the offer is still valid at the provider (an expired quote would pass).
@@ -111,15 +118,16 @@ Both new tests fail on `479236b` and pass here. HOLD, I6, the harness, the hypot
 
 ## Before any freeze (not authorized yet)
 1. PMO review of this checkpoint.
-2. Freeze the A5 predictions (draft in `bench.PREDICTIONS["A5"]`) together with the code fingerprints.
-3. Then, on Windows: C-llama, A, B with `llama3.2:3b`, each condition kept in its own results folder.
+2. After authorization: `hold bench freeze` on `experiment/E1-A5` freezes the A5 predictions (draft in `bench.PREDICTIONS["A5"]`) with the code fingerprints. `bench/protocol.frozen.json` is committed alone, its SHA-256 in the commit message, under the annotated tag `e1-a5-frozen`.
+3. **Independent register.** A SHA-256 written inside the file it covers attests consistency, not authenticity. With exact equality, a valid anchor's protocol is the protocol the current code computes, so its digest is a function of the code alone: authenticity reduces to *which code*, and that is what the Git commit attests. The PMO records the tag's commit and the SHA-256 in its own review; any later `bench evaluate` must be run on that commit and print that digest.
+4. Then, on Windows: C-llama, A, B with `llama3.2:3b`, each condition kept in its own results folder, `HOLD_LANG` unset (English).
 
 ## Windows (PowerShell) — what can run now
 ```powershell
 cd <extraction>\hold
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 125 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 127 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli demo --scenario a5-recovery --no-color
 ```
 `hold bench run` will refuse to start until A5 is frozen: that is intended.

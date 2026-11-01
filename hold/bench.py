@@ -47,7 +47,9 @@ ROOT = Path(__file__).resolve().parent
 PROFILE = ROOT / "profiles" / "reservation.hold.yaml"
 VERSION = "hold.bench/v1-e1-a5"
 CODE = ["hesitation.py", "floor.py", "runtime.py", "discern.py", "bench.py", "testing.py", "demo.py", "replay.py", "outcome.py", "profile.py",
-        "store.py", "journal.py", "cli.py", "narrate.py", "studio/core.js", "profiles/reservation.hold.yaml"]
+        "store.py", "journal.py", "cli.py", "narrate.py", "studio/core.js", "profiles/reservation.hold.yaml",
+        # checkpoint 6: every other module the bench and its CLI load (digests, the messages returned to the agent, relays)
+        "__init__.py", "canonical.py", "i18n.py", "relay/__init__.py", "relay/base.py", "relay/whatsapp.py"]
 SEED = 42  # A5: repetition r runs with seed SEED + r (at temperature 0, a fixed seed made the repetitions identical)
 AGENT_MAX_STEPS = 16  # A5: the same budget of model turns for A, B and C-llama (A4: 16, 16 and 12)
 TOOL_SURFACE = {
@@ -229,6 +231,12 @@ PREDICTIONS = {
 }
 
 
+def _messages_language() -> str:
+    from .i18n import lang
+
+    return lang()
+
+
 def _hold_system() -> str:
     from .demo import SYSTEM
 
@@ -252,6 +260,8 @@ def protocol() -> dict[str, Any]:
         "harness": {"barrier": "one tool call per model turn; later calls of the turn returned NOT_EXECUTED", "reprise": "only after a reconciliation",
                     "replacement": "an infrastructure-error run may be replaced once by a re-run of the same condition, scenario and seed"},
         "hold_system_sha256": sha256_hex(_hold_system()),
+        # the language of the messages HOLD returns to the agent (HOLD_LANG) is an input of C-llama: frozen, not ambient
+        "hold_messages_language": _messages_language(),
         "timing": TIMING, "authority_policy": AUTHORITY_POLICY, "predictions": PREDICTIONS,
         "code": {f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in CODE},
     }
@@ -288,8 +298,11 @@ def check_freeze(path: str | Path) -> tuple[bool, list[str]]:
     for f in sorted(set(frozen_code) & set(now_code)):
         if frozen_code[f] != now_code[f]:
             problems.append(f"{f} changed after the freeze")
-    if canonical_json({k: v for k, v in now.items() if k != "code"}) != canonical_json({k: v for k, v in frozen["protocol"].items() if k != "code"}):
+    differing = sorted(k for k in set(now) | set(frozen["protocol"]) if k != "code"
+                       and canonical_json(now.get(k)) != canonical_json(frozen["protocol"].get(k)))
+    if differing:
         problems.append("the protocol in the code differs from the frozen one")
+        problems.append("differing protocol entries: " + ", ".join(differing))
     return not problems, problems
 
 
