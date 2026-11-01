@@ -266,7 +266,8 @@ def freeze(path: str | Path) -> dict[str, Any]:
 
 def check_freeze(path: str | Path) -> tuple[bool, list[str]]:
     """Is this frozen file a valid anchor? It must match its own SHA-256, and the code and protocol that run now
-    must be the ones it froze. Unreadable or incomplete files are invalid, never an exception."""
+    must be the ones it froze: the set of fingerprinted components must be exactly the current one (none missing,
+    none added) and every fingerprint equal. Unreadable or incomplete files are invalid, never an exception."""
     try:
         frozen = json.loads(Path(path).read_text(encoding="utf-8"))
         if not isinstance(frozen, dict) or not isinstance(frozen.get("protocol"), dict) or not isinstance(frozen.get("sha256"), str):
@@ -279,8 +280,13 @@ def check_freeze(path: str | Path) -> tuple[bool, list[str]]:
     if digest(frozen["protocol"]) != frozen["sha256"]:
         problems.append("the frozen file does not match its own SHA-256")
     now = protocol()
-    for f, h in frozen["protocol"]["code"].items():
-        if now["code"].get(f) != h:
+    frozen_code, now_code = frozen["protocol"]["code"], now["code"]
+    for f in sorted(set(now_code) - set(frozen_code)):
+        problems.append(f"{f} is not covered by the freeze")
+    for f in sorted(set(frozen_code) - set(now_code)):
+        problems.append(f"{f} is in the freeze but not in the code perimeter")
+    for f in sorted(set(frozen_code) & set(now_code)):
+        if frozen_code[f] != now_code[f]:
             problems.append(f"{f} changed after the freeze")
     if canonical_json({k: v for k, v in now.items() if k != "code"}) != canonical_json({k: v for k, v in frozen["protocol"].items() if k != "code"}):
         problems.append("the protocol in the code differs from the frozen one")

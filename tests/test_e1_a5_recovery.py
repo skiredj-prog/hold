@@ -506,6 +506,45 @@ def test_an_unreadable_frozen_file_is_an_invalid_anchor_not_a_crash(tmp_path):
     assert bench.check_freeze(bad) == (False, ["the frozen file has no protocol or no SHA-256"])
 
 
+def _refreeze(path, protocol):
+    """A frozen file whose SHA-256 is correctly recomputed over an altered protocol: self-consistent, not the code."""
+    path.write_text(json.dumps({"protocol": protocol, "sha256": bench.digest(protocol)}), encoding="utf-8")
+    return path
+
+
+def test_the_anchor_must_cover_exactly_the_frozen_code_perimeter(tmp_path):
+    complete = bench.freeze(tmp_path / "complete.json")["protocol"]
+    assert bench.check_freeze(tmp_path / "complete.json") == (True, [])  # 1. complete and consistent
+
+    one_missing = complete | {"code": {f: h for f, h in complete["code"].items() if f != "floor.py"}}
+    ok, problems = bench.check_freeze(_refreeze(tmp_path / "one.json", one_missing))  # 2. one fingerprint dropped
+    assert not ok and problems == ["floor.py is not covered by the freeze"]
+
+    ok, problems = bench.check_freeze(_refreeze(tmp_path / "none.json", complete | {"code": {}}))  # 3. all dropped
+    assert not ok and len(problems) == len(bench.CODE) and all("is not covered by the freeze" in p for p in problems)
+
+    extra = complete | {"code": complete["code"] | {"shadow.py": "0" * 64}}
+    ok, problems = bench.check_freeze(_refreeze(tmp_path / "extra.json", extra))  # 4a. an extra component
+    assert not ok and problems == ["shadow.py is in the freeze but not in the code perimeter"]
+
+    divergent = complete | {"code": complete["code"] | {"runtime.py": "0" * 64}}
+    ok, problems = bench.check_freeze(_refreeze(tmp_path / "divergent.json", divergent))  # 4b. a divergent fingerprint
+    assert not ok and problems == ["runtime.py changed after the freeze"]
+
+
+def test_the_qualification_cli_refuses_an_incomplete_anchor_before_reading_results(tmp_path):
+    complete = bench.freeze(tmp_path / "complete.json")["protocol"]
+    for name, code in {"none": {}, "one": {f: h for f, h in complete["code"].items() if f != "floor.py"},
+                       "extra": complete["code"] | {"shadow.py": "0" * 64}}.items():
+        frozen = _refreeze(tmp_path / f"{name}.json", complete | {"code": code})
+        sha = json.loads(frozen.read_text(encoding="utf-8"))["sha256"]
+        results = tmp_path / f"{name}-results.json"  # 33 rows that all carry the anchor's own, self-consistent digest
+        results.write_text(json.dumps({"protocol_sha256": sha, "results": _campaign(protocol_sha256=sha)}), encoding="utf-8")
+        refused = _cli_evaluate(frozen, results)
+        assert refused.returncode == 1 and "not a valid anchor" in refused.stderr, name  # 5. refused before any result
+        assert refused.stdout == "", name
+
+
 def test_rows_written_by_the_runner_and_its_replacement_pass_strict_identity(monkeypatch, tmp_path):
     from hold import demo
 

@@ -1,6 +1,6 @@
-# E1-A5 — Legitimate recovery (development checkpoint 5, NOT frozen, NOT qualified)
+# E1-A5 — Legitimate recovery (development checkpoint 6, NOT frozen, NOT qualified)
 
-> Checkpoint 2 answered the PMO review of `9651f9e`; checkpoint 3 the second review of `fc22f595`; checkpoint 4 the reserve on evidence identity raised on `c40dda1`; checkpoint 5 the final reserve on the frozen file raised on `f4d2837`. See the review sections below.
+> Checkpoint 2 answered the PMO review of `9651f9e`; checkpoint 3 the second review of `fc22f595`; checkpoint 4 the reserve on evidence identity raised on `c40dda1`; checkpoint 5 the final reserve on the frozen file raised on `f4d2837`; checkpoint 6 the completeness of the frozen perimeter raised on `479236b`. See the review sections below.
 
 Date: 1 November 2026. Branch `experiment/E1-A5`, parent E1-A4 `aa96a09` (frozen protocol `15af3cc2…`, kept unchanged as the safety reference; its 33 C-llama 3B runs and the S1 diagnostic are committed as evidence).
 
@@ -36,7 +36,7 @@ Status: **exploratory**. A5 was designed after observing the A4 failure on `llam
 Provenance is established by HOLD from the recorded tool results, never from what the model asserts: a value the agent typed into a read, or a plausible value the provider never quoted, is refused (tested).
 
 ## Verification at this checkpoint
-- Checkpoint 5: **123 tests** pass on the **real template with I6 active** (checkpoint 4: 121; 3: 114; 2: 108; 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
+- Checkpoint 6: **125 tests** pass on the **real template with I6 active** (checkpoint 5: 123; 4: 121; 3: 114; 2: 108; 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
 - The PMO passing criterion is met by one complete demonstration (`hold demo --scenario a5-recovery`, test `test_demonstration_observe_verify_engage_recover_without_repeating`), replaying the A4 first turn verbatim:
   1. the search is executed, the two calls issued with it come back unexecuted;
   2. the invented booking is refused twice as correctable (`I4/INVALID_ARGUMENTS`, then `I6/PROVENANCE`), and the corrected booking is admitted with `provenance_checked = provider, hotel_id, price, currency`;
@@ -89,6 +89,19 @@ Synthetic results built by unit tests keep the lenient mode (`strict=False`); th
 
 Nothing else changed: HOLD, I6, the harness, the hypotheses and the A5 predictions are as in checkpoint 4.
 
+## PMO reserve on 479236b — completeness of the frozen perimeter (checkpoint 6)
+`check_freeze` compared only the fingerprints present in the frozen file: an anchor from which components had been removed, with its SHA-256 correctly recomputed, passed (and with every fingerprint removed, `bench evaluate` accepted H1 on 33 synthetic rows). It now requires the set of fingerprinted components to be exactly the current one, keys included: a component missing from the freeze, a component the freeze has but the code perimeter does not, and a divergent fingerprint are each refused, by name. `bench evaluate`, `run` and `rerun` share this check, so they refuse such a file before reading or producing any result.
+
+| Exit criterion | Test |
+|---|---|
+| 1. complete, consistent file: PASS | `test_the_anchor_must_cover_exactly_the_frozen_code_perimeter` |
+| 2. one fingerprint removed, SHA recomputed: REFUSED | same test (`floor.py is not covered by the freeze`) |
+| 3. all fingerprints removed, SHA recomputed: REFUSED | same test (one refusal per component) |
+| 4. extra component, or divergent fingerprint: REFUSED | same test (`shadow.py …`, `runtime.py changed after the freeze`) |
+| 5. `bench evaluate` refuses these files before reading results | `test_the_qualification_cli_refuses_an_incomplete_anchor_before_reading_results` (exit 1, nothing on stdout, 33 rows carrying the anchor's own digest) |
+
+Both new tests fail on `479236b` and pass here. HOLD, I6, the harness, the hypotheses and the A5 predictions are unchanged.
+
 ## Known limits (stated, not solved)
 - I6 binds attributes to a record by field name (or an explicit `attr=field` mapping), from a declared source tool; it trusts that tool to speak for the provider, and a provider whose records name fields differently needs the mapping in the profile.
 - I6 proves a value set was returned together; it does not prove the offer is still valid at the provider (an expired quote would pass).
@@ -106,7 +119,7 @@ Nothing else changed: HOLD, I6, the harness, the hypotheses and the A5 predictio
 cd <extraction>\hold
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 123 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 125 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli demo --scenario a5-recovery --no-color
 ```
 `hold bench run` will refuse to start until A5 is frozen: that is intended.
