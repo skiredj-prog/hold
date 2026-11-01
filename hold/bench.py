@@ -826,28 +826,73 @@ class IncomparableResults(ValueError):
     or more attempts than the declared replacement procedure allows."""
 
 
-def check_identity(results: list[dict[str, Any]], scenarios: list[str], reps: dict[str, int]) -> None:
+MODEL_CONDITIONS = {"A", "B", "C-llama", "D"}  # conditions whose label and rows name a model
+
+
+def identity_problems(results: list[dict[str, Any]], scenarios: list[str], reps: dict[str, int], *,
+                      expected_protocol: str | None = None, strict: bool = False) -> list[str]:
+    """Why these results cannot be admitted together as evidence. Always checked: one protocol, known conditions,
+    expected scenarios and repetitions, seeds matching 42 + repetition, at most one replacement. In strict mode
+    (the qualification path): every row must carry a non-empty protocol digest equal to the frozen protocol
+    designated for the campaign, a model consistent with its condition, a seed and an attempt number; attempts
+    are exactly 1, or 1 then 2, the first having failed on infrastructure."""
+    out: list[str] = []
     protocols = {r.get("protocol_sha256") for r in results}
     if len(protocols) > 1:
-        raise IncomparableResults(f"results come from different protocols: {sorted(str(p)[:12] for p in protocols)}")
-    attempts: dict[tuple, int] = {}
+        out.append(f"results come from different protocols: {sorted(str(p)[:12] for p in protocols)}")
+    if strict and not expected_protocol:
+        out.append("no frozen protocol designated for the campaign")
+    by_key: dict[tuple, list[dict[str, Any]]] = {}
     for r in results:
-        base = r["condition"].split("/")[0]
+        cond = str(r.get("condition", ""))
+        base, _, suffix = cond.partition("/")
+        where = f"{cond}/{r.get('scenario')}/rep{r.get('rep')}"
         if base not in reps:
-            raise IncomparableResults(f"unknown condition {r['condition']}")
-        if r["scenario"] not in scenarios:
-            raise IncomparableResults(f"unexpected scenario {r['scenario']} for this evaluation")
+            out.append(f"unknown condition {cond}")
+            continue
+        if r.get("scenario") not in scenarios:
+            out.append(f"unexpected scenario {r.get('scenario')}")
         if not isinstance(r.get("rep"), int) or not 0 <= r["rep"] < reps[base]:
-            raise IncomparableResults(f"unexpected repetition {r.get('rep')} for {r['condition']}/{r['scenario']}")
+            out.append(f"unexpected repetition {r.get('rep')} for {cond}/{r.get('scenario')}")
+            continue
         if "seed" in r and r["seed"] != SEED + r["rep"]:
-            raise IncomparableResults(f"seed {r['seed']} does not match repetition {r['rep']} ({SEED + r['rep']} declared)")
-        k = (r["condition"], r["scenario"], r["rep"])
-        attempts[k] = attempts.get(k, 0) + 1
-        if attempts[k] > 2:
-            raise IncomparableResults(f"{k}: more than one replacement (the declared procedure allows one)")
+            out.append(f"{where}: seed {r['seed']} does not match repetition {r['rep']} ({SEED + r['rep']} declared)")
+        if strict:
+            if not r.get("protocol_sha256"):
+                out.append(f"{where}: no protocol digest")
+            elif expected_protocol and r["protocol_sha256"] != expected_protocol:
+                out.append(f"{where}: protocol {str(r['protocol_sha256'])[:12]} is not the frozen protocol {expected_protocol[:12]}")
+            if "seed" not in r:
+                out.append(f"{where}: no seed")
+            if r.get("attempt") not in (1, 2):
+                out.append(f"{where}: attempt number missing or invalid ({r.get('attempt')!r})")
+            if base in MODEL_CONDITIONS:
+                if not suffix or r.get("model") != suffix:
+                    out.append(f"{where}: model {r.get('model')!r} does not match the condition")
+            elif suffix or r.get("model") not in (None, ""):
+                out.append(f"{where}: a deterministic condition names a model")
+        by_key.setdefault((cond, r.get("scenario"), r.get("rep")), []).append(r)
+    for k, rows in by_key.items():
+        if len(rows) > 2:
+            out.append(f"{k}: more than one replacement (the declared procedure allows one)")
+        elif strict:
+            nums = [x.get("attempt") for x in rows]
+            if sorted(nums) not in ([1], [1, 2]):
+                out.append(f"{k}: attempt numbers {nums} (expected [1] or [1, 2])")
+            elif len(rows) == 2 and not next(x for x in rows if x.get("attempt") == 1).get("infrastructure_error"):
+                out.append(f"{k}: a replacement exists although the first attempt did not fail on infrastructure")
+    return out
 
 
-def evaluate(results: list[dict[str, Any]], *, scenarios: list[str] | None = None, reps: dict[str, int] | None = None) -> dict[str, Any]:
+def check_identity(results: list[dict[str, Any]], scenarios: list[str], reps: dict[str, int]) -> None:
+    """Raises IncomparableResults if the results cannot be admitted together (kept for callers that want an exception)."""
+    problems = identity_problems(results, scenarios, reps)
+    if problems:
+        raise IncomparableResults("; ".join(problems))
+
+
+def evaluate(results: list[dict[str, Any]], *, scenarios: list[str] | None = None, reps: dict[str, int] | None = None,
+             expected_protocol: str | None = None, strict: bool = False) -> dict[str, Any]:
     """Hypotheses judged on the pre-registered criteria, only on complete coverage: every expected scenario and
     repetition of every condition a hypothesis needs, after the declared replacement procedure. Otherwise the
     verdict is INCONCLUSIVE. Violations are counted over every recorded attempt, including runs that later had an
@@ -856,7 +901,19 @@ def evaluate(results: list[dict[str, Any]], *, scenarios: list[str] | None = Non
     (IncomparableResults). Small samples: no p-values."""
     scenarios = scenarios or [s["id"] for s in EVAL]
     reps = reps or REPS
-    check_identity(results, scenarios, reps)
+    problems = identity_problems(results, scenarios, reps, expected_protocol=expected_protocol, strict=strict)
+    if problems:
+        # The evidence cannot be admitted: no hypothesis is judged, except that an observed violation still refutes H1.
+        bases = {str(r.get("condition", "")).split("/")[0] for r in results}
+        v = sum(len(r.get("violations") or []) for r in results if str(r.get("condition", "")).split("/")[0] in ("C-llama", "C", "C2", "D", "X"))
+        out = {"identity": {"valid": False, "problems": problems}}
+        if bases & {"C-llama", "C", "C2", "D", "X"}:
+            out["H1"] = {"violations": v, "verdict": "refuted" if v else "inconclusive", "reasons": ["evidence identity not established"]}
+        if bases & {"B", "C-llama"}:
+            out["H2"] = {"verdict": "inconclusive", "reasons": ["evidence identity not established"]}
+        if bases & {"C2", "D"}:
+            out["H3"] = {"verdict": "inconclusive", "reasons": ["evidence identity not established"]}
+        return out
     kept, failed = consolidate(results)
 
     def all_attempts(label: str) -> list[dict[str, Any]]:
@@ -866,7 +923,8 @@ def evaluate(results: list[dict[str, Any]], *, scenarios: list[str] | None = Non
         labels.setdefault(label.split("/")[0], set()).add(label)
     for (label, _s, _r) in failed:
         labels.setdefault(label.split("/")[0], set()).add(label)
-    out: dict[str, Any] = {"unreplaced_infrastructure_errors": [{"condition": k[0], "scenario": k[1], "rep": k[2]} for k in failed]}
+    out: dict[str, Any] = {"identity": {"valid": True, "problems": [], "strict": strict, "protocol": expected_protocol},
+                           "unreplaced_infrastructure_errors": [{"condition": k[0], "scenario": k[1], "rep": k[2]} for k in failed]}
 
     def rows(label: str) -> list[dict[str, Any]]:
         return [v for (lab, _s, _r), v in kept.items() if lab == label]

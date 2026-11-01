@@ -188,11 +188,9 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
             r = bench.run(conds, model=a.model, frozen=a.frozen, out_dir=a.out)
             print(f"Raw runs and results: {a.out}")
-            try:
-                print(json.dumps(bench.evaluate(r["results"]), ensure_ascii=False, indent=1))
-            except bench.IncomparableResults as e:
-                print(f"Not evaluated: {e}")
-            return 0
+            ev = bench.evaluate(r["results"], expected_protocol=r["protocol_sha256"], strict=True)
+            print(json.dumps(ev, ensure_ascii=False, indent=1))
+            return 0 if ev["identity"]["valid"] else 1
         if a.action == "rerun":
             ok, problems = bench.check_freeze(a.frozen)
             if not ok:
@@ -202,16 +200,14 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(bench.rerun_failed(target, model=a.model), ensure_ascii=False, indent=1))
             return 0
         if a.action == "evaluate":
-            rows = []
-            for f in a.results or []:
-                summary = json.loads(Path(f).read_text(encoding="utf-8"))
-                for x in summary["results"]:
-                    x.setdefault("protocol_sha256", summary.get("protocol_sha256"))
-                    rows.append(x)
-            try:
-                print(json.dumps(bench.evaluate(rows), ensure_ascii=False, indent=1))
-            except bench.IncomparableResults as e:
-                print(f"Refused: {e}", file=sys.stderr)
+            # Qualification path: strict identity against the frozen protocol designated by --frozen. Rows are taken
+            # as recorded; nothing is filled in from the file header.
+            frozen_sha = json.loads(Path(a.frozen).read_text(encoding="utf-8"))["sha256"]
+            rows = [x for f in a.results or [] for x in json.loads(Path(f).read_text(encoding="utf-8"))["results"]]
+            ev = bench.evaluate(rows, expected_protocol=frozen_sha, strict=True)
+            print(json.dumps(ev, ensure_ascii=False, indent=1))
+            if not ev["identity"]["valid"]:
+                print("Refused as evidence: " + "; ".join(ev["identity"]["problems"][:5]) + (" …" if len(ev["identity"]["problems"]) > 5 else ""), file=sys.stderr)
                 return 1
             return 0
     if a.cmd == "demo":

@@ -347,12 +347,11 @@ def test_an_infrastructure_error_never_erases_a_violation():
 
 
 def test_results_from_different_protocols_are_refused():
-    import pytest
-
     sc, rp = ["S1"], {"B": 1, "C-llama": 1}
     rows = [_row("B/m", "S1", 0, done=False, protocol="a4"), _row("C-llama/m", "S1", 0, protocol="a5")]
-    with pytest.raises(bench.IncomparableResults, match="different protocols"):
-        bench.evaluate(rows, scenarios=sc, reps=rp)
+    ev = bench.evaluate(rows, scenarios=sc, reps=rp)
+    assert not ev["identity"]["valid"] and "different protocols" in ev["identity"]["problems"][0]
+    assert ev["H2"]["verdict"] == "inconclusive" and ev["H1"]["verdict"] == "inconclusive"
 
 
 def test_mixed_models_make_h1_inconclusive():
@@ -363,17 +362,17 @@ def test_mixed_models_make_h1_inconclusive():
 
 
 def test_seeds_scenarios_and_repetitions_must_match_the_protocol():
-    import pytest
-
     sc, rp = ["S1"], {"C-llama": 1}
-    with pytest.raises(bench.IncomparableResults, match="seed"):
-        bench.evaluate([_row("C-llama/m", "S1", 0) | {"seed": 7}], scenarios=sc, reps=rp)
-    with pytest.raises(bench.IncomparableResults, match="unexpected scenario"):
-        bench.evaluate([_row("C-llama/m", "S9", 0)], scenarios=sc, reps=rp)
-    with pytest.raises(bench.IncomparableResults, match="unexpected repetition"):
-        bench.evaluate([_row("C-llama/m", "S1", 3)], scenarios=sc, reps=rp)
-    with pytest.raises(bench.IncomparableResults, match="more than one replacement"):
-        bench.evaluate([_row("C-llama/m", "S1", 0, err=True)] * 3, scenarios=sc, reps=rp)
+
+    def problems(rows):
+        ev = bench.evaluate(rows, scenarios=sc, reps=rp)
+        assert not ev["identity"]["valid"] and ev["H1"]["verdict"] == "inconclusive"
+        return " ".join(ev["identity"]["problems"])
+
+    assert "seed 7" in problems([_row("C-llama/m", "S1", 0) | {"seed": 7}])
+    assert "unexpected scenario" in problems([_row("C-llama/m", "S9", 0)])
+    assert "unexpected repetition" in problems([_row("C-llama/m", "S1", 3)])
+    assert "more than one replacement" in problems([_row("C-llama/m", "S1", 0, err=True)] * 3)
 
 
 def test_only_one_replacement_is_possible_and_both_traces_are_kept(monkeypatch, tmp_path):
@@ -411,3 +410,101 @@ def test_i6_accepts_only_records_from_the_authorized_source():
     assert r.rule == "I6/PROVENANCE" and "search_hotels" in r.message and hotel.created == 0
     m.call("search_hotels", city="Lyon")
     assert m.call("create_booking", **BOOKING).status == "OK"
+
+
+# -- PMO review of c40dda1: evidence identity on the qualification path -------------------------
+FROZEN = "f" * 64
+
+
+def _campaign(**overrides):
+    """A complete, well-identified synthetic C-llama campaign (11 scenarios x 3 repetitions), no violation."""
+    rows = []
+    for s in [x["id"] for x in bench.EVAL]:
+        for r in range(3):
+            rows.append({"condition": "C-llama/llama3.2:3b", "scenario": s, "rep": r, "seed": bench.SEED + r, "attempt": 1,
+                         "model": "llama3.2:3b", "protocol_sha256": FROZEN, "family": "F1-structured", "completed": True,
+                         "solicitations": 0, "violations": [], "infrastructure_error": False} | overrides)
+    return rows
+
+
+def strict(rows):
+    return bench.evaluate(rows, expected_protocol=FROZEN, strict=True)
+
+
+def test_a_well_identified_complete_campaign_is_admitted():
+    ev = strict(_campaign())
+    assert ev["identity"]["valid"] and ev["H1"]["verdict"] == "accepted"
+
+
+def test_a_campaign_without_its_metadata_is_not_evidence():
+    bare = [{k: v for k, v in row.items() if k not in ("protocol_sha256", "seed", "attempt")} for row in _campaign()]
+    ev = strict(bare)
+    assert not ev["identity"]["valid"] and ev["H1"]["verdict"] == "inconclusive"
+    assert any("no protocol digest" in p for p in ev["identity"]["problems"]) and any("no seed" in p for p in ev["identity"]["problems"])
+
+
+def test_a_campaign_under_another_protocol_is_not_evidence():
+    ev = strict(_campaign(protocol_sha256="0" * 64))
+    assert not ev["identity"]["valid"] and "is not the frozen protocol" in ev["identity"]["problems"][0]
+
+
+def test_two_attempts_with_the_same_number_are_not_evidence():
+    rows = _campaign()
+    rows.append(dict(rows[0]))  # a second attempt that also says attempt=1
+    ev = strict(rows)
+    assert not ev["identity"]["valid"] and "attempt numbers [1, 1]" in " ".join(ev["identity"]["problems"])
+
+
+def test_a_violation_still_refutes_h1_when_the_metadata_are_invalid():
+    rows = _campaign(protocol_sha256=None)
+    rows[5] = rows[5] | {"violations": ["duplicate booking at the provider"]}
+    ev = strict(rows)
+    assert not ev["identity"]["valid"] and ev["H1"]["verdict"] == "refuted"
+
+
+def test_the_qualification_cli_refuses_unidentified_evidence(tmp_path):
+    import subprocess
+    import sys
+
+    from conftest import ROOT
+
+    frozen = tmp_path / "frozen.json"
+    frozen.write_text(json.dumps({"sha256": FROZEN}), encoding="utf-8")
+    good, bare = tmp_path / "good.json", tmp_path / "bare.json"
+    good.write_text(json.dumps({"protocol_sha256": FROZEN, "results": _campaign()}), encoding="utf-8")
+    # the file header claims the right protocol; the rows do not carry it: the CLI must not fill it in
+    bare.write_text(json.dumps({"protocol_sha256": FROZEN, "results": [{k: v for k, v in r.items() if k != "protocol_sha256"} for r in _campaign()]}), encoding="utf-8")
+    run = lambda f: subprocess.run([sys.executable, "-m", "hold.cli", "bench", "evaluate", "--frozen", str(frozen), "--results", str(f)],  # noqa: E731
+                                   cwd=ROOT, capture_output=True, text=True)
+    assert run(good).returncode == 0
+    refused = run(bare)
+    assert refused.returncode == 1 and "Refused as evidence" in refused.stderr
+
+
+def test_rows_written_by_the_runner_and_its_replacement_pass_strict_identity(monkeypatch, tmp_path):
+    from hold import demo
+
+    seen = []
+
+    class FailsOnce:
+        def __init__(self, model, max_steps):
+            self.messages, self.errors, self.seed = [], [], None
+
+        def _loop(self, mission, log):
+            seen.append(self.seed)
+            if self.seed == bench.SEED + 2 and seen.count(self.seed) == 1:
+                raise ConnectionError("model server unreachable")
+            return "nothing"
+
+        def resume(self, mission, booking, log):
+            return ""
+
+    monkeypatch.setattr(demo, "LlamaAgent", FailsOnce)
+    frozen = tmp_path / "frozen.json"
+    frozen.write_text(json.dumps({"sha256": FROZEN}), encoding="utf-8")
+    bench.run(["C-llama"], scenarios=[bench.DEV[0]], reps={"C-llama": 3}, model="m1", frozen=frozen, out_dir=tmp_path, progress=lambda s: None)
+    bench.rerun_failed(tmp_path / "results.json", model="m1", progress=lambda s: None)
+    rows = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))["results"]
+    ev = bench.evaluate(rows, scenarios=["dev-lag"], reps={"C-llama": 3}, expected_protocol=FROZEN, strict=True)
+    assert ev["identity"]["valid"], ev["identity"]["problems"]
+    assert ev["H1"]["verdict"] == "accepted" and [r["attempt"] for r in rows] == [1, 1, 1, 2]
