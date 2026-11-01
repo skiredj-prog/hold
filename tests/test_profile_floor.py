@@ -20,7 +20,10 @@ def ctx(**kw):
     from hold.floor import observed_records
     from hold.testing import BOOKING
 
-    seen = observed_records([BOOKING, dict(BOOKING, price=999), dict(BOOKING, price=998), {"receipt": "R"}])
+    from hold.floor import SOURCE
+
+    seen = [{SOURCE: "search_hotels", **r} for r in observed_records([BOOKING, dict(BOOKING, price=999), dict(BOOKING, price=998)])]
+    seen += [{SOURCE: "create_booking", **r} for r in observed_records({"receipt": "R"})]
     base = dict(revoked=False, expired=False, usage={}, confirmed_actions=set(), uncertain_actions=set(), records=seen)
     return ActionContext(**(base | kw))
 
@@ -96,7 +99,7 @@ def test_admission_rules(profile, booking):
         assert v.rule == "I4/ENVELOPE" and why in v.reason
     assert admit_action(profile, "create_booking", pricey, ctx(now=now, revoked=True), grant=grant).rule == "I4/REVOKED"
     assert admit_action(profile, "create_booking", pricey, ctx(now=now, usage={"power:create_booking": 1}), grant=grant).rule == "I4/BUDGET"
-    it = {"traveler": "A", "booking_reference": "R"}
+    it = {"traveler": "A", "booking_reference": "R"}  # R: a receipt returned by create_booking (see ctx)
     assert admit_action(profile, "send_itinerary", it, ctx(uncertain_actions={"create_booking"})).rule == "I3"
     assert admit_action(profile, "send_itinerary", it, ctx()).rule == "I2"
     assert admit_action(profile, "send_itinerary", it, ctx(confirmed_actions={"create_booking"})).admitted

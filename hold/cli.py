@@ -187,9 +187,11 @@ def main(argv: list[str] | None = None) -> int:
                 print("--model is required for A, B, C-llama and D", file=sys.stderr)
                 return 2
             r = bench.run(conds, model=a.model, frozen=a.frozen, out_dir=a.out)
-            ev = bench.evaluate(r["results"])
-            print(json.dumps(ev, ensure_ascii=False, indent=1))
             print(f"Raw runs and results: {a.out}")
+            try:
+                print(json.dumps(bench.evaluate(r["results"]), ensure_ascii=False, indent=1))
+            except bench.IncomparableResults as e:
+                print(f"Not evaluated: {e}")
             return 0
         if a.action == "rerun":
             ok, problems = bench.check_freeze(a.frozen)
@@ -200,8 +202,17 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(bench.rerun_failed(target, model=a.model), ensure_ascii=False, indent=1))
             return 0
         if a.action == "evaluate":
-            rows = [x for f in a.results or [] for x in json.loads(Path(f).read_text())["results"]]
-            print(json.dumps(bench.evaluate(rows), ensure_ascii=False, indent=1))
+            rows = []
+            for f in a.results or []:
+                summary = json.loads(Path(f).read_text(encoding="utf-8"))
+                for x in summary["results"]:
+                    x.setdefault("protocol_sha256", summary.get("protocol_sha256"))
+                    rows.append(x)
+            try:
+                print(json.dumps(bench.evaluate(rows), ensure_ascii=False, indent=1))
+            except bench.IncomparableResults as e:
+                print(f"Refused: {e}", file=sys.stderr)
+                return 1
             return 0
     if a.cmd == "demo":
         from .demo import SCENARIOS, run, run_baseline

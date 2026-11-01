@@ -28,7 +28,7 @@ from typing import Any, Callable, get_type_hints
 
 from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
-from .floor import CORRECTABLE, ActionContext, Verdict, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, observed_records, parse_time, provenance_match, value_digest
+from .floor import CORRECTABLE, SOURCE, ActionContext, Verdict, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, observed_records, parse_time, provenance_match, value_digest
 from .hesitation import boundary_position
 from .i18n import t
 from .journal import verify_chain
@@ -282,13 +282,16 @@ class Mission:
     def _records(self) -> list[dict[str, str]]:
         """Every record tool results returned in this mission: read results, and receipts of confirmed effects."""
         out: list[dict[str, str]] = []
+        effect_action: dict[str, str] = {}
         for e in self.events():
-            if e.type == "ACTION_RESULT":
-                out.extend(e.data.get("records") or [])
+            if e.type == "EFFECT_RESERVED":
+                effect_action[e.data["effect_key"]] = e.data["action"]
+            elif e.type == "ACTION_RESULT":
+                out.extend({SOURCE: e.data["action"], **r} for r in e.data.get("records") or [])
             elif e.type in ("EFFECT_OUTCOME", "RECONCILED", "EVIDENCE") and e.data.get("receipt") and (e.type != "EVIDENCE" or e.data.get("correlated")):
                 d = value_digest(e.data["receipt"])
                 if d:
-                    out.append({"receipt": d})
+                    out.append({SOURCE: effect_action.get(e.data.get("effect_key"), ""), "receipt": d})
         return out
 
     def _arguments_problem(self, tool: _Tool, attrs: dict[str, Any]) -> str | None:

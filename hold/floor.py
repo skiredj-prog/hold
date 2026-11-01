@@ -123,20 +123,31 @@ def provenance_fields(power: Power) -> list[tuple[str, str]]:
     return [tuple(p.split("=", 1)) if "=" in p else (p, p) for p in power.provenance]  # type: ignore[misc]
 
 
+SOURCE = "@source"  # the tool whose result a record came from
+
+
 def provenance_match(power: Power, attrs: dict[str, Any], records: list[dict[str, str]]) -> tuple[dict[str, str] | None, list[str]]:
-    """I6, atomic: the declared attributes of an effect must all come from ONE record a tool result returned
-    earlier in the mission. Values seen separately in different records do not compose an offer."""
+    """I6, atomic and sourced: the declared attributes of an effect must all come from ONE record returned earlier
+    in the mission by a tool the profile authorizes as their source. Values seen separately in different records
+    do not compose an offer; a record from another tool does not prove an offer. Without declared sources, I6
+    only proves coherence between the attributes."""
     pairs = [(a, f) for a, f in provenance_fields(power) if a in attrs]
     if not pairs:
         return None, []
+    if power.provenance_source:
+        allowed = [r for r in records if r.get(SOURCE) in power.provenance_source]
+        if not allowed and records:
+            return None, [f"no record from an authorized source ({', '.join(power.provenance_source)}) was returned in this mission"]
+        records = allowed
     wanted = {f: value_digest(attrs[a]) for a, f in pairs}
     for r in records:
         if all(r.get(f) == d for f, d in wanted.items()):
             return r, []
+    where = f" by {', '.join(power.provenance_source)}" if power.provenance_source else ""
     never = [a for a, f in pairs if not any(r.get(f) == wanted[f] for r in records)]
     if never:
-        return None, [f"{a}={attrs[a]!r} was never returned by an earlier tool result of this mission" for a in never]
-    return None, ["no single record returned by an earlier tool result contains " + ", ".join(f"{a}={attrs[a]!r}" for a, _ in pairs) + " together"]
+        return None, [f"{a}={attrs[a]!r} was never returned{where or ' by an earlier tool result'} in this mission" for a in never]
+    return None, [f"no single record returned{where or ' by an earlier tool result'} contains " + ", ".join(f"{a}={attrs[a]!r}" for a, _ in pairs) + " together"]
 
 
 def provenance_violations(power: Power, attrs: dict[str, Any], records: list[dict[str, str]]) -> list[str]:

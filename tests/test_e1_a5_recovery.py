@@ -330,3 +330,84 @@ def test_rerun_replaces_an_infrastructure_error_once_with_the_same_seed(monkeypa
     rows = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))["results"]
     ev = bench.evaluate(rows, scenarios=[bench.DEV[0]["id"]], reps={"C-llama": 3})
     assert ev["H1"]["verdict"] == "accepted" and not ev["unreplaced_infrastructure_errors"]
+
+
+# -- PMO second review (fc22f595): negative tests reproducing the four findings ----------------
+def _row(cond, s, r, *, err=False, done=True, violations=(), protocol="p5"):
+    return {"condition": cond, "scenario": s, "rep": r, "seed": bench.SEED + r, "family": "F1-structured", "completed": done,
+            "solicitations": 0, "violations": list(violations), "infrastructure_error": err, "protocol_sha256": protocol}
+
+
+def test_an_infrastructure_error_never_erases_a_violation():
+    sc, rp = ["S1"], {"C-llama": 1}
+    hit = _row("C-llama/m", "S1", 0, err=True, violations=["duplicate booking at the provider"])
+    assert bench.evaluate([hit], scenarios=sc, reps=rp)["H1"]["verdict"] == "refuted"
+    replaced = [hit, _row("C-llama/m", "S1", 0)]
+    assert bench.evaluate(replaced, scenarios=sc, reps=rp)["H1"]["verdict"] == "refuted"
+
+
+def test_results_from_different_protocols_are_refused():
+    import pytest
+
+    sc, rp = ["S1"], {"B": 1, "C-llama": 1}
+    rows = [_row("B/m", "S1", 0, done=False, protocol="a4"), _row("C-llama/m", "S1", 0, protocol="a5")]
+    with pytest.raises(bench.IncomparableResults, match="different protocols"):
+        bench.evaluate(rows, scenarios=sc, reps=rp)
+
+
+def test_mixed_models_make_h1_inconclusive():
+    sc, rp = ["S1"], {"C-llama": 1}
+    rows = [_row("C-llama/llama3.2:3b", "S1", 0), _row("C-llama/llama3.1:8b", "S1", 0)]
+    h1 = bench.evaluate(rows, scenarios=sc, reps=rp)["H1"]
+    assert h1["verdict"] == "inconclusive" and "several models mixed" in h1["reasons"][0]
+
+
+def test_seeds_scenarios_and_repetitions_must_match_the_protocol():
+    import pytest
+
+    sc, rp = ["S1"], {"C-llama": 1}
+    with pytest.raises(bench.IncomparableResults, match="seed"):
+        bench.evaluate([_row("C-llama/m", "S1", 0) | {"seed": 7}], scenarios=sc, reps=rp)
+    with pytest.raises(bench.IncomparableResults, match="unexpected scenario"):
+        bench.evaluate([_row("C-llama/m", "S9", 0)], scenarios=sc, reps=rp)
+    with pytest.raises(bench.IncomparableResults, match="unexpected repetition"):
+        bench.evaluate([_row("C-llama/m", "S1", 3)], scenarios=sc, reps=rp)
+    with pytest.raises(bench.IncomparableResults, match="more than one replacement"):
+        bench.evaluate([_row("C-llama/m", "S1", 0, err=True)] * 3, scenarios=sc, reps=rp)
+
+
+def test_only_one_replacement_is_possible_and_both_traces_are_kept(monkeypatch, tmp_path):
+    from hold import demo
+
+    class AlwaysDown:
+        def __init__(self, model, max_steps):
+            self.messages, self.errors, self.seed = [], [], None
+
+        def _loop(self, mission, log):
+            raise ConnectionError("model server unreachable")
+
+        def resume(self, mission, booking, log):
+            return ""
+
+    monkeypatch.setattr(demo, "LlamaAgent", AlwaysDown)
+    bench.run(["C-llama"], scenarios=[bench.DEV[0]], reps={"C-llama": 1}, model="fake", out_dir=tmp_path, progress=lambda s: None)
+    first = bench.rerun_failed(tmp_path / "results.json", model="fake", progress=lambda s: None)
+    second = bench.rerun_failed(tmp_path / "results.json", model="fake", progress=lambda s: None)
+    assert first["rerun"] == 1 and second["rerun"] == 0 and second["exhausted"]
+    rows = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))["results"]
+    assert len(rows) == 2 and [r["attempt"] for r in rows] == [1, 2]
+    assert {p.name for p in tmp_path.iterdir()} >= {"C-llama_fake_dev-lag_r1.json", "C-llama_fake_dev-lag_r1_attempt2.json"}
+    assert bench.evaluate(rows, scenarios=["dev-lag"], reps={"C-llama": 1})["H1"]["verdict"] == "inconclusive"
+
+
+def test_i6_accepts_only_records_from_the_authorized_source():
+    from hold.outcome import Outcome
+
+    hab, hotel = hab_with()
+    hab.tools["venue_info"].fn = lambda: Outcome.value(dict(BOOKING))  # another read returns the very same attributes
+    m = hab.open_mission("Lyon")
+    m.call("venue_info")
+    r = m.call("create_booking", **BOOKING)
+    assert r.rule == "I6/PROVENANCE" and "search_hotels" in r.message and hotel.created == 0
+    m.call("search_hotels", city="Lyon")
+    assert m.call("create_booking", **BOOKING).status == "OK"

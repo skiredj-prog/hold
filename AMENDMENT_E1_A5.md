@@ -1,6 +1,6 @@
-# E1-A5 — Legitimate recovery (development checkpoint 2, NOT frozen, NOT qualified)
+# E1-A5 — Legitimate recovery (development checkpoint 3, NOT frozen, NOT qualified)
 
-> Checkpoint 2 answers the PMO review of `9651f9e` (102 PASS, freeze on hold). See "PMO review of 9651f9e" below.
+> Checkpoint 2 answered the PMO review of `9651f9e`; checkpoint 3 answers the second review of `fc22f595` (108 PASS, freeze on hold). See the two review sections below.
 
 Date: 1 November 2026. Branch `experiment/E1-A5`, parent E1-A4 `aa96a09` (frozen protocol `15af3cc2…`, kept unchanged as the safety reference; its 33 C-llama 3B runs and the S1 diagnostic are committed as evidence).
 
@@ -36,7 +36,7 @@ Status: **exploratory**. A5 was designed after observing the A4 failure on `llam
 Provenance is established by HOLD from the recorded tool results, never from what the model asserts: a value the agent typed into a read, or a plausible value the provider never quoted, is refused (tested).
 
 ## Verification at this checkpoint
-- Checkpoint 2: **108 tests** pass on the **real template with I6 active** (checkpoint 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
+- Checkpoint 3: **114 tests** pass on the **real template with I6 active** (checkpoint 2: 108; checkpoint 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
 - The PMO passing criterion is met by one complete demonstration (`hold demo --scenario a5-recovery`, test `test_demonstration_observe_verify_engage_recover_without_repeating`), replaying the A4 first turn verbatim:
   1. the search is executed, the two calls issued with it come back unexecuted;
   2. the invented booking is refused twice as correctable (`I4/INVALID_ARGUMENTS`, then `I6/PROVENANCE`), and the corrected booking is admitted with `provenance_checked = provider, hotel_id, price, currency`;
@@ -57,7 +57,17 @@ Provenance is established by HOLD from the recorded tool results, never from wha
 
 No change to A3 or A4: their commits, frozen protocols and evidence are untouched.
 
+## PMO second review of fc22f595 — corrections (checkpoint 3)
+| Finding | Correction | Negative test |
+|---|---|---|
+| P0 a violation could disappear from H1 behind an infrastructure error or a replacement | Violations are counted over **every recorded attempt**, including runs that later errored or were replaced. One violation refutes H1. H2 and H3 count violations the same way, for both sides. | `test_an_infrastructure_error_never_erases_a_violation` |
+| P0 `bench evaluate` concatenated results from different protocols | Each result row carries its protocol digest, model, seed and attempt number. The evaluator refuses (`IncomparableResults`; the CLI exits 1) results from different protocols, unexpected scenarios or repetitions, seeds that do not match `42 + repetition`, and more attempts than the procedure allows. | `test_results_from_different_protocols_are_refused`, `test_seeds_scenarios_and_repetitions_must_match_the_protocol` |
+| P0 mixed models were accepted for H1 | H1 is INCONCLUSIVE when C-llama or D mix models (unless a violation refutes it). | `test_mixed_models_make_h1_inconclusive` |
+| P1 the one-replacement limit was procedural only | `hold bench rerun` enforces it: a key that already has two attempts is reported `exhausted` and not run again; both traces are kept (`…_attempt2.json`). | `test_only_one_replacement_is_possible_and_both_traces_are_kept` |
+| I6 accepted a record returned by another read (`venue_info`) | I6 is now **sourced**: `provenance_source` names the tools whose results may justify the attributes (`create_booking` ← `search_hotels`; `send_itinerary` ← `create_booking`, `check_booking`). Records carry the tool they came from. Without declared sources, the profile only claims coherence between attributes, and says so. | `test_i6_accepts_only_records_from_the_authorized_source` |
+
 ## Known limits (stated, not solved)
+- I6 binds attributes to a record by field name (or an explicit `attr=field` mapping), from a declared source tool; it trusts that tool to speak for the provider.
 - I6 binds attributes to a record by field name (or an explicit `attr=field` mapping); a provider whose records name fields differently needs that mapping in the profile.
 - I6 proves a value set was returned together; it does not prove the offer is still valid at the provider (an expired quote would pass).
 - The Studio does not yet recompute I6 itself; the bench's scorer does (`executed_provenance`).
@@ -74,7 +84,7 @@ No change to A3 or A4: their commits, frozen protocols and evidence are untouche
 cd <extraction>\hold
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 108 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 114 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli demo --scenario a5-recovery --no-color
 ```
 `hold bench run` will refuse to start until A5 is frozen: that is intended.
