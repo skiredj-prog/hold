@@ -1,0 +1,898 @@
+{
+ "evaluation": true,
+ "protocol_sha256": "15af3cc2df2a37b47b17efcb60522bf36e1c526543e53240aa548198c9716691",
+ "model": "llama3.2:3b",
+ "results": [
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S1",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S2",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S3",
+   "family": "F1-structured",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S4",
+   "family": "F2-plain-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S5",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S6",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S7",
+   "family": "F3-paraphrased-delay",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S8",
+   "family": "F4-decoy",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S9",
+   "family": "F4-decoy",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S10",
+   "family": "F5-support-pending",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 0
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 1
+  },
+  {
+   "scenario": "S11",
+   "family": "F6-envelope",
+   "condition": "C-llama/llama3.2:3b",
+   "completed": false,
+   "solicitations": 0,
+   "unnecessary_solicitations": 0,
+   "violations": [],
+   "price_input_findings": [],
+   "completed_without_unnecessary_solicitation": false,
+   "elapsed_s": 0.0,
+   "labels": {},
+   "decisions": [],
+   "credit": {
+    "discerner": 0,
+    "floor": 0
+   },
+   "readings": {
+    "SUPPORTED": 0,
+    "UNDETERMINED": 0,
+    "CONTRADICTED": 0
+   },
+   "options_left": {},
+   "verified": true,
+   "status": "CLOSED_UNCONFIRMED",
+   "rep": 2
+  }
+ ]
+}
