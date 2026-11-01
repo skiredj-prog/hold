@@ -89,10 +89,15 @@ class Fold:
             if applied == "WAIT":
                 usage[f"waits:{key}"] += 1
                 usage[f"waited_s:{key}"] += d["verdict"]["wait_seconds"]
+                verify = next((x for x in self.positions[d["position_seq"]]["paths"] if x["name"] == "VERIFY"), None)
+                if verify and verify["open"] and not usage[f"scheduled_checks:{key}"]:
+                    usage[f"scheduled_checks:{key}"] += 1
             elif applied == "VERIFY":
                 usage[f"checks:{key}"] += 1
                 if usage[f"directed_checks:{key}"] > 0:
                     usage[f"directed_checks:{key}"] -= 1
+                elif usage[f"scheduled_checks:{key}"] > 0:
+                    usage[f"scheduled_checks:{key}"] -= 1
             elif applied == "CONTACT_SUPPORT" and profile.support and profile.support.budget is not None:
                 usage[f"power:{profile.support.action}"] += 1
         elif t in ("PRESERVED", "WAIT_STARTED"):

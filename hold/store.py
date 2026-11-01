@@ -58,6 +58,7 @@ def now_iso() -> str:
 class Store:
     def __init__(self, path: str = "hold.db"):
         self.path = path
+        self.clock = None  # set by a Habilitation with an explicit clock: event timestamps follow it
         self._conn = sqlite3.connect(path, check_same_thread=False, isolation_level=None, timeout=15.0)
         self._conn.row_factory = sqlite3.Row
         self._lock = threading.RLock()
@@ -80,6 +81,11 @@ class Store:
             except BaseException:
                 self._conn.execute("ROLLBACK")
                 raise
+
+    def now(self) -> str:
+        if self.clock is None:
+            return now_iso()
+        return self.clock().astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
     def read(self, sql: str, args: tuple = ()) -> list[sqlite3.Row]:
         with self._lock:
@@ -121,7 +127,7 @@ class Store:
         if not m:
             raise KeyError(f"Mission inconnue : {mission_id}")
         e = make_event(
-            mission=mission_id, seq=m["head_seq"] + 1, at=now_iso(), type_=type_, actor=actor, cause=cause,
+            mission=mission_id, seq=m["head_seq"] + 1, at=self.now(), type_=type_, actor=actor, cause=cause,
             profile=m["profile_fp"], revision=m["profile_rev"], data=data, prev=m["head_hash"],
             phase=default_phase(type_, data, actor) if phase == DERIVE else phase, status=m["status"],
         )

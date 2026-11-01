@@ -28,9 +28,10 @@ const journals = JSON.parse(require('fs').readFileSync(process.argv[3], 'utf8'))
   for (const j of journals) {
     const chain = await core.verifyChain(j.events);
     const dec = core.decisionReplay(j.events, j.profiles);
+    const ver = j.events.length ? await core.verifyJournal(j) : null;
     const fps = {};
     for (const [fp, p] of Object.entries(j.profiles)) fps[fp] = await core.fingerprint(p);
-    out.push({ chain, dec, fps });
+    out.push({ chain, dec, fps, ver });
   }
   console.log(JSON.stringify(out));
 })();
@@ -69,6 +70,15 @@ def journals(booking):
     run(Reader(), visible_after_s=600, status_note=LAG_NOTE, then=lambda h, m, c: (c.advance(600), m.sweep()))  # wait, then verify
     run(Reader(quote="a passage that is not there"), visible_after_s=600, status_note=LAG_NOTE)  # ungrounded wait
 
+    class QuotesThenAsks(Reader):
+        def propose(self, position, context):
+            p = super().propose(position, context)
+            if p.move == "WAIT":
+                p.move = "CONTACT_SUPPORT"
+            return p
+
+    run(QuotesThenAsks(), visible_after_s=600, status_note=LAG_NOTE)  # undetermined reading used beyond its scope
+
     def answer(h, m, c):
         h.answer(m.id, m.open_request()["question_id"], "EXTEND_CHECKS", channel="whatsapp")
 
@@ -90,8 +100,15 @@ def test_studio_core_reaches_the_librarys_verdicts(booking, tmp_path):
         assert r["dec"]["matches"], r["dec"]["mismatches"]
         assert r["dec"]["checked"] == sum(1 for e in j["events"] if e["type"] == "DECISION")
         assert all(fp == r["fps"][fp] for fp in j["profiles"])
+        v = r["ver"]
+        assert v["positions"]["matches"], v["positions"]["mismatches"]
+        assert v["decisions"]["matches"], v["decisions"]["mismatches"]
+        assert v["status"]["matches"], v["status"]["mismatches"]
+        assert v["store_matches"], (v["state"], j["store"])
     outcomes = {e["data"]["outcome"] for j in js for e in j["events"] if e["type"] == "DECISION"}
     assert {"ADMITTED", "MAP_REFUSED", "MOVE_REFUSED", "INCOHERENT", "REFERENCE_APPLIED"} <= outcomes
+    rules = {e["data"]["verdict"]["rule"] for j in js for e in j["events"] if e["type"] == "DECISION"}
+    assert {"D1/MAP", "D1/SCOPE", "D1/COHERENCE", "I4/PATH", "ADMIT"} <= rules
 
 
 def test_studio_core_detects_tampering(booking, tmp_path):
@@ -112,3 +129,30 @@ def test_catalog_fingerprints_match(tmp_path):
         profiles[p.fingerprint] = p.model_dump(mode="json", exclude_none=True)
     res = node([{"events": [], "profiles": profiles}], tmp_path)[0]
     assert all(fp == res["fps"][fp] for fp in profiles)
+
+
+def rechain(journal):
+    """A forger who can rewrite the whole store also recomputes the hash chain."""
+    from hold.journal import GENESIS, Event, compute_hash
+
+    prev = GENESIS
+    for e in journal["events"]:
+        e["prev"] = prev
+        e["hash"] = compute_hash(Event(**{k: v for k, v in e.items() if k != "hash"}))
+        prev = e["hash"]
+    return journal
+
+
+def test_a_rewritten_chain_does_not_hide_a_forged_decision_or_position(booking, tmp_path):
+    js = journals(booking)
+    credit = rechain(json.loads(json.dumps(js[2])))
+    d = next(e for e in credit["events"] if e["type"] == "DECISION" and e["data"]["outcome"] == "REFERENCE_APPLIED")
+    d["data"]["verdict"]["credit"] = "discerner"
+    rechain(credit)
+    sigma = json.loads(json.dumps(js[0]))
+    p = next(e for e in sigma["events"] if e["type"] == "POSITION")
+    p["data"]["position"]["paths"][0]["sigma"] = 0.99  # pretend the check was more promising than the history implies
+    rechain(sigma)
+    a, b = node([credit, sigma], tmp_path)
+    assert a["chain"]["valid"] and not a["ver"]["decisions"]["matches"]
+    assert b["chain"]["valid"] and not b["ver"]["positions"]["matches"] and "paths" in b["ver"]["positions"]["mismatches"][0]["fields"]

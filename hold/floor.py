@@ -192,7 +192,7 @@ def admit_proposal(proposal: dict[str, Any] | None, position: dict[str, Any], re
     """The gate, in order: position current (I5), a usable proposal, a true map (D1), an admissible
     move (I4), a move that follows from the declared map. If the attempt is the last one, a refusal
     applies the reference (or PRESERVE), credited to the floor, never to the model."""
-    from .hesitation import admissible_moves, check_map, justified_moves, true_map
+    from .hesitation import UNDETERMINED_SCOPE, admissible_moves, check_map, justified_moves, true_map
 
     ref = position["reference"]
     p = proposal or {}
@@ -208,6 +208,8 @@ def admit_proposal(proposal: dict[str, Any] | None, position: dict[str, Any], re
         outcome, rule, reason = "NO_PROPOSAL", "D1/NONE", "No usable proposal" + (f" ({p['error']})" if p.get("error") else "") + "."
     elif mc["reading"] in (None, "CONTRADICTED"):
         outcome, rule, reason = "MAP_REFUSED", "D1/MAP", "The declared reading is contradicted by the available evidence: " + "; ".join(mc["discrepancies"]) + "."
+    elif mc["reading"] == "UNDETERMINED" and move not in UNDETERMINED_SCOPE:
+        outcome, rule, reason = "MAP_REFUSED", "D1/SCOPE", f"The reading is undetermined, which is enough only for bounded moves ({', '.join(UNDETERMINED_SCOPE)}), not for {move}."
     elif move not in admissible:
         path = next((x for x in position["paths"] if x["name"] == move), None)
         outcome, rule, reason = "MOVE_REFUSED", "I4/PATH", f"Path {move} is closed: {path['reason'] if path else 'unknown path'}."

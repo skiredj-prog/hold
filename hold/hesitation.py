@@ -27,6 +27,10 @@ PATH_AUTHORITY = {"VERIFY": "agent", "CONTACT_SUPPORT": "mandate", "ASK_AUTHORIT
 MOVES = ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "WAIT", "PRESERVE"]
 PENDING_CONDITIONS = ["VISIBILITY_DELAY", "SUPPORT_REPLY"]
 INSIDE_HABILITATION = ("VERIFY", "CONTACT_SUPPORT")
+# An undetermined reading (not contradicted, not established) is enough only for bounded moves that
+# gather information or keep the state. Contacting a third party or the authority needs a supported
+# reading. Effects never pass on a reading at all: they go through the floor's execution rules.
+UNDETERMINED_SCOPE = ("VERIFY", "WAIT", "PRESERVE")
 FORBIDDEN_DURING_HOLD = ["RECREATE_EQUIVALENT_EFFECT", "DECLARE_SUCCESS_WITHOUT_EVIDENCE", "RUN_DEPENDENT_ACTIONS", "EXCEED_PROFILE"]
 MIN_QUOTE = 8
 
@@ -113,9 +117,11 @@ def boundary_position(
             left = rec.max_checks + granted - used
             sigma = round(rec.sigma * (rec.decay ** not_found), 4)
             ok = left > 0 and not revoked
-            directed = ok and usage.get(f"directed_checks:{effect_key}", 0) > 0
+            granted_now = usage.get(f"directed_checks:{effect_key}", 0) > 0
+            scheduled = usage.get(f"scheduled_checks:{effect_key}", 0) > 0
+            directed = ok and (granted_now or scheduled)
             if directed:
-                reason = "check granted by the authority"
+                reason = "check granted by the authority" if granted_now else "check scheduled at the end of the wait"
             else:
                 reason = f"{left} check(s) left" if ok else ("mandate revoked" if revoked else "checks exhausted")
             paths.append(PathState(name, ok, reason, sigma, "agent", sigma >= tau, directed, max(left, 0)))

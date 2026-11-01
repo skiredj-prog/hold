@@ -12,6 +12,7 @@
   const PHASES = ["RESSENTIR", "CAPTER", "PERCEVOIR", "DISCERNER", "RELIER", "CHOISIR", "ENGAGER", "REEVALUER"];
   const PENDING_CONDITIONS = ["VISIBILITY_DELAY", "SUPPORT_REPLY"];
   const INSIDE = ["VERIFY", "CONTACT_SUPPORT"];
+  const UNDETERMINED_SCOPE = ["VERIFY", "WAIT", "PRESERVE"];
   const MIN_QUOTE = 8;
   const EVENT_TYPES = {
     MISSION_OPENED: ["title"], PROFILE_ATTACHED: ["fingerprint", "revision", "profile"], RUNTIME_BOUND: ["core", "discerner", "tools"],
@@ -158,6 +159,7 @@
     let outcome, rule, reason;
     if (!move) { outcome = "NO_PROPOSAL"; rule = "D1/NONE"; reason = "No usable proposal" + (p.error ? ` (${p.error})` : "") + "."; }
     else if (mc.reading === null || mc.reading === "CONTRADICTED") { outcome = "MAP_REFUSED"; rule = "D1/MAP"; reason = "The declared reading is contradicted by the available evidence: " + mc.discrepancies.join("; ") + "."; }
+    else if (mc.reading === "UNDETERMINED" && !UNDETERMINED_SCOPE.includes(move)) { outcome = "MAP_REFUSED"; rule = "D1/SCOPE"; reason = `The reading is undetermined, which is enough only for bounded moves (${UNDETERMINED_SCOPE.join(", ")}), not for ${move}.`; }
     else if (!admissible.includes(move)) {
       const path = position.paths.find((x) => x.name === move);
       outcome = "MOVE_REFUSED"; rule = "I4/PATH"; reason = `Path ${move} is closed: ${path ? path.reason : "unknown path"}.`;
@@ -192,6 +194,168 @@
       if (ref !== pos.reference || canonical(v) !== canonical(d.verdict) || v.outcome !== d.outcome) mismatches.push({ seq: e.seq, round: d.round, recorded: d.verdict, replayed: v });
     }
     return { checked, matches: mismatches.length === 0, mismatches };
+  }
+
+  // -- independent recomputation: positions, verdicts and state from the history alone ----
+  const FORBIDDEN = ["RECREATE_EQUIVALENT_EFFECT", "DECLARE_SUCCESS_WITHOUT_EVIDENCE", "RUN_DEPENDENT_ACTIONS", "EXCEED_PROFILE"];
+  const round4 = (x) => Math.round(x * 1e4) / 1e4;
+  const pathState = (name, open, reason, sigma, authority, reaches, directed, left) => ({ name, open, reason, sigma, authority, reaches_tau: reaches, directed: !!directed, left: left ?? null });
+
+  function boundaryPosition(profile, f) {
+    const h = profile.hesitation; const tau = h.tau_star; const u = (k) => f.usage[k] || 0;
+    const coherence = ["CONFIRMED", "FAILED_PROVEN"].includes(f.effect_state) ? 1 : 0;
+    const power = (profile.powers || []).find((p) => p.action === f.action);
+    const rec = power && power.reconciliation;
+    const support = (profile.powers || []).find((p) => p.role === "support");
+    const a = profile.authority; const key = f.effect_key; const paths = [];
+    for (const name of h.ladder) {
+      if (name === "VERIFY") {
+        if (!rec) { paths.push(pathState(name, false, "no reconciliation declared for this effect", 0, "agent", false, false, 0)); continue; }
+        const left = rec.max_checks + u(`extra_checks:${key}`) - u(`checks:${key}`);
+        const sigma = round4(rec.sigma * Math.pow(rec.decay, f.not_found));
+        const ok = left > 0 && !f.revoked;
+        const grantedNow = u(`directed_checks:${key}`) > 0, scheduled = u(`scheduled_checks:${key}`) > 0;
+        const directed = ok && (grantedNow || scheduled);
+        const reason = directed ? (grantedNow ? "check granted by the authority" : "check scheduled at the end of the wait") : ok ? `${left} check(s) left` : (f.revoked ? "mandate revoked" : "checks exhausted");
+        paths.push(pathState(name, ok, reason, sigma, "agent", sigma >= tau, directed, Math.max(left, 0)));
+      } else if (name === "CONTACT_SUPPORT") {
+        if (!support) { paths.push(pathState(name, false, "no support contact power in the profile", 0, "mandate", false, false, 0)); continue; }
+        const left = support.budget == null ? null : support.budget - u(`power:${support.action}`);
+        const sigma = support.sigma != null ? support.sigma : 0.5;
+        const ok = (left === null || left > 0) && !f.revoked;
+        const reason = ok ? (left === null ? "support reachable" : `${left} contact(s) left`) : (f.revoked ? "mandate revoked" : "contact budget exhausted");
+        paths.push(pathState(name, ok, reason, sigma, "mandate", sigma >= tau, false, left === null ? null : Math.max(left, 0)));
+      } else if (name === "ASK_AUTHORITY") {
+        const left = a.max_requests - u("authority_requests");
+        const ok = f.authority_available && !f.open_request && left > 0 && !f.revoked;
+        const reason = f.revoked ? "mandate revoked" : !f.authority_available ? "authority unreachable (no channel configured)" : f.open_request ? "a request is already open" : left <= 0 ? "requests to the authority exhausted" : `${a.name} reachable on ${a.channel}`;
+        paths.push(pathState(name, ok, reason, a.sigma, "authority", a.sigma >= tau, false, Math.max(left, 0)));
+      } else if (name === "PRESERVE") {
+        if (h.max_wait_seconds > 0) {
+          const leftS = Math.max(0, h.max_wait_seconds - u(`waited_s:${key}`));
+          const ok = leftS > 0 && u(`waits:${key}`) < h.max_waits && !f.revoked;
+          const reason = f.revoked ? "mandate revoked" : !ok ? "patience exhausted" : `${leftS} s of patience left; only on a pending condition stated in the evidence`;
+          paths.push(pathState("WAIT", ok, reason, 0, "none", false, false, leftS));
+        } else paths.push(pathState("WAIT", false, "waiting is not allowed by the profile", 0, "none", false, false, 0));
+        paths.push(pathState(name, true, "always possible: keep the state without acting", 0, "none", false, false, null));
+      }
+    }
+    return {
+      effect_key: key, action: f.action, operation_id: f.operation_id, effect_state: f.effect_state, coherence, tau_star: tau,
+      threatened: coherence < tau, paths, restorable_in_habilitation: paths.some((p) => p.open && p.reaches_tau && ["agent", "mandate"].includes(p.authority)),
+      reference: referencePath(paths, h.ladder), observations: f.observations, forbidden: FORBIDDEN.slice(),
+    };
+  }
+
+  class Fold {
+    constructor(profiles) {
+      this.profiles = profiles; this.status = "OPEN"; this.revoked = false; this.effects = {}; this.usage = {}; this.requests = {};
+      this.grantsConsumed = new Set(); this.positions = {}; this.observations = {}; this.noResponse = {}; this.authorityReachable = false; this.statusMismatches = [];
+    }
+    bump(k, d = 1) { this.usage[k] = (this.usage[k] || 0) + d; }
+    apply(e) {
+      const d = e.data, t = e.type, profile = this.profiles[e.profile];
+      const budget = (action) => { const p = (profile.powers || []).find((x) => x.action === action); return !!(p && p.budget != null); };
+      const obs = (key) => (this.observations[key] = this.observations[key] || []);
+      if (t === "RUNTIME_BOUND") this.authorityReachable = !!d.authority_reachable;
+      else if (t === "ACTION_ADMITTED") { if (d.kind !== "effect" && budget(d.action)) this.bump(`power:${d.action}`); if (d.grant) this.grantsConsumed.add(d.grant); }
+      else if (t === "EFFECT_RESERVED") {
+        const prev = this.effects[d.effect_key];
+        this.effects[d.effect_key] = { action: d.action, operation_id: d.operation_id, status: "DISPATCHING", receipt: null, not_found: 0, attempts: prev ? prev.attempts + 1 : 1 };
+        if (budget(d.action)) this.bump(`power:${d.action}`);
+      } else if (t === "EFFECT_OUTCOME") {
+        const eff = this.effects[d.effect_key]; eff.status = d.status;
+        if (d.status === "CONFIRMED") eff.receipt = d.receipt ?? null;
+        if (d.status === "FAILED_PROVEN" && budget(eff.action)) this.bump(`power:${eff.action}`, -1);
+        if (d.status === "UNKNOWN" && !(d.effect_key in this.noResponse)) this.noResponse[d.effect_key] = { id: `E${e.seq}`, seq: e.seq, at: e.at, source: "core", kind: "NO_RESPONSE", text: d.reason ?? null };
+      } else if (t === "HOLD_ENTERED") this.status = "HELD";
+      else if (t === "EVIDENCE") {
+        obs(d.effect_key).push({ id: `E${e.seq}`, seq: e.seq, at: e.at, source: d.source ?? null, kind: d.kind ?? null, text: d.detail || d.receipt || d.reason || null });
+        if (["status", "support"].includes(d.source) && (d.kind === "NOT_FOUND" || (["RECEIPT", "SUPPORT_REPLY"].includes(d.kind) && !d.correlated))) this.effects[d.effect_key].not_found += 1;
+      } else if (t === "WAIT_ENDED") obs(d.effect_key).push({ id: `E${e.seq}`, seq: e.seq, at: e.at, source: "core", kind: "WAITED", text: `Waited until ${d.until}; the position is read again.` });
+      else if (t === "RECONCILED") { const eff = this.effects[d.effect_key]; eff.status = "CONFIRMED"; eff.receipt = d.receipt; }
+      else if (t === "POSITION") this.positions[e.seq] = d.position;
+      else if (t === "DECISION") {
+        const applied = d.verdict.applied; const pos = this.positions[d.position_seq]; const key = pos.effect_key; const u = (k) => this.usage[k] || 0;
+        if (applied === "WAIT") {
+          this.bump(`waits:${key}`); this.bump(`waited_s:${key}`, d.verdict.wait_seconds);
+          const v = pos.paths.find((x) => x.name === "VERIFY");
+          if (v && v.open && !u(`scheduled_checks:${key}`)) this.bump(`scheduled_checks:${key}`);
+        } else if (applied === "VERIFY") {
+          this.bump(`checks:${key}`);
+          if (u(`directed_checks:${key}`) > 0) this.bump(`directed_checks:${key}`, -1);
+          else if (u(`scheduled_checks:${key}`) > 0) this.bump(`scheduled_checks:${key}`, -1);
+        } else if (applied === "CONTACT_SUPPORT") {
+          const sup = (profile.powers || []).find((p) => p.role === "support");
+          if (sup && sup.budget != null) this.bump(`power:${sup.action}`);
+        }
+      } else if (t === "PRESERVED" || t === "WAIT_STARTED") this.status = "HELD";
+      else if (t === "DECISION_REQUEST") { this.requests[d.question_id] = "OPEN"; this.bump("authority_requests"); this.status = "AWAITING_AUTHORITY"; }
+      else if (t === "AUTHORITY_ANSWER") { this.requests[d.question_id] = "ANSWERED"; if (d.answer === "REFUSE") this.status = "OPEN"; }
+      else if (t === "REQUEST_CLOSED") { this.requests[d.question_id] = d.status; this.status = d.mission_status; }
+      else if (t === "AUTHORITY_GRANT") {
+        if (d.grant.kind === "EXTRA_CHECK") { this.bump(`extra_checks:${d.grant.effect_key}`); this.bump(`directed_checks:${d.grant.effect_key}`); this.status = "HELD"; }
+        else if (d.grant.kind === "ENVELOPE_ONCE") this.status = "OPEN";
+      } else if (t === "RESUMED") { if (["HELD", "AWAITING_AUTHORITY"].includes(this.status)) this.status = "OPEN"; }
+      else if (t === "REVOKED") { this.revoked = true; for (const q in this.requests) if (this.requests[q] === "OPEN") this.requests[q] = "CANCELLED"; this.status = "REVOKED"; }
+      else if (t === "MISSION_CLOSED") { for (const q in this.requests) if (this.requests[q] === "OPEN") this.requests[q] = "CANCELLED"; this.status = d.outcome; }
+      if (e.status != null && e.status !== this.status) this.statusMismatches.push({ seq: e.seq, type: t, recorded: e.status, recomputed: this.status });
+    }
+    position(key, profile) {
+      const eff = this.effects[key];
+      const obs = (this.observations[key] || []).slice(-8);
+      if (key in this.noResponse) obs.unshift(this.noResponse[key]);
+      return boundaryPosition(profile, {
+        effect_key: key, action: eff.action, operation_id: eff.operation_id, effect_state: eff.status, not_found: eff.not_found,
+        usage: this.usage, authority_available: this.authorityReachable, open_request: Object.values(this.requests).includes("OPEN"), revoked: this.revoked, observations: obs,
+      });
+    }
+    state() {
+      const usage = {}; for (const [k, v] of Object.entries(this.usage)) if (v) usage[k] = v;
+      return { status: this.status, revoked: this.revoked, effects: this.effects, usage, requests: this.requests, grants_consumed: [...this.grantsConsumed].sort() };
+    }
+  }
+
+  /** Verification, not reproduction: every position and verdict is recomputed from the history, the
+   * frozen profiles and this implementation of the rules; what the journal asserts is only compared. */
+  async function verifyJournal(journal) {
+    const events = journal.events, profiles = journal.profiles || {};
+    const chain = await verifyChain(events);
+    const f = new Fold(profiles); const recomputed = {};
+    const positions = { checked: 0, mismatches: [] }, decisions = { checked: 0, mismatches: [] };
+    for (const e of events) {
+      if (!profiles[e.profile]) return { chain, error: `profile ${String(e.profile).slice(0, 12)} missing from the journal` };
+      if (e.type === "POSITION") {
+        const mine = f.position(e.data.effect_key, profiles[e.profile]); recomputed[e.seq] = mine; positions.checked++;
+        if (canonical(mine) !== canonical(e.data.position)) positions.mismatches.push({ seq: e.seq, round: e.data.round, fields: Object.keys(mine).filter((k) => canonical(mine[k]) !== canonical(e.data.position[k])) });
+      } else if (e.type === "DECISION") {
+        const d = e.data; const pos = recomputed[d.position_seq]; decisions.checked++;
+        if (!pos) decisions.mismatches.push({ seq: e.seq, error: "no recomputed position" });
+        else {
+          const read = await digest(pos);
+          const v = admitProposal(d.proposal, pos, read, d.now_digest, d.final, d.on_refused || profiles[e.profile].hesitation.on_refused_proposal);
+          const problems = [];
+          if (read !== d.read_digest) problems.push("the gate read a position the history does not imply");
+          if (canonical(v) !== canonical(d.verdict) || v.outcome !== d.outcome) problems.push("verdict differs");
+          if (problems.length) decisions.mismatches.push({ seq: e.seq, round: d.round, problems, recorded: d.verdict, recomputed: v });
+        }
+      }
+      f.apply(e);
+    }
+    const state = f.state();
+    const store = journal.store ? canonical(journal.store) === canonical(state) : null;
+    const counts = (type, pred = () => true) => events.filter((e) => e.type === type && pred(e)).length;
+    const external = [
+      { what: "provider", count: counts("EFFECT_OUTCOME", (e) => e.data.status !== "UNKNOWN") + counts("EVIDENCE", (e) => e.data.source !== "core"), note: "Receipts, refusals and replies are the provider's statements. Correlation with the operation is checked here; the provider's register is not." },
+      { what: "authority", count: counts("AUTHORITY_ANSWER"), note: "Taps were authenticated at runtime (Meta signature, enrolled number, open question). The signature is not in the journal; the WhatsApp message ids are, for audit with Meta." },
+      { what: "model", count: counts("PROPOSAL", (e) => e.data.proposal && e.data.proposal.model), note: "Model outputs are recorded with their digests. Reproducing them requires re-running the recorded model with the recorded prompt digest." },
+      { what: "completeness", count: null, note: "The chain proves the order and integrity of what was recorded, not that nothing was left out. A full rewrite of the store would also rewrite the chain: only an external witness of the head can rule that out." },
+      { what: "time", count: null, note: "Timestamps come from the runtime's clock." },
+    ];
+    return {
+      chain, positions: { ...positions, matches: positions.mismatches.length === 0 }, decisions: { ...decisions, matches: decisions.mismatches.length === 0 },
+      status: { matches: f.statusMismatches.length === 0, mismatches: f.statusMismatches }, state, store_matches: store, external,
+    };
   }
 
   // -- profil -------------------------------------------------------------------------------
@@ -264,6 +428,6 @@
     return steps;
   }
 
-  const api = { canonical, digest, sha256Hex, fingerprint, profileBody, verifyChain, decisionReplay, admitProposal, checkMap, justifiedMoves, trueMap, referencePath, validateProfile, simulateHesitation, ENVELOPE_VERSION, PHASES };
+  const api = { canonical, digest, sha256Hex, fingerprint, profileBody, verifyChain, verifyJournal, boundaryPosition, Fold, decisionReplay, admitProposal, checkMap, justifiedMoves, trueMap, referencePath, validateProfile, simulateHesitation, ENVELOPE_VERSION, PHASES };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HoldCore = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

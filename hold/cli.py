@@ -53,7 +53,7 @@ def _profile_cmd(a: argparse.Namespace) -> int:
 
 def _journal_cmd(a: argparse.Namespace) -> int:
     from .profile import load_profile
-    from .replay import decision_replay, export_journal, policy_replay, state_replay
+    from .replay import export_journal, journal_profiles, policy_replay, state_replay, verify_decisions
     from .journal import verify_chain
     from .store import Store
 
@@ -73,11 +73,15 @@ def _journal_cmd(a: argparse.Namespace) -> int:
             print(f"  round {r['round']}: recorded {r['recorded']:<16} replayed {r['replayed']:<16}{' ← changes' if r['changed'] else ''}")
         return 0
     chain = verify_chain(events)
-    sr = state_replay(store, a.mission, profile)
-    dr = decision_replay(events, journal_profiles(store, events))
+    sr = state_replay(store, a.mission, journal_profiles(store, events))
+    vd = verify_decisions(events, journal_profiles(store, events))
+    ok = lambda r: "all recomputed identical" if r["matches"] else f"{len(r['mismatches'])} mismatch(es)"  # noqa: E731
     print(f"Chain: {'valid' if chain.valid else 'INVALID at ' + str(chain.broken_at) + ' (' + str(chain.reason) + ')'} · {chain.count} events")
-    print(f"State replay: {'identical' if sr['matches'] else 'DIFFERENT ' + ', '.join(sr['differences'])}")
-    print(f"Decision replay: {dr['checked']} verdict(s), {'all reproduced' if dr['matches'] else str(len(dr['mismatches'])) + ' mismatch(es)'}")
+    print(f"Positions recomputed from the history: {vd['positions']['checked']}, {ok(vd['positions'])}")
+    print(f"Verdicts recomputed from those positions: {vd['decisions']['checked']}, {ok(vd['decisions'])}")
+    print(f"Mission status recomputed event by event: {ok(vd['status'])}")
+    print(f"Final state vs store: {'identical' if sr['matches'] else 'DIFFERENT ' + ', '.join(sr['differences'])}")
+    print("Not verifiable from the journal alone: the provider's register, the authority's identity (checked at runtime), model outputs (re-run the recorded model), completeness, clock.")
     return 0 if chain.valid and sr["matches"] and dr["matches"] else 1
 
 

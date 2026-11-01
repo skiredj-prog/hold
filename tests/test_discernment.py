@@ -184,3 +184,19 @@ def test_phases_record_only_the_agents_observable_acts(booking):
     assert by_type["EFFECT_OUTCOME"] == {"RESSENTIR"} and by_type["ACTION_ADMITTED"] >= {"CAPTER", "ENGAGER"}
     observed = {e.phase for e in m.events()} - {None}
     assert "REEVALUER" not in observed  # nothing was reassessed: the authority revoked; the journal does not pretend otherwise
+
+
+def test_an_undetermined_reading_is_enough_only_for_bounded_moves(booking):
+    class QuotesThenAsks(Reader):
+        def propose(self, position, context):
+            p = super().propose(position, context)
+            if p.move == "WAIT":
+                p.move = "CONTACT_SUPPORT"  # same undetermined reading, used to contact a third party
+            return p
+
+    hab, hotel, clock = setup(QuotesThenAsks(), visible_after_s=600, status_note=LAG_NOTE)
+    m = hab.open_mission("Lyon")
+    m.call("create_booking", **booking)
+    scoped = [d for d in decisions(m) if d["verdict"]["rule"] == "D1/SCOPE"]
+    assert scoped and scoped[0]["verdict"]["reading"] == "UNDETERMINED" and scoped[0]["outcome"] == "MAP_REFUSED"
+    sound(hab, m)

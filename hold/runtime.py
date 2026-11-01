@@ -109,6 +109,8 @@ class Habilitation:
         self.relay = relay
         self.background = background
         self.clock: Callable[[], datetime] = clock or (lambda: datetime.now(timezone.utc))
+        if clock is not None:
+            self.store.clock = clock
         self.tools: dict[str, _Tool] = {}
         self._loops: dict[str, threading.Lock] = {}
         self._threads: list[threading.Thread] = []
@@ -512,8 +514,11 @@ class Mission:
         path = verdict.applied
         if path == "VERIFY":
             self.store.bump(c, self.id, f"checks:{key}")
-            if self.store.usage(self.id).get(f"directed_checks:{key}", 0) > 0:
+            usage = self.store.usage(self.id)
+            if usage.get(f"directed_checks:{key}", 0) > 0:
                 self.store.bump(c, self.id, f"directed_checks:{key}", -1)
+            elif usage.get(f"scheduled_checks:{key}", 0) > 0:
+                self.store.bump(c, self.id, f"scheduled_checks:{key}", -1)
         elif path == "CONTACT_SUPPORT":
             sup = self.profile.support
             if sup and sup.budget is not None:
@@ -526,6 +531,9 @@ class Mission:
             pending = (decided.get("map") or {}).get("pending") or {}
             self.store.bump(c, self.id, f"waits:{key}")
             self.store.bump(c, self.id, f"waited_s:{key}", seconds)
+            verify = next((x for x in pos["paths"] if x["name"] == "VERIFY"), None)
+            if verify and verify["open"] and not self.store.usage(self.id).get(f"scheduled_checks:{key}", 0):
+                self.store.bump(c, self.id, f"scheduled_checks:{key}")  # waiting is for looking afterwards: one check, from the existing budget
             c.execute("INSERT OR REPLACE INTO waits(effect_key, mission, until, created_at) VALUES(?,?,?,?)", (key, self.id, until, now_iso()))
             self.store.append(c, self.id, "WAIT_STARTED", "CORE", {"effect_key": key, "seconds": seconds, "until": until, "condition": pending.get("condition"), "evidence": pending.get("evidence")}, cause=cause, status="HELD")
         elif path == "PRESERVE":
