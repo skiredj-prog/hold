@@ -67,8 +67,7 @@ No change to A3 or A4: their commits, frozen protocols and evidence are untouche
 | I6 accepted a record returned by another read (`venue_info`) | I6 is now **sourced**: `provenance_source` names the tools whose results may justify the attributes (`create_booking` ← `search_hotels`; `send_itinerary` ← `create_booking`, `check_booking`). Records carry the tool they came from. Without declared sources, the profile only claims coherence between attributes, and says so. | `test_i6_accepts_only_records_from_the_authorized_source` |
 
 ## Known limits (stated, not solved)
-- I6 binds attributes to a record by field name (or an explicit `attr=field` mapping), from a declared source tool; it trusts that tool to speak for the provider.
-- I6 binds attributes to a record by field name (or an explicit `attr=field` mapping); a provider whose records name fields differently needs that mapping in the profile.
+- I6 binds attributes to a record by field name (or an explicit `attr=field` mapping), from a declared source tool; it trusts that tool to speak for the provider, and a provider whose records name fields differently needs the mapping in the profile.
 - I6 proves a value set was returned together; it does not prove the offer is still valid at the provider (an expired quote would pass).
 - The Studio does not yet recompute I6 itself; the bench's scorer does (`executed_provenance`).
 - Recording read results in the journal is right for the bench; a real deployment may need a profile option to record digests only.
