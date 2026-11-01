@@ -13,7 +13,7 @@ from hold.runtime import Habilitation
 from hold.server import create_app
 from hold.testing import SyntheticHotel, wire
 
-from conftest import PROFILE
+from conftest import PROFILE, opened
 
 SECRET = "app-secret"
 AUTH = "212600000000"
@@ -32,7 +32,7 @@ def world(booking):
     wire(hab, hotel)
     app = create_app(hab.store, [hab], whatsapp=cfg, studio_token="")
     client = TestClient(app)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     return hab, hotel, relay, client, m
 

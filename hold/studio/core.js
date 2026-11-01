@@ -258,6 +258,7 @@
       const budget = (action) => { const p = (profile.powers || []).find((x) => x.action === action); return !!(p && p.budget != null); };
       const obs = (key) => (this.observations[key] = this.observations[key] || []);
       if (t === "RUNTIME_BOUND") this.authorityReachable = !!d.authority_reachable;
+      else if (t === "ACTION_REFUSED") { if (d.correctable) this.bump(`corrections:${d.action}`); }
       else if (t === "ACTION_ADMITTED") { if (d.kind !== "effect" && budget(d.action)) this.bump(`power:${d.action}`); if (d.grant) this.grantsConsumed.add(d.grant); }
       else if (t === "EFFECT_RESERVED") {
         const prev = this.effects[d.effect_key];

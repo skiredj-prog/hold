@@ -11,6 +11,7 @@ class PriceStringHoldAgent:
         self.value = value
 
     def run(self, mission, booking):
+        mission.call("search_hotels", city="Lyon")  # A5: the booking's values must have been observed (I6)
         mission.call("create_booking", **(booking | {"price": self.value}))
 
     def resume(self, mission, booking):
@@ -62,10 +63,12 @@ def test_real_c_llama_runner_writes_results_for_string_price(monkeypatch, tmp_pa
     from hold.testing import BOOKING
 
     class FakeLlama:
-        def __init__(self, model, max_steps):
+        def __init__(self, model, max_steps, seed=42):
             self.messages = []
+            self.errors = []
 
         def _loop(self, mission, log):
+            mission.call("search_hotels", city="Lyon")
             mission.call("create_booking", **(BOOKING | {"price": "238"}))
             return "attempted"
 

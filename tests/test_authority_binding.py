@@ -10,9 +10,9 @@ from hold.profile import revise
 from hold.relay.base import SimulatedRelay
 from hold.replay import decision_replay, journal_profiles, state_replay, verify_decisions
 from hold.runtime import Habilitation, ProfileMismatch
-from hold.testing import SyntheticHotel, wire
+from hold.testing import BOOKING, SyntheticHotel, wire
 
-from conftest import PROFILE
+from conftest import PROFILE, PRICEY, opened
 
 
 class Clock:
@@ -53,7 +53,7 @@ def types(m):
 
 def test_unanswered_question_expires_and_the_hesitation_continues(booking):
     hab, hotel, clock = world(visible_after=None)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     first = m.open_request()
     assert first["expires_at"] == "2026-11-17T10:00:00.000Z" and first["profile"] == hab.profile.fingerprint
@@ -75,7 +75,7 @@ def test_unanswered_question_expires_and_the_hesitation_continues(booking):
 def test_one_time_approval_expires_unused(booking):
     agent, hotel, clock = world(create_mode="respond")
     server = Habilitation(PROFILE, store=agent.store, relay=agent.relay, background=False, clock=clock)  # no tools: records only
-    m = agent.open_mission("Lyon")
+    m = opened(agent, offers=[PRICEY])
     assert m.call("create_booking", **booking | {"price": 340}).status == "HELD"
     q = m.open_request()["question_id"]
     assert server.answer(m.id, q, "APPROVE_ONCE", channel="whatsapp")["accepted"]
@@ -92,7 +92,7 @@ def test_one_time_approval_expires_unused(booking):
 def test_approval_is_used_once_and_never_creates_a_duplicate(booking):
     agent, hotel, clock = world(create_mode="respond")
     server = Habilitation(PROFILE, store=agent.store, relay=agent.relay, background=False, clock=clock)
-    m = agent.open_mission("Lyon")
+    m = opened(agent, offers=[PRICEY])
     m.call("create_booking", **booking | {"price": 340})
     server.answer(m.id, m.open_request()["question_id"], "APPROVE_ONCE", channel="whatsapp")
     assert m.resume_pending().status == "OK" and hotel.created == 1
@@ -106,7 +106,7 @@ def test_approval_is_used_once_and_never_creates_a_duplicate(booking):
 def test_approval_cannot_outlive_a_revocation(booking):
     agent, hotel, clock = world(create_mode="respond")
     server = Habilitation(PROFILE, store=agent.store, relay=agent.relay, background=False, clock=clock)
-    m = agent.open_mission("Lyon")
+    m = opened(agent, offers=[PRICEY])
     m.call("create_booking", **booking | {"price": 340})
     server.answer(m.id, m.open_request()["question_id"], "APPROVE_ONCE", channel="whatsapp")
     m.revoke(by="Authority")
@@ -118,7 +118,7 @@ def test_approval_cannot_outlive_a_revocation(booking):
 
 def test_changed_conditions_void_the_question(booking):
     hab, hotel, clock = world(create_mode="respond")
-    m = hab.open_mission("Lyon")
+    m = opened(hab, offers=[PRICEY, BOOKING])
     assert m.call("create_booking", **booking | {"price": 340}).status == "HELD"
     q = m.open_request()["question_id"]
     # meanwhile the agent books the same room at a price inside the envelope
@@ -131,7 +131,7 @@ def test_changed_conditions_void_the_question(booking):
 
 def test_a_new_profile_revision_voids_questions_and_must_be_adopted_explicitly(booking):
     hab, hotel, clock = world(visible_after=None)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     q = m.open_request()["question_id"]
     rev2 = revise(hab.profile, title=hab.profile.title + " (rev. 2)")

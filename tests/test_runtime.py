@@ -1,4 +1,5 @@
 import json
+from conftest import opened
 import threading
 
 from hold.discern import Proposal
@@ -26,7 +27,7 @@ def types(m):
 
 def test_lost_response_is_reconciled_without_repeating(make, booking):
     hab, hotel, relay = make(visible_after=2)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     assert m.call("venue_info").status == "OK"
     r = m.call("create_booking", **booking)
     assert r.status == "OK" and r.data["reconciled"]
@@ -43,7 +44,7 @@ def test_lost_response_is_reconciled_without_repeating(make, booking):
 
 def test_dependent_actions_wait_and_independent_work_continues(make, booking):
     hab, hotel, _ = make(visible_after=None, relay=False)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     r = m.call("create_booking", **booking)
     assert r.status == "HELD" and m.status == "HELD"
     assert m.call("send_itinerary", traveler="A", booking_reference="X").rule == "I3"
@@ -58,7 +59,7 @@ def test_dependent_actions_wait_and_independent_work_continues(make, booking):
 
 def test_authority_is_asked_only_when_habilitation_cannot_restore(make, booking):
     hab, hotel, relay = make(visible_after=3)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     r = m.call("create_booking", **booking)
     assert r.status == "HELD" and m.status == "AWAITING_AUTHORITY"
     applied = [e.data["verdict"]["applied"] for e in m.events() if e.type == "DECISION"]
@@ -82,7 +83,7 @@ def test_authority_is_asked_only_when_habilitation_cannot_restore(make, booking)
 
 def test_close_unconfirmed_and_revocation(make, booking):
     hab, hotel, _ = make(visible_after=None)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     q = m.open_request()["question_id"]
     hab.answer(m.id, q, "CLOSE_UNCONFIRMED", channel="whatsapp")
@@ -93,7 +94,7 @@ def test_close_unconfirmed_and_revocation(make, booking):
     assert_sound(hab, m)
 
     hab2, _, _ = make(visible_after=None)
-    m2 = hab2.open_mission("Lyon")
+    m2 = opened(hab2)
     m2.call("create_booking", **booking)
     hab2.answer(m2.id, m2.open_request()["question_id"], "REVOKE", channel="whatsapp")
     assert m2.status == "REVOKED"
@@ -103,7 +104,7 @@ def test_close_unconfirmed_and_revocation(make, booking):
 
 def test_proven_refusal_allows_one_new_attempt(make, booking):
     hab, hotel, _ = make(create_mode="reject")
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     assert m.call("create_booking", **booking).status == "FAILED"
     hotel.create_mode = "respond"
     r = m.call("create_booking", **booking)
@@ -115,7 +116,7 @@ def test_proven_refusal_allows_one_new_attempt(make, booking):
 
 def test_concurrent_calls_create_one_effect(make, booking):
     hab, hotel, _ = make(create_mode="respond")
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     results = []
     threads = [threading.Thread(target=lambda: results.append(m.call("create_booking", **booking).status)) for _ in range(8)]
     for t in threads:
@@ -129,7 +130,7 @@ def test_concurrent_calls_create_one_effect(make, booking):
 
 def test_envelope_breach_goes_to_authority_and_approval_is_exact(make, booking):
     hab, hotel, relay = make(create_mode="respond")
-    m = hab.open_mission("Lyon")
+    m = opened(hab, offers=[booking | {"price": 340}])
     pricey = booking | {"price": 340}
     r = m.call("create_booking", **pricey)
     assert r.status == "HELD" and r.rule == "I4/ENVELOPE" and hotel.created == 0
@@ -153,7 +154,7 @@ def test_refused_proposals_never_deadlock_the_mission(make, booking):
 
     stubborn = Stubborn()
     hab, hotel, relay = make(visible_after=2, relay=False, discerner=stubborn)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     r = m.call("create_booking", **booking)
     assert r.status == "OK" and hotel.created == 1
     decisions = [e.data for e in m.events() if e.type == "DECISION"]
@@ -169,7 +170,7 @@ def test_refused_proposals_never_deadlock_the_mission(make, booking):
 
 def test_stale_position_is_refused_and_reread(make, booking):
     hab, hotel, _ = make(visible_after=2)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     calls = {"n": 0}
 
     class Racy:
@@ -195,7 +196,7 @@ def test_stale_position_is_refused_and_reread(make, booking):
 
 def test_tampering_is_detected_and_policy_replay_is_counterfactual(make, booking):
     hab, hotel, _ = make(visible_after=3)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     alt = policy_replay(m.events(), tau_star=0.3, profile=hab.profile)
     assert [x["recorded"] for x in alt][:3] == ["VERIFY", "VERIFY", "CONTACT_SUPPORT"]

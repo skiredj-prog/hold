@@ -77,6 +77,8 @@ class Power(_Model):
     depends_on: list[str] = Field(default_factory=list, description="Effets qui doivent être confirmés avant cette action")
     role: Literal["support"] | None = None
     sigma: float | None = Field(default=None, ge=0, le=1)
+    provenance: list[str] = Field(default_factory=list, description="Attributes whose values must have been returned by an earlier tool result of the mission (I6)")
+    max_corrections: int = Field(default=2, ge=0, le=10, description="Corrected requests allowed after refusals that produced no effect")
 
     @model_validator(mode="after")
     def _coherent(self) -> "Power":

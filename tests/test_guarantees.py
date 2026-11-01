@@ -14,7 +14,7 @@ import time
 from hold.runtime import GUARANTEES, Habilitation
 from hold.testing import BOOKING, LedgerHotel, SyntheticHotel, wire
 
-from conftest import PROFILE, ROOT
+from conftest import PROFILE, ROOT, opened
 
 CHILD = textwrap.dedent("""
     import json, sys, time
@@ -24,6 +24,7 @@ CHILD = textwrap.dedent("""
     hab = Habilitation({profile!r}, store={db!r}, background=False)
     wire(hab, LedgerHotel({ledger!r}))
     m = hab.mission({mission!r})
+    m.call("search_hotels", city="Lyon")  # each process observes the offer before booking (I6)
     while time.time() < {start}:
         time.sleep(0.001)
     print(json.dumps(m.call("create_booking", **BOOKING).status))
@@ -57,8 +58,8 @@ def test_separate_stores_are_outside_the_boundary(tmp_path):
     b = Habilitation(PROFILE, store=str(tmp_path / "b.db"), background=False)
     wire(a, hotel)
     wire(b, hotel)
-    a.open_mission("Lyon").call("create_booking", **BOOKING)
-    b.open_mission("Lyon").call("create_booking", **BOOKING)
+    opened(a).call("create_booking", **BOOKING)
+    opened(b).call("create_booking", **BOOKING)
     assert hotel.created == 2
     assert "Not across separate stores" in GUARANTEES["dispatch"]
 
@@ -66,7 +67,7 @@ def test_separate_stores_are_outside_the_boundary(tmp_path):
 def test_provider_side_deduplication_is_labelled_by_what_was_verified(booking):
     plain = Habilitation(PROFILE, store=":memory:", background=False)
     wire(plain, SyntheticHotel(create_mode="respond"))
-    m = plain.open_mission("Lyon")
+    m = opened(plain)
     m.call("create_booking", **booking)
     g = m.effects()[0]["guarantees"]
     assert g == {"dispatch": "AT_MOST_ONCE_IN_BOUNDARY", "dispatches": 1, "provider": "NOT_DECLARED", "outcome": "CONFIRMED_CORRELATED"}
@@ -77,7 +78,7 @@ def test_provider_side_deduplication_is_labelled_by_what_was_verified(booking):
     assert hotel.created == 1 and first.receipt == again.receipt
     idem = Habilitation(PROFILE, store=":memory:", background=False)
     wire(idem, hotel)
-    m2 = idem.open_mission("Lyon")
+    m2 = opened(idem)
     m2.call("create_booking", **booking)
     assert m2.effects()[0]["guarantees"]["provider"] == "VERIFIED"
     bound = [e.data for e in m2.events() if e.type == "RUNTIME_BOUND"][0]
@@ -87,7 +88,7 @@ def test_provider_side_deduplication_is_labelled_by_what_was_verified(booking):
 
 def test_unknown_stays_unknown(make, booking):
     hab, hotel, _ = make(visible_after=None, relay=False)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     assert m.call("create_booking", **booking).status == "HELD"
     assert m.effects()[0]["guarantees"]["outcome"] == "UNKNOWN"
     assert m.close()["status"] == "CLOSED_UNCONFIRMED"
@@ -95,7 +96,7 @@ def test_unknown_stays_unknown(make, booking):
 
 def test_runtime_binding_is_journaled_not_in_the_profile(make):
     hab, _, _ = make()
-    m = hab.open_mission("Lyon", agent={"name": "scripted", "model": None})
+    m = opened(hab, agent={"name": "scripted", "model": None})
     bound = [e.data for e in m.events() if e.type == "RUNTIME_BOUND"][0]
     assert bound["discerner"]["name"] == "reference" and bound["agent"]["name"] == "scripted"
     assert {t["action"] for t in bound["tools"]} >= {"create_booking", "check_booking"}

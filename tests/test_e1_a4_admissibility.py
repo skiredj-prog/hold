@@ -13,6 +13,7 @@ class OneAttemptAgent:
         self.price = price
 
     def run(self, mission, booking):
+        mission.call("search_hotels", city="Lyon")  # A5: values must have been observed (I6)
         mission.call("create_booking", **(booking | {"price": self.price}))
 
     def resume(self, mission, booking):

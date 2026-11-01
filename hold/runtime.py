@@ -28,7 +28,7 @@ from typing import Any, Callable, get_type_hints
 
 from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
-from .floor import ActionContext, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, parse_time
+from .floor import CORRECTABLE, ActionContext, Verdict, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, observed_digests, parse_time, value_digest
 from .hesitation import boundary_position
 from .i18n import t
 from .journal import verify_chain
@@ -38,7 +38,8 @@ from .relay.base import TITLES, Relay, new_question_id
 from .store import Store, now_iso
 
 UNKNOWN_EXCEPTIONS = (TimeoutError, ConnectionError, OSError)
-CLOSED = {"CLOSED_COMPLETED", "CLOSED_UNCONFIRMED", "CLOSED_FAILED", "REVOKED"}
+CLOSED = {"CLOSED_COMPLETED", "CLOSED_UNCONFIRMED", "CLOSED_NO_EFFECT", "CLOSED_FAILED", "REVOKED"}
+RECORD_LIMIT = 16384  # read results up to this size are kept in the journal: provenance (I6) can then be recomputed from it
 REQUEST_END = {"QUESTION_EXPIRED": "EXPIRED", "PROFILE_CHANGED": "SUPERSEDED", "CONDITIONS_CHANGED": "MOOT"}
 
 
@@ -275,7 +276,28 @@ class Mission:
             confirmed_actions={e["action"] for e in effs if e["status"] == "CONFIRMED"},
             uncertain_actions={e["action"] for e in effs if e["status"] in ("UNKNOWN", "DISPATCHING")},
             now=self.hab.clock(),
+            observed=self._observed(),
         )
+
+    def _observed(self) -> set[str]:
+        """What tool results have returned in this mission: read results, and receipts of confirmed effects."""
+        out: set[str] = set()
+        for e in self.events():
+            if e.type == "ACTION_RESULT":
+                out.update(e.data.get("observed") or [])
+            elif e.type in ("EFFECT_OUTCOME", "RECONCILED", "EVIDENCE") and e.data.get("receipt") and (e.type != "EVIDENCE" or e.data.get("correlated")):
+                d = value_digest(e.data["receipt"])
+                if d:
+                    out.add(d)
+        return out
+
+    def _arguments_problem(self, tool: _Tool, attrs: dict[str, Any]) -> str | None:
+        """The call must match the tool it names: no unknown argument, no missing required one."""
+        props = set((tool.parameters or {}).get("properties", {}))
+        unexpected = sorted(k for k in attrs if k not in props)
+        missing = sorted(k for k in (tool.parameters or {}).get("required", []) if k not in attrs)
+        parts = ([f"unexpected argument(s): {', '.join(unexpected)}"] if unexpected else []) + ([f"missing argument(s): {', '.join(missing)}"] if missing else [])
+        return "; ".join(parts) or None
 
     def _authority_available(self) -> bool:
         return bool(self.hab.relay and self.hab.relay.available(self.profile.authority))
@@ -308,14 +330,23 @@ class Mission:
             if existing and existing["status"] in ("CONFIRMED", "UNKNOWN", "DISPATCHING"):
                 return self._equivalent(power, existing)
         with self.store.tx() as c:
-            v = admit_action(self.profile, action, attrs, ctx, grant=grant)
+            problem = self._arguments_problem(tool, attrs) if tool else None
+            if problem and power:
+                v = Verdict(False, "I4/INVALID_ARGUMENTS", f"Arguments do not match the tool: {problem}.", [problem])
+                if ctx.usage.get(f"corrections:{action}", 0) >= power.max_corrections + 1:
+                    v = Verdict(False, "I4/CORRECTIONS", f"Corrected requests exhausted for \"{action}\": stop and report.")
+            else:
+                v = admit_action(self.profile, action, attrs, ctx, grant=grant)
             if v.admitted and tool is None:
                 v = type(v)(False, "NO_IMPLEMENTATION", f"No implementation registered for \"{action}\".")
             if not v.admitted:
                 breach = v.rule == "I4/ENVELOPE" and self.profile.hesitation.envelope_breach == "ask_authority" and self._authority_available() and not self.open_request()
-                self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": action, "rule": v.rule, "reason": v.reason, "violations": v.violations})
+                correctable = v.rule in CORRECTABLE and not breach
+                self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": action, "rule": v.rule, "reason": v.reason, "violations": v.violations, "correctable": correctable})
+                if correctable:
+                    self.store.bump(c, self.id, f"corrections:{action}")
                 if not breach:
-                    return ToolResult("REFUSED", v.reason, rule=v.rule)
+                    return ToolResult("REFUSED", v.reason, rule=v.rule, correctable=correctable)
                 request = self._open_request(c, "ENVELOPE_BREACH", action=action, attrs=attrs, violations=v.violations)
             else:
                 request = None
@@ -339,7 +370,10 @@ class Mission:
             return ToolResult("FAILED", t("failed", action=power.action, error=e))
         data = out.data if isinstance(out, Outcome) else out
         with self.store.tx() as c:
-            self.store.append(c, self.id, "ACTION_RESULT", "PROVIDER", {"action": power.action, "status": "OK", "data_sha": digest(data) if data is not None else None}, cause=admitted.seq)
+            recorded = data if data is not None and len(canonical_json(data)) <= RECORD_LIMIT else None
+            self.store.append(c, self.id, "ACTION_RESULT", "PROVIDER", {"action": power.action, "status": "OK", "data_sha": digest(data) if data is not None else None,
+                                                                        "observed": sorted(observed_digests(data)) if data is not None else [],
+                                                                        "data": recorded, "data_recorded": recorded is not None or data is None}, cause=admitted.seq)
         return ToolResult("OK", t("done", action=power.action), data=data)
 
     def _grant(self, grant_id: str) -> dict[str, Any] | None:
@@ -365,7 +399,8 @@ class Mission:
                 )
             if power.budget is not None:
                 self.store.bump(c, self.id, f"power:{power.action}")
-            adm = self.store.append(c, self.id, "ACTION_ADMITTED", "CORE", {"action": power.action, "kind": "effect", "grant": grant["id"] if grant else None})
+            adm = self.store.append(c, self.id, "ACTION_ADMITTED", "CORE", {"action": power.action, "kind": "effect", "grant": grant["id"] if grant else None,
+                                                                         "provenance_checked": [a for a in power.provenance if a in attrs]})
             res = self.store.append(c, self.id, "EFFECT_RESERVED", "CORE", {"action": power.action, "effect_key": key, "operation_id": op, "attributes": attrs}, cause=adm.seq)
         try:
             out = tool.fn(**attrs, operation_id=op)

@@ -56,6 +56,54 @@ class ActionContext:
     confirmed_actions: set[str]  # actions dont au moins un effet est confirmé
     uncertain_actions: set[str]  # actions dont un effet est UNKNOWN ou DISPATCHING
     now: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    observed: set[str] = field(default_factory=set)  # digests of the values tool results returned so far in the mission (I6)
+
+
+# Refusals that produced no effect and can be corrected by the agent with values it has observed.
+CORRECTABLE = {"I4/INVALID_ARGUMENTS", "I6/PROVENANCE", "I4/ENVELOPE"}
+
+
+def value_digest(value: Any) -> str | None:
+    """A comparable digest of a scalar value: numbers and numeric strings by decimal value, other
+    strings case- and space-insensitively. Booleans and empty values are not observations."""
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float, Decimal)) or (isinstance(value, str) and value.strip()):
+        try:
+            n = Decimal(str(value).strip())
+            if n.is_finite():
+                return digest({"n": format(n.normalize(), "f")})
+        except InvalidOperation:
+            pass
+    if isinstance(value, str) and value.strip():
+        return digest({"s": " ".join(unicodedata.normalize("NFKC", value).casefold().split())})
+    return None
+
+
+def observed_digests(data: Any, limit: int = 2000) -> set[str]:
+    """Digests of every scalar leaf of a tool result."""
+    out: set[str] = set()
+    stack = [data]
+    while stack and len(out) < limit:
+        x = stack.pop()
+        if isinstance(x, dict):
+            stack.extend(x.values())
+        elif isinstance(x, (list, tuple)):
+            stack.extend(x)
+        else:
+            d = value_digest(x)
+            if d:
+                out.add(d)
+    return out
+
+
+def provenance_violations(power: Power, attrs: dict[str, Any], observed: set[str]) -> list[str]:
+    """I6: an effect may use, for these attributes, only values a tool result returned earlier."""
+    out = []
+    for name in power.provenance:
+        if name in attrs and value_digest(attrs[name]) not in observed:
+            out.append(f"{name}={attrs[name]!r} was never returned by an earlier tool result of this mission")
+    return out
 
 
 _V = {
@@ -186,10 +234,15 @@ def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: Acti
             return Verdict(False, "I2", f"Depends on \"{dep}\", which is not confirmed by evidence.")
     if power.budget is not None and ctx.usage.get(f"power:{action}", 0) >= power.budget:
         return Verdict(False, "I4/BUDGET", f"Budget exhausted for \"{action}\" ({power.budget}).")
+    if ctx.usage.get(f"corrections:{action}", 0) >= power.max_corrections + 1:
+        return Verdict(False, "I4/CORRECTIONS", f"Corrected requests exhausted for \"{action}\": stop and report.")
     if power.kind == "effect":
         invalid = structural_effect_violations(power, attrs)
         if invalid:
             return Verdict(False, "I4/INVALID_ARGUMENTS", "Invalid effect attributes (not approvable): " + "; ".join(invalid), invalid)
+        unobserved = provenance_violations(power, attrs, ctx.observed)
+        if unobserved:
+            return Verdict(False, "I6/PROVENANCE", "Effect on values never observed (not approvable): " + "; ".join(unobserved), unobserved)
         v = envelope_violations(power, attrs)
         if v:
             problem = grant_problem(grant, action=action, attrs=attrs, profile=profile, now=ctx.now) if grant else "no approval"

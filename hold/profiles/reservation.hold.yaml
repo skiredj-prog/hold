@@ -27,6 +27,7 @@ powers:
     description: Réserver une chambre (effet externe, non idempotent chez le fournisseur).
     budget: 1
     identity: [provider, hotel_id, traveler, check_in, check_out]
+    provenance: [provider, hotel_id, price, currency]
     envelope:
       max_amount: { amount: 300, currency: EUR }
       amount_field: price
@@ -57,6 +58,7 @@ powers:
     description: Envoyer l'itinéraire final au voyageur (suppose l'hôtel confirmé).
     budget: 1
     identity: [traveler, booking_reference]
+    provenance: [booking_reference]
     depends_on: [create_booking]
 hesitation:
   tau_star: 0.5

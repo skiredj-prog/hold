@@ -11,7 +11,7 @@ from hold.replay import decision_replay, state_replay, journal_profiles, verify_
 from hold.runtime import Habilitation
 from hold.testing import SyntheticHotel, wire
 
-from conftest import PROFILE
+from conftest import PROFILE, opened
 
 LAG_NOTE = "No booking found for this operation. New bookings can take up to 10 minutes to appear in status."
 
@@ -82,7 +82,7 @@ class Reader:
 
 def test_a_justified_move_other_than_the_reference_is_the_discerners_and_credited_to_it(booking):
     hab, hotel, _ = setup(Fixed("CONTACT_SUPPORT"), visible_after=None, support_mode="finds")
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     assert m.call("create_booking", **booking).status == "OK"
     d = decisions(m)[0]
     assert d["outcome"] == "ADMITTED" and d["verdict"]["credit"] == "discerner"
@@ -95,7 +95,7 @@ def test_a_justified_move_other_than_the_reference_is_the_discerners_and_credite
 
 def test_a_true_reading_with_a_move_it_does_not_justify_is_incoherent(booking):
     hab, hotel, _ = setup(Fixed("ASK_AUTHORITY"), visible_after=2)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     first = decisions(m)[0]
     assert first["outcome"] == "INCOHERENT" and first["verdict"]["reading"] == "SUPPORTED" and first["verdict"]["coherent"] is False
@@ -106,7 +106,7 @@ def test_a_true_reading_with_a_move_it_does_not_justify_is_incoherent(booking):
 
 def test_a_true_reading_with_a_closed_move_is_refused(booking):
     hab, hotel, _ = setup(Fixed("ASK_AUTHORITY"), relay=False, visible_after=2)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     assert decisions(m)[0]["outcome"] == "MOVE_REFUSED" and decisions(m)[0]["verdict"]["rule"] == "I4/PATH"
     sound(hab, m)
@@ -117,14 +117,14 @@ def test_reading_the_evidence_spares_the_authority_where_the_cascade_cannot(book
     then disturbs the authority. A discerner that reads the note waits, and the booking appears."""
     # the cascade
     hab, hotel, clock = setup(ReferenceDiscerner(), visible_after_s=600, status_note=LAG_NOTE)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     assert [d["verdict"]["applied"] for d in decisions(m)] == ["VERIFY", "VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY"]
     assert m.status == "AWAITING_AUTHORITY" and len(hab.relay.outbox) == 1
 
     # the reader
     hab, hotel, clock = setup(Reader(), visible_after_s=600, status_note=LAG_NOTE)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     assert m.call("create_booking", **booking).status == "HELD"
     applied = [d["verdict"]["applied"] for d in decisions(m)]
     assert applied == ["VERIFY", "WAIT"] and m.status == "HELD"
@@ -146,7 +146,7 @@ def test_reading_the_evidence_spares_the_authority_where_the_cascade_cannot(book
 
 def test_a_wait_must_quote_the_evidence(booking):
     hab, hotel, clock = setup(Reader(quote="the hotel promised to call back tomorrow"), visible_after_s=600, status_note=LAG_NOTE)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     refused = [d for d in decisions(m) if d["outcome"] == "MAP_REFUSED"]
     assert refused and "does not contain the quoted passage" in refused[0]["verdict"]["reason"]
@@ -157,7 +157,7 @@ def test_a_wait_must_quote_the_evidence(booking):
 
 def test_patience_is_bounded(booking):
     hab, hotel, clock = setup(Reader(), visible_after_s=None, visible_after=None, status_note=LAG_NOTE)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     for _ in range(4):
         clock.advance(900)
@@ -171,7 +171,7 @@ def test_patience_is_bounded(booking):
 
 def test_phases_record_only_the_agents_observable_acts(booking):
     hab, hotel, clock = setup(ReferenceDiscerner(), visible_after=None)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("venue_info")
     m.call("create_booking", **booking)
     hab.answer(m.id, m.open_request()["question_id"], "REVOKE", channel="whatsapp")
@@ -195,7 +195,7 @@ def test_an_undetermined_reading_is_enough_only_for_bounded_moves(booking):
             return p
 
     hab, hotel, clock = setup(QuotesThenAsks(), visible_after_s=600, status_note=LAG_NOTE)
-    m = hab.open_mission("Lyon")
+    m = opened(hab)
     m.call("create_booking", **booking)
     scoped = [d for d in decisions(m) if d["verdict"]["rule"] == "D1/SCOPE"]
     assert scoped and scoped[0]["verdict"]["reading"] == "UNDETERMINED" and scoped[0]["outcome"] == "MAP_REFUSED"

@@ -60,6 +60,7 @@ class ToolResult:
     data: Any = None
     rule: str | None = None
     details: dict[str, Any] = field(default_factory=dict)
+    correctable: bool | None = None  # REFUSED with no effect, and a corrected request is admissible
 
     def for_model(self) -> dict[str, Any]:
         out: dict[str, Any] = {"status": self.status, "message": self.message}
@@ -67,4 +68,11 @@ class ToolResult:
             out["data"] = self.data
         if self.rule:
             out["rule"] = self.rule
+        if self.status == "REFUSED":
+            out["next"] = (
+                "Nothing was executed. A corrected request is admissible if it uses only values returned by earlier tool results and respects the reason above."
+                if self.correctable else "Nothing was executed. Do not retry this action."
+            )
+        elif self.status == "HELD":
+            out["next"] = "An effect may already exist. Never repeat it; continue only independent work, or stop and report."
         return out

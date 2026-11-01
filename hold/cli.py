@@ -126,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     pb.add_argument("--results", nargs="*", help="results.json files to evaluate together")
 
     pd = sub.add_parser("demo", help="le piège de la double réservation")
-    pd.add_argument("--scenario", default="authority", choices=["lost-response", "support", "authority", "never", "envelope"])
+    pd.add_argument("--scenario", default="authority", choices=["lost-response", "support", "authority", "never", "envelope", "a5-recovery"])
     pd.add_argument("--agent", default="scripted", choices=["scripted", "llama"])
     pd.add_argument("--discerner", default="reference", choices=["reference", "llama"])
     pd.add_argument("--relay", default="simulated", choices=["simulated", "whatsapp", "console"])
@@ -199,6 +199,11 @@ def main(argv: list[str] | None = None) -> int:
         from .demo import SCENARIOS, run, run_baseline
         from .testing import BOOKING, SyntheticHotel
 
+        if a.scenario == "a5-recovery":
+            from .demo import demonstrate_a5
+
+            r = demonstrate_a5(color=not a.no_color)
+            return 0 if r["score"]["completed"] and not r["score"]["violations"] else 1
         if a.baseline:
             conf = SCENARIOS[a.scenario]
             run_baseline(SyntheticHotel(timeout_s=0.5, **{k: v for k, v in conf["hotel"].items() if k == "visible_after"}), dict(BOOKING))

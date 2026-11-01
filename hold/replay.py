@@ -49,6 +49,9 @@ class Fold:
         usage, effects = self.usage, self.effects
         if t == "RUNTIME_BOUND":
             self.authority_reachable = bool(d.get("authority_reachable"))
+        elif t == "ACTION_REFUSED":
+            if d.get("correctable"):
+                usage[f"corrections:{d['action']}"] += 1
         elif t == "ACTION_ADMITTED":
             if d.get("kind") != "effect" and budget(d["action"]):
                 usage[f"power:{d['action']}"] += 1

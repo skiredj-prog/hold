@@ -14,7 +14,7 @@ from hold.replay import export_journal
 from hold.runtime import Habilitation
 from hold.testing import SyntheticHotel, wire
 
-from conftest import PROFILE, ROOT
+from conftest import PROFILE, ROOT, opened
 from test_discernment import LAG_NOTE, Clock, Fixed, Reader
 
 CORE = ROOT / "hold" / "studio" / "core.js"
@@ -56,7 +56,7 @@ def journals(booking):
         hotel = SyntheticHotel(clock=clock, **hotel_kw)
         hab = Habilitation(PROFILE, store=":memory:", relay=SimulatedRelay() if relay else None, discerner=discerner, background=False, clock=clock)
         wire(hab, hotel)
-        m = hab.open_mission("Lyon")
+        m = opened(hab)
         m.call("create_booking", **booking)
         if then:
             then(hab, m, clock)
@@ -89,6 +89,9 @@ def journals(booking):
         h2 = Habilitation(rev2, store=h.store, relay=h.relay, background=False, clock=c)
         h2.mission(m.id, adopt=True)
     run(None, visible_after=None, then=adopt)
+
+    from hold.demo import demonstrate_a5  # A5: correctable refusals, provenance, recorded read results
+    out.append(demonstrate_a5(out=lambda s: None)["run"]["journal"])
     return out
 
 
