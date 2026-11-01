@@ -192,12 +192,13 @@ def run(scenario: str = "authority", *, agent: str = "scripted", discerner: str 
         out(t("d_server", port=serve_port))
     m = hab.open_mission(t("d_title", label=label(scenario)))
     seen = {"seq": 0}
+    memory: dict = {}
 
     def tail() -> None:
         for e in m.events():
             if e.seq > seen["seq"]:
                 seen["seq"] = e.seq
-                s = line(e, color)
+                s = line(e, color, memory)
                 if s:
                     out(s)
 

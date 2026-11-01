@@ -2,6 +2,7 @@ import json
 import threading
 
 from hold.discern import Proposal
+from hold.hesitation import true_map
 from hold.replay import decision_replay, export_journal, policy_replay, state_replay
 from hold.testing import BOOKING
 
@@ -69,7 +70,8 @@ def test_authority_is_asked_only_when_habilitation_cannot_restore(make, booking)
     # la directive de l'autorité passe avant l'échelle : le contrôle accordé est fait, il trouve le reçu
     assert m.status == "OPEN"
     last = [e for e in m.events() if e.type == "DECISION"][-1]
-    assert last.data["verdict"]["applied"] == "VERIFY" and last.data["position"]["reference"] == "VERIFY"
+    pos = {e.seq: e.data["position"] for e in m.events() if e.type == "POSITION"}[last.data["position_seq"]]
+    assert last.data["verdict"]["applied"] == "VERIFY" and pos["reference"] == "VERIFY" and pos["paths"][0]["directed"]
     assert hotel.created == 1
     assert_sound(hab, m)
 
@@ -142,16 +144,21 @@ def test_refused_proposals_never_deadlock_the_mission(make, booking):
         name = "stubborn"
 
         def propose(self, position, context):
-            return Proposal("stubborn", "ASK_AUTHORITY", "NOT_SENT", [], "toujours demander")
+            self.feedback = context["feedback"]
+            return Proposal("stubborn", "ASK_AUTHORITY", {"effect_state": "NOT_SENT", "open_paths": [], "reaching_tau": []}, "always ask")
 
-    hab, hotel, relay = make(visible_after=2, relay=False, discerner=Stubborn())
+    stubborn = Stubborn()
+    hab, hotel, relay = make(visible_after=2, relay=False, discerner=stubborn)
     m = hab.open_mission("Lyon")
     r = m.call("create_booking", **booking)
     assert r.status == "OK" and hotel.created == 1
     decisions = [e.data for e in m.events() if e.type == "DECISION"]
-    assert all(d["verdict"]["overruled"] and d["verdict"]["applied"] == "VERIFY" for d in decisions)
-    proposals = [e.data["judgment"] for e in m.events() if e.type == "PROPOSAL"]
-    assert all(j["chose_closed_path"] and not j["perception"] for j in proposals)
+    first_tries = [d for d in decisions if d["attempt"] == 0]
+    finals = [d for d in decisions if d["final"]]
+    assert all(d["outcome"] == "MAP_REFUSED" and d["verdict"]["applied"] is None for d in first_tries)
+    assert all(d["outcome"] == "REFERENCE_APPLIED" and d["verdict"]["credit"] == "floor" and d["verdict"]["applied"] == "VERIFY" for d in finals)
+    assert "effect_state is UNKNOWN, not NOT_SENT" in stubborn.feedback[0]["reason"]  # its error was handed back
+    assert not any(d["verdict"]["credit"] == "discerner" for d in decisions)  # nothing is credited to it
     assert_sound(hab, m)
 
 
@@ -168,7 +175,7 @@ def test_stale_position_is_refused_and_reread(make, booking):
             if calls["n"] == 1:  # pendant la délibération, le monde change (contrôle externe)
                 with hab.store.tx() as c:
                     c.execute("UPDATE effects SET not_found=not_found+1 WHERE effect_key=?", (position["effect_key"],))
-            return Proposal("racy", position["reference"], position["effect_state"], [], "")
+            return Proposal("racy", position["reference"], true_map(position), "")
 
     hab.discerner = Racy()
     r = m.call("create_booking", **booking)

@@ -15,7 +15,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any, Iterator
 
-from .journal import GENESIS, Event, make_event
+from .journal import GENESIS, Event, default_phase, make_event
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS missions(
@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS usage(mission TEXT NOT NULL, counter TEXT NOT NULL, v
 CREATE TABLE IF NOT EXISTS requests(
   question_id TEXT PRIMARY KEY, mission TEXT NOT NULL, kind TEXT NOT NULL, status TEXT NOT NULL,
   payload TEXT NOT NULL, answer TEXT, created_at TEXT NOT NULL, answered_at TEXT);
+CREATE TABLE IF NOT EXISTS waits(
+  effect_key TEXT PRIMARY KEY, mission TEXT NOT NULL, until TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS grants(
   id TEXT PRIMARY KEY, mission TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL,
   consumed INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
@@ -107,13 +109,18 @@ class Store:
         c.execute("UPDATE missions SET status=? WHERE id=?", (status, mission_id))
 
     # -- journal ---------------------------------------------------------------------
-    def append(self, c: sqlite3.Connection, mission_id: str, type_: str, actor: str, data: dict[str, Any], cause: int | None = None) -> Event:
-        m = c.execute("SELECT head_seq, head_hash, profile_fp, profile_rev FROM missions WHERE id=?", (mission_id,)).fetchone()
+    def append(self, c: sqlite3.Connection, mission_id: str, type_: str, actor: str, data: dict[str, Any], cause: int | None = None, *, status: str | None = None, phase: str | None = None) -> Event:
+        """Appends an event. `status`: the mission status this event sets (recorded in the event as the
+        status after it). `phase`: overrides the phase derived from the event type."""
+        if status is not None:
+            self.set_status(c, mission_id, status)
+        m = c.execute("SELECT head_seq, head_hash, profile_fp, profile_rev, status FROM missions WHERE id=?", (mission_id,)).fetchone()
         if not m:
             raise KeyError(f"Mission inconnue : {mission_id}")
         e = make_event(
             mission=mission_id, seq=m["head_seq"] + 1, at=now_iso(), type_=type_, actor=actor, cause=cause,
             profile=m["profile_fp"], revision=m["profile_rev"], data=data, prev=m["head_hash"],
+            phase=phase or default_phase(type_, data), status=m["status"],
         )
         c.execute("INSERT INTO events(mission, seq, type, json, hash) VALUES(?,?,?,?,?)", (mission_id, e.seq, e.type, json.dumps(e.to_dict(), ensure_ascii=False), e.hash))
         c.execute("UPDATE missions SET head_seq=?, head_hash=? WHERE id=?", (e.seq, e.hash, mission_id))

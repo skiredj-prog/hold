@@ -8,16 +8,22 @@
 
   const ENVELOPE_VERSION = "hold.event/v1";
   const GENESIS = "0".repeat(64);
-  const LADDER_AUTHORITY = { VERIFY: "agent", CONTACT_SUPPORT: "mandate", ASK_AUTHORITY: "authority", PRESERVE: "none" };
+  const LADDER_AUTHORITY = { VERIFY: "agent", CONTACT_SUPPORT: "mandate", ASK_AUTHORITY: "authority", WAIT: "none", PRESERVE: "none" };
+  const PHASES = ["RESSENTIR", "CAPTER", "PERCEVOIR", "DISCERNER", "RELIER", "CHOISIR", "ENGAGER", "REEVALUER"];
+  const PENDING_CONDITIONS = ["VISIBILITY_DELAY", "SUPPORT_REPLY"];
+  const INSIDE = ["VERIFY", "CONTACT_SUPPORT"];
+  const MIN_QUOTE = 8;
   const EVENT_TYPES = {
-    MISSION_OPENED: ["title"], PROFILE_ATTACHED: ["fingerprint", "revision", "profile"],
+    MISSION_OPENED: ["title"], PROFILE_ATTACHED: ["fingerprint", "revision", "profile"], RUNTIME_BOUND: ["core", "discerner", "tools"],
     ACTION_ADMITTED: ["action", "kind"], ACTION_REFUSED: ["action", "rule", "reason"], ACTION_RESULT: ["action", "status"],
     EFFECT_RESERVED: ["action", "effect_key", "operation_id", "attributes"], EFFECT_OUTCOME: ["effect_key", "operation_id", "status"],
-    HOLD_ENTERED: ["effect_key", "operation_id", "scope"], PROPOSAL: ["round", "discerner", "position", "proposal"],
-    DECISION: ["round", "position", "proposal", "read_digest", "now_digest", "verdict"], PATH_EXECUTED: ["round", "path", "result"],
-    EVIDENCE: ["effect_key", "source", "kind"], DECISION_REQUEST: ["question_id", "kind", "options"],
-    AUTHORITY_ANSWER: ["question_id", "answer", "channel"], AUTHORITY_GRANT: ["grant"], RECONCILED: ["effect_key", "receipt"],
-    RESUMED: ["effect_key"], PRESERVED: ["effect_key", "reason"], REVOKED: ["by", "channel"],
+    HOLD_ENTERED: ["effect_key", "operation_id", "scope"], POSITION: ["round", "effect_key", "position"],
+    PROPOSAL: ["round", "attempt", "discerner", "position_seq", "proposal"],
+    DECISION: ["round", "attempt", "position_seq", "proposal", "read_digest", "now_digest", "final", "outcome", "verdict"],
+    WAIT_STARTED: ["effect_key", "seconds", "until", "condition"], WAIT_ENDED: ["effect_key"],
+    PATH_EXECUTED: ["round", "path", "result"], EVIDENCE: ["effect_key", "source", "kind"], DECISION_REQUEST: ["question_id", "kind", "options"],
+    AUTHORITY_ANSWER: ["question_id", "answer", "channel"], AUTHORITY_GRANT: ["grant"], REQUEST_CLOSED: ["question_id", "reason", "status", "mission_status"],
+    RECONCILED: ["effect_key", "receipt"], RESUMED: ["effect_key"], PRESERVED: ["effect_key", "reason"], REVOKED: ["by", "channel"],
     RELAY_SENT: ["question_id", "channel", "mode"], RELAY_FAILED: ["channel", "error"], RELAY_REJECTED: ["reason"], MISSION_CLOSED: ["outcome"],
   };
 
@@ -65,6 +71,7 @@
       const missing = (EVENT_TYPES[e.type] || null);
       if (!missing) return { valid: false, count: events.length, brokenAt: e.seq, reason: "unknown type " + e.type };
       if (missing.some((k) => !(k in (e.data || {})))) return { valid: false, count: events.length, brokenAt: e.seq, reason: "missing fields" };
+      if (e.phase != null && !PHASES.includes(e.phase)) return { valid: false, count: events.length, brokenAt: e.seq, reason: "unknown phase " + e.phase };
       prev = hash;
     }
     return { valid: true, count: events.length, head: prev };
@@ -77,29 +84,103 @@
     return "PRESERVE";
   }
 
-  function admitPath(proposalPath, position, readDigest, nowDigest, onRefused) {
-    const ref = position.reference;
-    if (readDigest !== nowDigest) return { proposed: proposalPath, admitted: false, applied: null, reference: ref, rule: "I5", reason: "The position changed during deliberation: re-read before acting.", overruled: false };
-    const p = position.paths.find((x) => x.name === (proposalPath || ""));
-    let reason;
-    if (!p) reason = "No usable proposal.";
-    else if (!p.open) reason = `Path ${proposalPath} is closed: ${p.reason}.`;
-    else return { proposed: proposalPath, admitted: true, applied: proposalPath, reference: ref, rule: "ADMIT", reason: `Path ${proposalPath} is open: ${p.reason}.`, overruled: false };
+  // -- the gate (identical to hold/hesitation.py and hold/floor.py) ------------------------
+  const names = (v) => Array.isArray(v) ? [...new Set(v.filter((x) => typeof x === "string"))].sort() : [];
+  const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const str = (v) => (typeof v === "string" ? v : "nothing");
+  function trueMap(position) {
+    const paths = position.paths;
+    return {
+      effect_state: position.effect_state,
+      open_paths: paths.filter((p) => p.open && p.name !== "PRESERVE").map((p) => p.name).sort(),
+      reaching_tau: paths.filter((p) => p.open && p.reaches_tau).map((p) => p.name).sort(),
+      pending: { condition: "NONE" },
+    };
+  }
+  function pendingOf(m) {
+    const p = isObj(m) ? m.pending : null;
+    return isObj(p) && ![undefined, null, "", "NONE"].includes(p.condition) ? p : null;
+  }
+  function norm(s) {
+    return (s || "").normalize("NFKC").toLowerCase().replace(/\s+/g, " ").replace(/^[ ."']+|[ ."']+$/g, "");
+  }
+  function checkMap(declared, position) {
+    if (!isObj(declared)) return { true: false, discrepancies: ["no map declared"], grounded: null };
+    const truth = trueMap(position); const out = [];
+    if (declared.effect_state !== truth.effect_state) out.push(`effect_state is ${truth.effect_state}, not ${str(declared.effect_state)}`);
+    for (const [k, label] of [["open_paths", "open paths"], ["reaching_tau", "paths reaching tau*"]]) {
+      const got = names(declared[k]);
+      if (got.join(",") !== truth[k].join(",")) out.push(`${label} are ${truth[k].join(", ") || "none"}, not ${got.join(", ") || "none"}`);
+    }
+    let grounded = null;
+    const p = pendingOf(declared);
+    if (p) {
+      const cited = str(p.evidence);
+      const o = typeof p.evidence === "string" ? (position.observations || []).find((x) => x.id === p.evidence) : null;
+      const quote = norm(typeof p.quote === "string" ? p.quote : "");
+      if (!PENDING_CONDITIONS.includes(p.condition)) { out.push(`pending condition ${str(p.condition)} is not a known condition`); grounded = false; }
+      else if (!o) { out.push(`the cited evidence ${cited} does not exist`); grounded = false; }
+      else if (quote.length < MIN_QUOTE || !norm(o.text || "").includes(quote)) { out.push(`the cited evidence ${cited} does not contain the quoted passage`); grounded = false; }
+      else grounded = true;
+    }
+    return { true: out.length === 0, discrepancies: out, grounded };
+  }
+  function justifiedMoves(declared, position) {
+    const directed = position.paths.filter((p) => p.open && p.directed).map((p) => p.name);
+    if (directed.length) return directed.slice(0, 1);
+    const m = isObj(declared) ? declared : {};
+    const reach = new Set(names(m.reaching_tau));
+    const moves = INSIDE.filter((n) => reach.has(n));
+    if (pendingOf(m) && names(m.open_paths).includes("WAIT")) moves.push("WAIT");
+    if (!moves.length && reach.has("ASK_AUTHORITY")) moves.push("ASK_AUTHORITY");
+    return moves.length ? moves : ["PRESERVE"];
+  }
+  const admissibleMoves = (position) => position.paths.filter((p) => p.open).map((p) => p.name);
+  const seconds = (v) => (typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1e9 ? Math.trunc(v) : null);
+
+  function verdict(outcome, proposed, applied, reference, credit, rule, reason, mapTrue, coherent, justified, discrepancies, wait) {
+    return { outcome, proposed, applied, reference, credit, rule, reason, map_true: mapTrue, coherent, justified, discrepancies, wait_seconds: wait ?? null };
+  }
+  function admitProposal(proposal, position, readDigest, nowDigest, final, onRefused) {
+    const ref = position.reference; const p = proposal || {}; const move = p.move ?? null;
+    if (readDigest !== nowDigest) return verdict("STALE", move, null, ref, null, "I5", "The position changed during deliberation: re-read before acting.", null, null, [], []);
+    const mc = checkMap(p.map, position);
+    const justified = justifiedMoves(p.map, position);
+    const coherent = move ? justified.includes(move) : null;
+    let outcome, rule, reason;
+    if (!move) { outcome = "NO_PROPOSAL"; rule = "D1/NONE"; reason = "No usable proposal" + (p.error ? ` (${p.error})` : "") + "."; }
+    else if (!mc.true) { outcome = "MAP_REFUSED"; rule = "D1/MAP"; reason = "The declared reading is false: " + mc.discrepancies.join("; ") + "."; }
+    else if (!admissibleMoves(position).includes(move)) {
+      const path = position.paths.find((x) => x.name === move);
+      outcome = "MOVE_REFUSED"; rule = "I4/PATH"; reason = `Path ${move} is closed: ${path ? path.reason : "unknown path"}.`;
+    } else if (!coherent) { outcome = "INCOHERENT"; rule = "D1/COHERENCE"; reason = `${move} does not follow from the declared reading, which justifies ${justified.join(", ")}.`; }
+    else {
+      let wait = null;
+      if (move === "WAIT") {
+        const left = position.paths.find((x) => x.name === "WAIT").left || 0;
+        const asked = seconds(p.wait_seconds) || seconds((pendingOf(p.map) || {}).wait_seconds) || left;
+        wait = Math.max(1, Math.min(asked, left));
+      }
+      return verdict("ADMITTED", move, move, ref, "discerner", "ADMIT", `${move} is open and follows from a true reading.`, true, true, justified, [], wait);
+    }
+    if (!final) return verdict(outcome, move, null, ref, null, rule, reason, mc.true, coherent, justified, mc.discrepancies);
     const applied = onRefused === "reference" ? ref : "PRESERVE";
-    return { proposed: proposalPath, admitted: false, applied, reference: ref, rule: "I4/PATH", reason: `${reason} The floor applies ${applied}.`, overruled: true };
+    return verdict("REFERENCE_APPLIED", move, applied, ref, "floor", rule, `${reason} Retries exhausted: the floor applies ${applied} (credited to the floor, not to the model).`, mc.true, coherent, justified, mc.discrepancies);
   }
 
   function decisionReplay(events, profiles) {
-    let checked = 0; const mismatches = [];
+    let checked = 0; const mismatches = []; const positions = {};
     for (const e of events) {
+      if (e.type === "POSITION") { positions[e.seq] = e.data.position; continue; }
       if (e.type !== "DECISION") continue;
       const prof = profiles[e.profile];
       const ladder = prof ? prof.hesitation.ladder : ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"];
-      const d = e.data;
-      const ref = referencePath(d.position.paths, ladder);
-      const v = admitPath(d.proposal.path, d.position, d.read_digest, d.now_digest, d.on_refused || (prof ? prof.hesitation.on_refused_proposal : "reference"));
+      const d = e.data; const pos = positions[d.position_seq];
+      if (!pos) { mismatches.push({ seq: e.seq, round: d.round, error: "position missing" }); continue; }
+      const ref = referencePath(pos.paths, ladder);
+      const v = admitProposal(d.proposal, pos, d.read_digest, d.now_digest, d.final, d.on_refused || (prof ? prof.hesitation.on_refused_proposal : "reference"));
       checked++;
-      if (ref !== d.position.reference || canonical(v) !== canonical(d.verdict)) mismatches.push({ seq: e.seq, round: d.round, recorded: d.verdict, replayed: v });
+      if (ref !== pos.reference || canonical(v) !== canonical(d.verdict) || v.outcome !== d.outcome) mismatches.push({ seq: e.seq, round: d.round, recorded: d.verdict, replayed: v });
     }
     return { checked, matches: mismatches.length === 0, mismatches };
   }
@@ -174,6 +255,6 @@
     return steps;
   }
 
-  const api = { canonical, digest, sha256Hex, fingerprint, profileBody, verifyChain, decisionReplay, admitPath, referencePath, validateProfile, simulateHesitation, ENVELOPE_VERSION };
+  const api = { canonical, digest, sha256Hex, fingerprint, profileBody, verifyChain, decisionReplay, admitProposal, checkMap, justifiedMoves, trueMap, referencePath, validateProfile, simulateHesitation, ENVELOPE_VERSION, PHASES };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HoldCore = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

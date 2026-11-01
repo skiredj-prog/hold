@@ -28,8 +28,8 @@ from typing import Any, Callable
 
 from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
-from .floor import ActionContext, admit_action, admit_path, effect_key, envelope_violations, grant_problem, parse_time
-from .hesitation import boundary_position, judge
+from .floor import ActionContext, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, parse_time
+from .hesitation import boundary_position
 from .i18n import t
 from .journal import verify_chain
 from .outcome import Outcome, ToolResult
@@ -384,8 +384,7 @@ class Mission:
             c.execute("UPDATE effects SET status='UNKNOWN', updated_at=? WHERE effect_key=?", (now_iso(), key))
             e = self.store.append(c, self.id, "EFFECT_OUTCOME", "PROVIDER", {"effect_key": key, "operation_id": op, "status": "UNKNOWN", "reason": out.reason}, cause=cause)
             scope = self._dependents(power.action)
-            self.store.append(c, self.id, "HOLD_ENTERED", "CORE", {"effect_key": key, "operation_id": op, "scope": [power.action, *scope], "reason": out.reason or "résultat inconnu"}, cause=e.seq)
-            self.store.set_status(c, self.id, "HELD")
+            self.store.append(c, self.id, "HOLD_ENTERED", "CORE", {"effect_key": key, "operation_id": op, "scope": [power.action, *scope], "reason": out.reason or "outcome unknown"}, cause=e.seq, status="HELD")
         return self.hesitate(key)
 
     def _equivalent(self, power: Power, existing) -> ToolResult:
@@ -393,7 +392,8 @@ class Mission:
             if existing["status"] == "CONFIRMED":
                 self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I1", "reason": "Equivalent effect already confirmed: nothing is repeated.", "effect_key": existing["effect_key"]})
                 return ToolResult("ALREADY_CONFIRMED", t("already", receipt=existing["receipt"]), data={"receipt": existing["receipt"], "operation_id": existing["operation_id"]}, rule="I1")
-            self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I1", "reason": "Equivalent effect with an unknown outcome: HOLD in progress.", "effect_key": existing["effect_key"]})
+            why = "Equivalent effect being dispatched by another call." if existing["status"] == "DISPATCHING" else "Equivalent effect with an unknown outcome: HOLD in progress."
+            self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I1", "reason": why, "effect_key": existing["effect_key"]})
         return self._held_message(power.action, existing["operation_id"], rule="I1")
 
     def _dependents(self, action: str) -> list[str]:
@@ -419,19 +419,26 @@ class Mission:
     # -- hésitation ---------------------------------------------------------------------------------
     def _position(self, key: str) -> dict[str, Any]:
         eff = self.store.effect(key)
+        events = self.events()
         obs = [
-            {"seq": e.seq, "at": e.at, "source": e.data.get("source"), "kind": e.data.get("kind"), "detail": e.data.get("detail") or e.data.get("receipt") or e.data.get("reason")}
-            for e in self.events() if e.type == "EVIDENCE" and e.data.get("effect_key") == key
+            {"id": f"E{e.seq}", "seq": e.seq, "at": e.at, "source": e.data.get("source"), "kind": e.data.get("kind"), "text": e.data.get("detail") or e.data.get("receipt") or e.data.get("reason")}
+            if e.type == "EVIDENCE" else
+            {"id": f"E{e.seq}", "seq": e.seq, "at": e.at, "source": "core", "kind": "WAITED", "text": f"Waited until {e.data.get('until')}; the position is read again."}
+            for e in events if e.type in ("EVIDENCE", "WAIT_ENDED") and e.data.get("effect_key") == key
         ][-8:]
-        for e in self.events():
+        for e in events:
             if e.type == "EFFECT_OUTCOME" and e.data.get("effect_key") == key and e.data.get("status") == "UNKNOWN":
-                obs.insert(0, {"seq": e.seq, "at": e.at, "source": "core", "kind": "NO_RESPONSE", "detail": e.data.get("reason")})
+                obs.insert(0, {"id": f"E{e.seq}", "seq": e.seq, "at": e.at, "source": "core", "kind": "NO_RESPONSE", "text": e.data.get("reason")})
                 break
         return boundary_position(
             self.profile, effect_key=key, action=eff["action"], operation_id=eff["operation_id"], effect_state=eff["status"],
             not_found=eff["not_found"], usage=self.store.usage(self.id), authority_available=self._authority_available(),
             open_request=bool(self.open_request()), revoked=bool(self.row["revoked"]), observations=obs,
         ).as_dict()
+
+    def _waiting(self, key: str) -> str | None:
+        rows = self.store.read("SELECT until FROM waits WHERE effect_key=?", (key,))
+        return rows[0]["until"] if rows else None
 
     def hesitate(self, key: str) -> ToolResult:
         lock = self.hab._loops.setdefault(self.id, threading.Lock())
@@ -444,56 +451,85 @@ class Mission:
             lock.release()
 
     def _hesitate(self, key: str) -> ToolResult:
+        """One round: the kernel states the position (DISCERNER), the discerner declares a reading and a
+        move (PERCEVOIR), the floor decides (CHOISIR). A refused reading or move is handed back to the
+        discerner up to `map_retries` times; then the reference applies, credited to the floor."""
         h = self.profile.hesitation
-        ctx = {"mission_title": self.title}
-        start_round = sum(1 for e in self.events() if e.type == "DECISION" and e.data.get("position", {}).get("effect_key") == key)
+        start_round = sum(1 for e in self.events() if e.type == "POSITION" and e.data.get("effect_key") == key)
         for rnd in range(start_round + 1, start_round + h.max_rounds + 1):
             if self.status in CLOSED:
                 return ToolResult("CLOSED", t("closed", status=self.status))
-            pos = self._position(key)
             eff = self.store.effect(key)
+            if self._waiting(key):
+                return self._held_message(eff["action"], eff["operation_id"])
+            pos = self._position(key)
             if not pos["threatened"]:
                 return self._resumed(key, eff)
             if self.open_request():
                 return self._held_message(eff["action"], eff["operation_id"])
             read_digest = digest(pos)
-            proposal: Proposal = self.hab.discerner.propose(pos, ctx)
-            now = self._position(key)
-            verdict = admit_path(proposal.path, pos, read_digest, digest(now), on_refused=h.on_refused_proposal)
             with self.store.tx() as c:
-                p_ev = self.store.append(c, self.id, "PROPOSAL", "DISCERNER", {"round": rnd, "discerner": proposal.discerner, "position": pos, "proposal": proposal.as_dict(), "judgment": judge(proposal.as_dict(), pos)})
-                d_ev = self.store.append(c, self.id, "DECISION", "CORE", {
-                    "round": rnd, "position": pos, "proposal": {"path": proposal.path}, "read_digest": read_digest, "now_digest": digest(now),
-                    "on_refused": h.on_refused_proposal, "verdict": verdict.__dict__,
-                }, cause=p_ev.seq)
-                if verdict.applied is None:
-                    continue
-                path = verdict.applied
-                if path == "VERIFY":
-                    self.store.bump(c, self.id, f"checks:{key}")
-                    if self.store.usage(self.id).get(f"directed_checks:{key}", 0) > 0:
-                        self.store.bump(c, self.id, f"directed_checks:{key}", -1)
-                elif path == "CONTACT_SUPPORT":
-                    sup = self.profile.support
-                    if sup and sup.budget is not None:
-                        self.store.bump(c, self.id, f"power:{sup.action}")
-                elif path == "ASK_AUTHORITY":
-                    request = self._open_request(c, "UNKNOWN_EFFECT", effect_key=key, cause=d_ev.seq)
-                elif path == "PRESERVE":
-                    self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": "no open path reaches tau*" if verdict.reference == "PRESERVE" else "preservation chosen"}, cause=d_ev.seq)
-                    self.store.set_status(c, self.id, "HELD")
+                pos_ev = self.store.append(c, self.id, "POSITION", "CORE", {"round": rnd, "effect_key": key, "position": pos})
+            feedback: list[dict[str, str]] = []
+            verdict = None
+            for attempt in range(h.map_retries + 1):
+                proposal: Proposal = self.hab.discerner.propose(pos, {"mission_title": self.title, "feedback": feedback})
+                now = self._position(key)
+                decided = {k: v for k, v in {"move": proposal.move, "map": proposal.map, "wait_seconds": proposal.wait_seconds, "error": proposal.error}.items() if v is not None}
+                final = attempt == h.map_retries
+                verdict = admit_proposal(decided, pos, read_digest, digest(now), final=final, on_refused=h.on_refused_proposal)
+                with self.store.tx() as c:
+                    p_ev = self.store.append(c, self.id, "PROPOSAL", "DISCERNER", {"round": rnd, "attempt": attempt, "discerner": proposal.discerner, "position_seq": pos_ev.seq, "proposal": proposal.as_dict()}, cause=pos_ev.seq)
+                    d_ev = self.store.append(c, self.id, "DECISION", "CORE", {
+                        "round": rnd, "attempt": attempt, "position_seq": pos_ev.seq, "proposal": decided, "read_digest": read_digest, "now_digest": digest(now),
+                        "on_refused": h.on_refused_proposal, "final": final, "outcome": verdict.outcome, "verdict": verdict.__dict__,
+                    }, cause=p_ev.seq)
+                    if verdict.applied is not None:
+                        request = self._book(c, verdict, key, pos, decided, cause=d_ev.seq)
+                if verdict.outcome == "STALE" or verdict.applied is not None:
+                    break
+                feedback.append({"answer": json.dumps({"map": proposal.map, "move": proposal.move}, ensure_ascii=False), "reason": verdict.reason})
+            if verdict is None or verdict.applied is None:
+                continue  # stale position: read it again in a new round
+            path = verdict.applied
             if path == "ASK_AUTHORITY":
                 self._send_request(request)
                 return self._held_message(eff["action"], eff["operation_id"])
-            if path == "PRESERVE":
+            if path in ("PRESERVE", "WAIT"):
                 return self._held_message(eff["action"], eff["operation_id"])
             result = self._run_path(path, key, eff, rnd, cause=d_ev.seq)
             if result is not None:
                 return result
         with self.store.tx() as c:
-            self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": f"limit of {h.max_rounds} hesitation rounds"})
+            self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": f"limit of {h.max_rounds} hesitation rounds"}, status="HELD")
         eff = self.store.effect(key)
         return self._held_message(eff["action"], eff["operation_id"])
+
+    def _book(self, c, verdict, key: str, pos: dict[str, Any], decided: dict[str, Any], *, cause: int) -> dict[str, Any] | None:
+        """What applying a move spends, recorded in the same transaction as the decision."""
+        path = verdict.applied
+        if path == "VERIFY":
+            self.store.bump(c, self.id, f"checks:{key}")
+            if self.store.usage(self.id).get(f"directed_checks:{key}", 0) > 0:
+                self.store.bump(c, self.id, f"directed_checks:{key}", -1)
+        elif path == "CONTACT_SUPPORT":
+            sup = self.profile.support
+            if sup and sup.budget is not None:
+                self.store.bump(c, self.id, f"power:{sup.action}")
+        elif path == "ASK_AUTHORITY":
+            return self._open_request(c, "UNKNOWN_EFFECT", effect_key=key, cause=cause)
+        elif path == "WAIT":
+            seconds = verdict.wait_seconds
+            until = _iso(self.hab.clock() + timedelta(seconds=seconds))
+            pending = (decided.get("map") or {}).get("pending") or {}
+            self.store.bump(c, self.id, f"waits:{key}")
+            self.store.bump(c, self.id, f"waited_s:{key}", seconds)
+            c.execute("INSERT OR REPLACE INTO waits(effect_key, mission, until, created_at) VALUES(?,?,?,?)", (key, self.id, until, now_iso()))
+            self.store.append(c, self.id, "WAIT_STARTED", "CORE", {"effect_key": key, "seconds": seconds, "until": until, "condition": pending.get("condition"), "evidence": pending.get("evidence")}, cause=cause, status="HELD")
+        elif path == "PRESERVE":
+            reason = "no open path reaches tau*" if verdict.reference == "PRESERVE" else "preservation chosen"
+            self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": reason}, cause=cause, status="HELD")
+        return None
 
     def _run_path(self, path: str, key: str, eff, rnd: int, *, cause: int) -> ToolResult | None:
         power = self.profile.power(eff["action"])
@@ -538,8 +574,9 @@ class Mission:
                     self._close_request(c, payload, "CONDITIONS_CHANGED")
             already = c.execute("SELECT COUNT(*) AS n FROM events WHERE mission=? AND type='RESUMED' AND json LIKE ?", (self.id, f'%"{key}"%')).fetchone()["n"]
             if not already:
-                self.store.append(c, self.id, "RESUMED", "CORE", {"effect_key": key, "receipt": eff["receipt"], "autonomous": self.profile.hesitation.autonomous_resume})
-            if self.status in ("HELD", "AWAITING_AUTHORITY"):
+                resume_to = "OPEN" if self.status in ("HELD", "AWAITING_AUTHORITY") else None
+                self.store.append(c, self.id, "RESUMED", "CORE", {"effect_key": key, "receipt": eff["receipt"], "autonomous": self.profile.hesitation.autonomous_resume}, status=resume_to)
+            elif self.status in ("HELD", "AWAITING_AUTHORITY"):
                 self.store.set_status(c, self.id, "OPEN")
         return ToolResult("OK", t("reconciled", action=eff["action"], receipt=eff["receipt"]), data={"receipt": eff["receipt"], "operation_id": eff["operation_id"], "reconciled": True})
 
@@ -580,8 +617,7 @@ class Mission:
         payload |= {"profile": self.profile.fingerprint, "revision": self.profile.revision, "expires_at": _iso(self.hab.clock() + timedelta(minutes=a.question_ttl_minutes))}
         c.execute("INSERT INTO requests(question_id, mission, kind, status, payload, created_at) VALUES(?,?,?,?,?,?)", (qid, self.id, kind, "OPEN", json.dumps(payload, ensure_ascii=False), now_iso()))
         self.store.bump(c, self.id, "authority_requests")
-        self.store.append(c, self.id, "DECISION_REQUEST", "CORE", {k: v for k, v in payload.items() if k != "attrs"} | {"to": self.profile.authority.name}, cause=cause)
-        self.store.set_status(c, self.id, "AWAITING_AUTHORITY")
+        self.store.append(c, self.id, "DECISION_REQUEST", "CORE", {k: v for k, v in payload.items() if k != "attrs"} | {"to": self.profile.authority.name}, cause=cause, status="AWAITING_AUTHORITY")
         return payload
 
     def _send_request(self, request: dict[str, Any]) -> None:
@@ -632,7 +668,7 @@ class Mission:
                 self.store.append(c, self.id, "RELAY_REJECTED", "CORE", {"reason": "OPTION_NOT_OFFERED", "question_id": question_id, "answer": code, "channel": channel})
                 return {"accepted": False, "reason": "OPTION_NOT_OFFERED"}
             c.execute("UPDATE requests SET status='ANSWERED', answer=?, answered_at=? WHERE question_id=?", (code, now_iso(), question_id))
-            ans = self.store.append(c, self.id, "AUTHORITY_ANSWER", "AUTHORITY", {"question_id": question_id, "answer": code, "channel": channel, "kind": payload["kind"], **{k: v for k, v in evidence.items() if k in ("message_id", "from", "mode")}})
+            ans = self.store.append(c, self.id, "AUTHORITY_ANSWER", "AUTHORITY", {"question_id": question_id, "answer": code, "channel": channel, "kind": payload["kind"], **{k: v for k, v in evidence.items() if k in ("message_id", "from", "mode")}}, status="OPEN" if code == "REFUSE" else None)
             follow: Callable[[], Any] | None = None
             if code == "REVOKE":
                 self._revoke(c, by=self.profile.authority.name, channel=channel, cause=ans.seq)
@@ -640,8 +676,7 @@ class Mission:
                 key = payload["effect_key"]
                 self.store.bump(c, self.id, f"extra_checks:{key}")
                 self.store.bump(c, self.id, f"directed_checks:{key}")
-                self.store.append(c, self.id, "AUTHORITY_GRANT", "AUTHORITY", {"grant": {"kind": "EXTRA_CHECK", "effect_key": key, "count": 1, "directed": True}}, cause=ans.seq)
-                self.store.set_status(c, self.id, "HELD")
+                self.store.append(c, self.id, "AUTHORITY_GRANT", "AUTHORITY", {"grant": {"kind": "EXTRA_CHECK", "effect_key": key, "count": 1, "directed": True}}, cause=ans.seq, status="HELD")
                 if self.profile.hesitation.autonomous_resume:
                     follow = lambda: self.hesitate(key)  # noqa: E731
             elif code == "CLOSE_UNCONFIRMED":
@@ -654,12 +689,11 @@ class Mission:
                     "expires_at": _iso(self.hab.clock() + timedelta(minutes=self.profile.authority.grant_ttl_minutes)),
                 }
                 c.execute("INSERT INTO grants(id, mission, kind, payload, created_at) VALUES(?,?,?,?,?)", (gid, self.id, "ENVELOPE_ONCE", json.dumps(grant), now_iso()))
-                self.store.append(c, self.id, "AUTHORITY_GRANT", "AUTHORITY", {"grant": grant | {"id": gid}}, cause=ans.seq)
-                self.store.set_status(c, self.id, "OPEN")
+                self.store.append(c, self.id, "AUTHORITY_GRANT", "AUTHORITY", {"grant": grant | {"id": gid}}, cause=ans.seq, status="OPEN")
                 attrs = payload["attrs"]
                 follow = lambda: self.call(payload["action"], **attrs, _grant=gid)  # noqa: E731
             elif code == "REFUSE":
-                self.store.set_status(c, self.id, "OPEN")
+                pass  # already recorded with the answer: the mission continues without this effect
         if follow and self._can_continue(payload):
             self.hab._spawn(follow)
         return {"accepted": True, "answer": code}
@@ -716,8 +750,7 @@ class Mission:
         if status not in CLOSED:
             unknown = c.execute("SELECT COUNT(*) AS n FROM effects WHERE mission=? AND status='UNKNOWN'", (self.id,)).fetchone()["n"]
             status = "HELD" if unknown else "OPEN"
-        self.store.append(c, self.id, "REQUEST_CLOSED", "CORE", {"question_id": payload["question_id"], "kind": payload["kind"], "reason": reason, "status": REQUEST_END[reason], "mission_status": status}, cause=cause)
-        self.store.set_status(c, self.id, status)
+        self.store.append(c, self.id, "REQUEST_CLOSED", "CORE", {"question_id": payload["question_id"], "kind": payload["kind"], "reason": reason, "status": REQUEST_END[reason], "mission_status": status}, cause=cause, status=status)
 
     def sweep(self) -> list[str]:
         """Closes the Decision Requests whose delay has run out. If the hesitation can continue in this
@@ -731,17 +764,28 @@ class Mission:
                     if c.execute("SELECT status FROM requests WHERE question_id=?", (payload["question_id"],)).fetchone()["status"] == "OPEN":
                         self._close_request(c, payload, "QUESTION_EXPIRED")
                         expired.append(payload)
+        woken: list[str] = []
+        for r in self.store.read("SELECT effect_key, until FROM waits WHERE mission=?", (self.id,)):
+            if now >= parse_time(r["until"]):
+                with self.store.tx() as c:
+                    if c.execute("DELETE FROM waits WHERE effect_key=? AND until=?", (r["effect_key"], r["until"])).rowcount == 1:
+                        self.store.append(c, self.id, "WAIT_ENDED", "CORE", {"effect_key": r["effect_key"], "until": r["until"]})
+                        woken.append(r["effect_key"])
         for p in expired:
             if p["kind"] == "UNKNOWN_EFFECT" and self.status == "HELD" and self._can_continue(p):
                 self.hab._spawn(lambda key=p["effect_key"]: self.hesitate(key))
+        for key in woken:
+            eff = self.store.effect(key)
+            if eff and self.status == "HELD" and self._can_continue({"action": eff["action"]}):
+                self.hab._spawn(lambda key=key: self.hesitate(key))
         return [p["question_id"] for p in expired]
 
     # -- révocation et clôture -----------------------------------------------------------------------
     def _revoke(self, c, *, by: str, channel: str, cause: int | None = None) -> None:
         c.execute("UPDATE missions SET revoked=1 WHERE id=?", (self.id,))
         c.execute("UPDATE requests SET status='CANCELLED' WHERE mission=? AND status='OPEN'", (self.id,))
-        self.store.append(c, self.id, "REVOKED", "AUTHORITY", {"by": by, "channel": channel}, cause=cause)
-        self.store.set_status(c, self.id, "REVOKED")
+        c.execute("DELETE FROM waits WHERE mission=?", (self.id,))
+        self.store.append(c, self.id, "REVOKED", "AUTHORITY", {"by": by, "channel": channel}, cause=cause, status="REVOKED")
 
     def revoke(self, *, by: str, channel: str = "console") -> None:
         with self.store.tx() as c:
@@ -758,8 +802,8 @@ class Mission:
 
     def _close(self, c, outcome: str, *, cause: int | None = None, report: dict | None = None) -> None:
         c.execute("UPDATE requests SET status='CANCELLED' WHERE mission=? AND status='OPEN'", (self.id,))
-        self.store.append(c, self.id, "MISSION_CLOSED", "CORE", {"outcome": outcome, "report": report or self._report()}, cause=cause)
-        self.store.set_status(c, self.id, outcome)
+        c.execute("DELETE FROM waits WHERE mission=?", (self.id,))
+        self.store.append(c, self.id, "MISSION_CLOSED", "CORE", {"outcome": outcome, "report": report or self._report()}, cause=cause, status=outcome)
 
     def close(self, outcome: str = "CLOSED_COMPLETED", report: dict | None = None) -> dict[str, Any]:
         with self.store.tx() as c:

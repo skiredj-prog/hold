@@ -14,9 +14,12 @@ def fake_reply(req: dict) -> dict:
         facts = json.loads(req["messages"][1]["content"].split("\n", 1)[1])
         paths = facts["paths"]
         directed = [p["name"] for p in paths if p["open"] and p.get("directed")]
-        reaching = [p["name"] for p in paths if p["open"] and p["name"] != "PRESERVE" and p["sigma"] >= facts["tau_star"]]
-        choice = (directed or reaching or ["PRESERVE"])[0]
-        content = json.dumps({"perceived_state": facts["effect_state"], "paths_reaching_tau": reaching, "choice": choice, "rationale": "open and sigma >= tau"})
+        reaching = sorted(p["name"] for p in paths if p["open"] and p["name"] not in ("PRESERVE", "WAIT") and p["sigma"] >= facts["tau_star"])
+        open_paths = sorted(p["name"] for p in paths if p["open"] and p["name"] != "PRESERVE")
+        order = ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY"]
+        choice = (directed or sorted(reaching, key=order.index) or ["PRESERVE"])[0]
+        content = json.dumps({"map": {"effect_state": facts["effect_state"], "open_paths": open_paths, "reaching_tau": reaching, "pending": {"condition": "NONE"}},
+                              "move": choice, "rationale": "open and sigma >= tau", "cites": ["P:" + choice]})
         return {"message": {"role": "assistant", "content": content}}
     msgs = req["messages"]
     tools = [m for m in msgs if m["role"] == "tool"]
@@ -77,4 +80,7 @@ def test_llama_agent_wears_the_profile(fake_ollama, scenario, final):
     assert r["bookings"] == 1 and r["chain_valid"] and r["status"] == final
     events = r["hab"].mission(r["mission"]).events()
     proposals = [e.data for e in events if e.type == "PROPOSAL"]
-    assert all(p["proposal"]["discerner"] == "llama" and p["judgment"]["choice"] for p in proposals)
+    decisions = [e.data for e in events if e.type == "DECISION"]
+    assert all(p["proposal"]["discerner"] == "llama" for p in proposals)
+    # a disciplined reader: every reading true, every move admitted on its own merit and credited to it
+    assert all(d["outcome"] == "ADMITTED" and d["verdict"]["credit"] == "discerner" and d["verdict"]["map_true"] for d in decisions)

@@ -12,8 +12,9 @@ import secrets
 import threading
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from .outcome import Outcome
 
@@ -28,6 +29,9 @@ class SyntheticHotel:
     support_mode: SupportMode = "unhelpful"
     timeout_s: float = 0.05
     idempotent: bool = False  # True: the provider deduplicates on operation_id (a retry of the same operation creates nothing)
+    visible_after_s: float | None = None  # if set: visible this many seconds after creation (lag), instead of after N checks
+    status_note: str | None = None  # free text the status service adds to a "not found" answer
+    clock: Callable[[], datetime] = field(default=lambda: datetime.now(timezone.utc), repr=False)
     bookings: list[dict[str, Any]] = field(default_factory=list)
     requests: list[dict[str, Any]] = field(default_factory=list)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
@@ -42,7 +46,7 @@ class SyntheticHotel:
                 self.requests.append({"kind": "CREATE", "operation_id": operation_id, "response": "DEDUPLICATED"})
                 return Outcome.confirmed(same["receipt"], operation_id=operation_id)
             receipt = f"RCPT-{secrets.token_hex(3).upper()}"
-            self.bookings.append({"operation_id": operation_id, "receipt": receipt, "attrs": attrs, "checks": 0})
+            self.bookings.append({"operation_id": operation_id, "receipt": receipt, "attrs": attrs, "checks": 0, "created_at": self.clock()})
             self.requests.append({"kind": "CREATE", "operation_id": operation_id, "response": "CREATED" if self.create_mode == "respond" else "LOST_RESPONSE"})
         if self.create_mode == "respond":
             return Outcome.confirmed(receipt, operation_id=operation_id)
@@ -52,13 +56,17 @@ class SyntheticHotel:
     def status(self, operation_id: str) -> Outcome:
         with self._lock:
             b = next((x for x in self.bookings if x["operation_id"] == operation_id), None)
+            note = self.status_note or "not found"
             if not b:
                 self.requests.append({"kind": "STATUS", "operation_id": operation_id, "response": "NOT_FOUND"})
-                return Outcome.not_found()
+                return Outcome.not_found(note)
             b["checks"] += 1
-            visible = self.visible_after is not None and b["checks"] >= self.visible_after
+            if self.visible_after_s is not None:
+                visible = (self.clock() - b["created_at"]).total_seconds() >= self.visible_after_s
+            else:
+                visible = self.visible_after is not None and b["checks"] >= self.visible_after
             self.requests.append({"kind": "STATUS", "operation_id": operation_id, "response": "CONFIRMED" if visible else "NOT_FOUND"})
-            return Outcome.confirmed(b["receipt"], operation_id=operation_id) if visible else Outcome.not_found()
+            return Outcome.confirmed(b["receipt"], operation_id=operation_id) if visible else Outcome.not_found(note)
 
     def support(self, question: str, operation_id: str) -> Outcome:
         with self._lock:

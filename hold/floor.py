@@ -160,30 +160,64 @@ def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: Acti
     return Verdict(True, "ADMIT", "Power present, budget available, envelope respected.")
 
 
-# -- admission d'un chemin d'hésitation -------------------------------------------
+# -- admission of a hesitation move ---------------------------------------------------------
+
+def _seconds(v: Any) -> int | None:
+    """A number of seconds from untrusted input: an actual number, truncated; anything else is None."""
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or v != v or abs(v) > 1e9:
+        return None
+    return int(v)
+
 
 @dataclass(frozen=True)
 class PathVerdict:
+    outcome: str  # ADMITTED | MAP_REFUSED | MOVE_REFUSED | INCOHERENT | NO_PROPOSAL | STALE | REFERENCE_APPLIED
     proposed: str | None
-    admitted: bool
-    applied: str | None  # None : position périmée, relire
+    applied: str | None  # None: the model reads again (or the position is re-read)
     reference: str
+    credit: str | None  # "discerner": its own move was admitted; "floor": the reference was applied
     rule: str
     reason: str
-    overruled: bool
+    map_true: bool | None
+    coherent: bool | None
+    justified: list[str]
+    discrepancies: list[str]
+    wait_seconds: int | None = None
 
 
-def admit_path(proposal_path: str | None, position: dict[str, Any], read_digest: str, now_digest: str, *, on_refused: str) -> PathVerdict:
+def admit_proposal(proposal: dict[str, Any] | None, position: dict[str, Any], read_digest: str, now_digest: str, *, final: bool, on_refused: str) -> PathVerdict:
+    """The gate, in order: position current (I5), a usable proposal, a true map (D1), an admissible
+    move (I4), a move that follows from the declared map. If the attempt is the last one, a refusal
+    applies the reference (or PRESERVE), credited to the floor, never to the model."""
+    from .hesitation import admissible_moves, check_map, justified_moves
+
     ref = position["reference"]
+    p = proposal or {}
+    move = p.get("move")
     if read_digest != now_digest:
-        return PathVerdict(proposal_path, False, None, ref, "I5", "The position changed during deliberation: re-read before acting.", False)
-    paths = {p["name"]: p for p in position["paths"]}
-    p = paths.get(proposal_path or "")
-    if p is None:
-        reason = "No usable proposal."
-    elif not p["open"]:
-        reason = f"Path {proposal_path} is closed: {p['reason']}."
+        return PathVerdict("STALE", move, None, ref, None, "I5", "The position changed during deliberation: re-read before acting.", None, None, [], [])
+    mc = check_map(p.get("map"), position)
+    justified = justified_moves(p.get("map"), position)
+    coherent = move in justified if move else None
+    if not move:
+        outcome, rule, reason = "NO_PROPOSAL", "D1/NONE", "No usable proposal" + (f" ({p['error']})" if p.get("error") else "") + "."
+    elif not mc["true"]:
+        outcome, rule, reason = "MAP_REFUSED", "D1/MAP", "The declared reading is false: " + "; ".join(mc["discrepancies"]) + "."
+    elif move not in admissible_moves(position):
+        path = next((x for x in position["paths"] if x["name"] == move), None)
+        outcome, rule, reason = "MOVE_REFUSED", "I4/PATH", f"Path {move} is closed: {path['reason'] if path else 'unknown path'}."
+    elif not coherent:
+        outcome, rule, reason = "INCOHERENT", "D1/COHERENCE", f"{move} does not follow from the declared reading, which justifies {', '.join(justified)}."
     else:
-        return PathVerdict(proposal_path, True, proposal_path, ref, "ADMIT", f"Path {proposal_path} is open: {p['reason']}.", False)
+        wait = None
+        if move == "WAIT":
+            from .hesitation import pending_of
+
+            left = next(x for x in position["paths"] if x["name"] == "WAIT").get("left") or 0
+            asked = _seconds(p.get("wait_seconds")) or _seconds((pending_of(p.get("map")) or {}).get("wait_seconds")) or left
+            wait = max(1, min(asked, left))
+        return PathVerdict("ADMITTED", move, move, ref, "discerner", "ADMIT", f"{move} is open and follows from a true reading.", True, True, justified, [], wait)
+    if not final:
+        return PathVerdict(outcome, move, None, ref, None, rule, reason, mc["true"], coherent, justified, mc["discrepancies"])
     applied = ref if on_refused == "reference" else "PRESERVE"
-    return PathVerdict(proposal_path, False, applied, ref, "I4/PATH", f"{reason} The floor applies {applied}.", True)
+    return PathVerdict("REFERENCE_APPLIED", move, applied, ref, "floor", rule, f"{reason} Retries exhausted: the floor applies {applied} (credited to the floor, not to the model).", mc["true"], coherent, justified, mc["discrepancies"])

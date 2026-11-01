@@ -22,6 +22,32 @@ GENESIS = "0" * 64
 ACTORS = {"CORE", "AGENT", "DISCERNER", "AUTHORITY", "PROVIDER", "RELAY"}
 
 # Champs obligatoires de `data` par type d'événement (validation à l'écriture et à la lecture).
+# The HOLD cycle of the habilitated agent. Functions of the cycle, not states: they repeat, revisit
+# and interleave, and an agent on hold keeps gathering, discerning and relating without acting.
+PHASES = ["RESSENTIR", "CAPTER", "PERCEVOIR", "DISCERNER", "RELIER", "CHOISIR", "ENGAGER", "REEVALUER"]
+
+
+def default_phase(type_: str, data: dict[str, Any]) -> str | None:
+    """The phase an event belongs to, from what it records. Administrative events have none."""
+    if type_ == "ACTION_ADMITTED" or type_ == "ACTION_RESULT":
+        return {"read": "CAPTER", "contact": "RELIER", "effect": "ENGAGER"}.get(data.get("kind"), "CAPTER" if type_ == "ACTION_RESULT" else "ENGAGER")
+    if type_ == "EFFECT_OUTCOME":
+        return "RESSENTIR" if data.get("status") == "UNKNOWN" else "REEVALUER"
+    if type_ == "PATH_EXECUTED":
+        return "CAPTER" if data.get("path") == "VERIFY" else "RELIER"
+    if type_ == "REQUEST_CLOSED":
+        return "REEVALUER" if data.get("reason") == "CONDITIONS_CHANGED" else "RESSENTIR"
+    if type_ == "PROFILE_ATTACHED":
+        return "RESSENTIR" if data.get("supersedes") else None
+    return {
+        "ACTION_REFUSED": "ENGAGER", "EFFECT_RESERVED": "ENGAGER", "EVIDENCE": "CAPTER", "HOLD_ENTERED": "RELIER",
+        "POSITION": "DISCERNER", "PROPOSAL": "PERCEVOIR", "DECISION": "CHOISIR", "WAIT_STARTED": "ENGAGER", "WAIT_ENDED": "RESSENTIR",
+        "DECISION_REQUEST": "RELIER", "AUTHORITY_ANSWER": "RELIER", "AUTHORITY_GRANT": "RELIER", "RELAY_SENT": "RELIER",
+        "RELAY_FAILED": "RELIER", "RELAY_REJECTED": "RELIER", "REVOKED": "RELIER",
+        "RECONCILED": "REEVALUER", "RESUMED": "REEVALUER", "PRESERVED": "REEVALUER", "MISSION_CLOSED": "REEVALUER",
+    }.get(type_)
+
+
 EVENT_TYPES: dict[str, set[str]] = {
     "MISSION_OPENED": {"title"},
     "PROFILE_ATTACHED": {"fingerprint", "revision", "profile"},
@@ -32,8 +58,11 @@ EVENT_TYPES: dict[str, set[str]] = {
     "EFFECT_RESERVED": {"action", "effect_key", "operation_id", "attributes"},
     "EFFECT_OUTCOME": {"effect_key", "operation_id", "status"},
     "HOLD_ENTERED": {"effect_key", "operation_id", "scope"},
-    "PROPOSAL": {"round", "discerner", "position", "proposal"},
-    "DECISION": {"round", "position", "proposal", "read_digest", "now_digest", "verdict"},
+    "POSITION": {"round", "effect_key", "position"},
+    "PROPOSAL": {"round", "attempt", "discerner", "position_seq", "proposal"},
+    "DECISION": {"round", "attempt", "position_seq", "proposal", "read_digest", "now_digest", "final", "outcome", "verdict"},
+    "WAIT_STARTED": {"effect_key", "seconds", "until", "condition"},
+    "WAIT_ENDED": {"effect_key"},
     "PATH_EXECUTED": {"round", "path", "result"},
     "EVIDENCE": {"effect_key", "source", "kind"},
     "DECISION_REQUEST": {"question_id", "kind", "options"},
@@ -64,6 +93,8 @@ class Event:
     revision: int
     core: str
     data: dict[str, Any] = field(default_factory=dict)
+    phase: str | None = None  # function of the agent's cycle this event belongs to (not a state)
+    status: str | None = None  # mission status after this event
     prev: str = GENESIS
     hash: str = ""
 
@@ -89,11 +120,13 @@ def validate_data(type_: str, data: dict[str, Any]) -> None:
         raise ValueError(f"{type_}: missing fields {sorted(missing)}")
 
 
-def make_event(*, mission: str, seq: int, at: str, type_: str, actor: str, cause: int | None, profile: str, revision: int, data: dict, prev: str) -> Event:
+def make_event(*, mission: str, seq: int, at: str, type_: str, actor: str, cause: int | None, profile: str, revision: int, data: dict, prev: str, phase: str | None = None, status: str | None = None) -> Event:
     if actor not in ACTORS:
         raise ValueError(f"Unknown actor: {actor}")
+    if phase is not None and phase not in PHASES:
+        raise ValueError(f"Unknown phase: {phase}")
     validate_data(type_, data)
-    e = Event(v=ENVELOPE_VERSION, mission=mission, seq=seq, at=at, type=type_, actor=actor, cause=cause, profile=profile, revision=revision, core=CORE_VERSION, data=data, prev=prev)
+    e = Event(v=ENVELOPE_VERSION, mission=mission, seq=seq, at=at, type=type_, actor=actor, cause=cause, profile=profile, revision=revision, core=CORE_VERSION, data=data, phase=phase, status=status, prev=prev)
     return Event(**{**e.to_dict(), "hash": compute_hash(e)})
 
 
@@ -122,5 +155,7 @@ def verify_chain(events: list[Event] | list[dict]) -> ChainReport:
             validate_data(e.type, e.data)
         except ValueError as err:
             return ChainReport(False, len(events), prev, e.seq, str(err))
+        if e.phase is not None and e.phase not in PHASES:
+            return ChainReport(False, len(events), prev, e.seq, f"unknown phase {e.phase}")
         prev = e.hash
     return ChainReport(True, len(events), prev)

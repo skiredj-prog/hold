@@ -133,6 +133,9 @@ class Hesitation(_Model):
     autonomous_resume: bool = True
     max_rounds: int = Field(default=8, ge=1, le=50)
     envelope_breach: Literal["refuse", "ask_authority"] = "refuse"
+    map_retries: int = Field(default=1, ge=0, le=3, description="Times a refused reading or move is handed back to the model before the reference applies")
+    max_wait_seconds: int = Field(default=900, ge=0, le=86400, description="Patience: total waiting allowed per unknown effect (0 disables WAIT)")
+    max_waits: int = Field(default=2, ge=0, le=10, description="Waits at most per unknown effect")
 
     @field_validator("ladder")
     @classmethod

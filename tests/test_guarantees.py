@@ -43,7 +43,8 @@ def test_two_processes_sharing_one_store_dispatch_once(tmp_path):
         assert p.returncode == 0, err
         results.append(json.loads(out.strip().splitlines()[-1]))
     assert LedgerHotel(ledger).created == 1  # counted at the provider, not by HOLD
-    assert results.count("OK") == 1 and set(results) <= {"OK", "ALREADY_CONFIRMED"}
+    # the others see the equivalent effect in flight (HELD) or already confirmed: none dispatches
+    assert results.count("OK") == 1 and set(results) <= {"OK", "ALREADY_CONFIRMED", "HELD"}
     assert m.verify().valid
     reserved = [e for e in m.events() if e.type == "EFFECT_RESERVED"]
     assert len(reserved) == 1

@@ -1,7 +1,9 @@
-"""Discerneurs : qui propose un chemin quand la cohérence est menacée.
+"""Discerners: who proposes a move when coherence is threatened.
 
-Le discerneur propose, le plancher admet. Un discerneur faible ne rend pas le système
-dangereux ; il le rend moins habile, et le journal le mesure (concordance, sur-sollicitation).
+The discerner declares a reading and a move; the floor checks the reading, the move, and that one
+follows from the other. A weak discerner cannot make the floor unsafe, and for that very reason its
+contribution is measured separately: what was admitted on its own merit is credited to it, what the
+floor applied after refusing it is credited to the floor.
 """
 
 from __future__ import annotations
@@ -16,17 +18,22 @@ import httpx
 
 from .canonical import canonical_json, sha256_hex
 
-PATHS = ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"]
+MOVES = ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "WAIT", "PRESERVE"]
+PENDING = ["NONE", "VISIBILITY_DELAY", "SUPPORT_REPLY"]
 EFFECT_STATES = ["DISPATCHING", "UNKNOWN", "CONFIRMED", "FAILED_PROVEN"]
 
 
 @dataclass
 class Proposal:
+    """A decision returned by a discerner: a declared map of the facts, a move, and reasons citing
+    fact ids. Only the map, the move and the citations are checked; the rationale is kept as text."""
+
     discerner: str
-    path: str | None
-    perceived_state: str | None = None
-    paths_reaching_tau: list[str] | None = None
+    move: str | None
+    map: dict[str, Any] | None = None
     rationale: str = ""
+    cites: list[str] | None = None
+    wait_seconds: int | None = None
     model: str | None = None
     model_digest: str | None = None
     input_sha: str | None = None
@@ -45,61 +52,90 @@ class Discerner(Protocol):
 
 
 class ReferenceDiscerner:
-    """Politique de référence (bras de contrôle) : recopie la règle de moindre autorité. Ce n'est pas un modèle."""
+    """The reference cascade (control arm). Not a model: it copies the kernel's own reading, so its map is
+    true by construction, it cannot read free text, and it never waits."""
 
     name = "reference"
 
     def describe(self) -> dict[str, Any]:
-        return {"name": self.name, "kind": "rule", "note": "least-authority cascade; not a model"}
+        return {"name": self.name, "kind": "rule", "note": "least-authority cascade on the kernel's own reading; not a model"}
 
     def propose(self, position: dict[str, Any], context: dict[str, Any]) -> Proposal:
-        reaching = [p["name"] for p in position["paths"] if p["open"] and p["reaches_tau"]]
-        return Proposal("reference", position["reference"], position["effect_state"], reaching, "Least-authority rule (authority directive first).")
+        from .hesitation import true_map
+
+        return Proposal("reference", position["reference"], true_map(position), "First open path reaching tau* in the ladder (authority directive first).", ["P:" + position["reference"]])
 
 
-SYSTEM_PROMPT = """You are the hesitation layer of an autonomous agent. An external action may have happened, but its result is unknown. You never act yourself: you choose one path, and a deterministic floor admits or refuses it.
+SYSTEM_PROMPT = """You are the hesitation layer of an autonomous agent. An external action was sent, but its result is unknown. You never act on the world yourself: you read the facts, declare your reading, choose one move, and a deterministic floor checks your reading and your move before anything happens.
 
-Definitions:
-- effect_state UNKNOWN: a request was sent, the result is not proven. A timeout does not prove failure. "Not found" does not prove failure.
-- coherence: 1 when the truth of the effect is known, 0 while it is unknown. tau_star is the threshold to restore.
-- Each path has: open (allowed right now, with the reason), sigma (chance to restore coherence), authority (who is mobilized: agent < mandate < authority).
-- A path "reaches tau" when it is open and sigma >= tau_star.
+The facts:
+- effect_state: UNKNOWN means a request was sent and its result is not proven. A timeout does not prove failure. "Not found" does not prove failure.
+- tau_star: the coherence to restore before acting again. A path "reaches tau*" when it is open and its sigma >= tau_star.
+- paths: each has open (allowed now, with the reason), sigma (chance to restore coherence), authority (who is mobilized: agent < mandate < authority), left (what remains of it), directed (granted explicitly by the accountable authority).
+- observations: evidence collected so far, each with an id (E...) and its text.
 
-Procedure, in order:
-0. If an open path has directed=true, the accountable authority explicitly granted it: choose it.
-1. Read effect_state from the facts.
-2. List the paths that are open AND have sigma >= tau_star.
-3. Choose the first of them in this order: VERIFY, CONTACT_SUPPORT, ASK_AUTHORITY. Never choose a closed path. Never ask the authority while VERIFY or CONTACT_SUPPORT can still reach tau.
-4. If no path reaches tau, choose PRESERVE.
-Never propose to recreate the action, to declare success, or to run dependent actions.
+The moves:
+- VERIFY: check the status with the provider. Each check is spent, and each "not found" lowers the sigma of the next one.
+- CONTACT_SUPPORT: ask the provider's support. Its contacts are few.
+- ASK_AUTHORITY: send a Decision Request to the accountable authority. It disturbs a person and uses one of few requests.
+- WAIT: wait without acting, only when an observation states that something is pending (the record may take time to appear, a reply is coming). You must quote that observation.
+- PRESERVE: keep the state and do nothing more.
 
-Answer only with the JSON object required by the schema. rationale: one short sentence citing the fields you used (open, sigma, authority)."""
+The mission's rules:
+1. Never choose a closed path.
+2. A path granted by the authority (directed=true) comes first.
+3. Do not ask the authority while a path inside the habilitation (VERIFY, CONTACT_SUPPORT) reaches tau*, or while a pending condition stated in the evidence can still resolve within your patience.
+4. A path below tau* is not expected to restore coherence.
+5. If nothing is justified, PRESERVE.
+6. Never propose to recreate the action, to declare success, or to run dependent actions.
+
+Among the moves the facts justify, the choice is yours: weigh what each one spends and what it leaves for later.
+
+Answer only with the JSON object required by the schema:
+- map.effect_state, map.open_paths (open paths except PRESERVE), map.reaching_tau: your reading of the facts.
+- map.pending: condition NONE, or VISIBILITY_DELAY / SUPPORT_REPLY with the evidence id, an exact quote from that observation, and wait_seconds.
+- move, rationale (one or two sentences), cites (the ids of the facts you used: E... for observations, P:<PATH> for paths)."""
 
 OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
-        "perceived_state": {"type": "string", "enum": EFFECT_STATES},
-        "paths_reaching_tau": {"type": "array", "items": {"type": "string", "enum": PATHS}},
-        "choice": {"type": "string", "enum": PATHS},
+        "map": {
+            "type": "object",
+            "properties": {
+                "effect_state": {"type": "string", "enum": EFFECT_STATES},
+                "open_paths": {"type": "array", "items": {"type": "string", "enum": MOVES[:4]}},
+                "reaching_tau": {"type": "array", "items": {"type": "string", "enum": MOVES[:3]}},
+                "pending": {
+                    "type": "object",
+                    "properties": {
+                        "condition": {"type": "string", "enum": PENDING},
+                        "evidence": {"type": "string"},
+                        "quote": {"type": "string"},
+                        "wait_seconds": {"type": "integer"},
+                    },
+                    "required": ["condition"],
+                },
+            },
+            "required": ["effect_state", "open_paths", "reaching_tau", "pending"],
+        },
+        "move": {"type": "string", "enum": MOVES},
         "rationale": {"type": "string"},
+        "cites": {"type": "array", "items": {"type": "string"}},
     },
-    "required": ["perceived_state", "paths_reaching_tau", "choice", "rationale"],
+    "required": ["map", "move", "rationale", "cites"],
 }
 
 
 def model_view(position: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
-    """Ce que le modèle voit : les faits et la frontière, pas la référence calculée."""
+    """What the model sees: the facts and the boundary, never the computed reference."""
     return {
         "mission": context.get("mission_title"),
-        "impasse": {
-            "action": position["action"],
-            "operation_id": position["operation_id"],
-            "observations": position["observations"],
-        },
+        "impasse": {"action": position["action"], "operation_id": position["operation_id"]},
         "effect_state": position["effect_state"],
         "coherence": position["coherence"],
         "tau_star": position["tau_star"],
-        "paths": [{k: p[k] for k in ("name", "open", "reason", "sigma", "authority", "directed")} for p in position["paths"]],
+        "paths": [{k: p.get(k) for k in ("name", "open", "reason", "sigma", "authority", "left", "directed")} for p in position["paths"]],
+        "observations": [{k: o.get(k) for k in ("id", "source", "kind", "text")} for o in position["observations"]],
         "forbidden": position["forbidden"],
     }
 
@@ -130,22 +166,19 @@ class LlamaDiscerner:
 
     def propose(self, position: dict[str, Any], context: dict[str, Any]) -> Proposal:
         view = model_view(position, context)
-        input_sha = sha256_hex(canonical_json(view))
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": "Facts (JSON):\n" + json.dumps(view, ensure_ascii=False, indent=1)},
+        ]
+        for past in context.get("feedback") or []:  # the floor's refusals of earlier attempts, handed back
+            messages += [{"role": "assistant", "content": past["answer"]}, {"role": "user", "content": "The floor refused this: " + past["reason"] + " Read the facts again and answer."}]
+        input_sha = sha256_hex(canonical_json(messages))
         started = time.monotonic()
         try:
             r = httpx.post(
                 f"{self.base_url}/api/chat",
                 timeout=self.timeout_s,
-                json={
-                    "model": self.model,
-                    "stream": False,
-                    "format": OUTPUT_SCHEMA,
-                    "options": self.options,
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": "Facts (JSON):\n" + json.dumps(view, ensure_ascii=False, indent=1)},
-                    ],
-                },
+                json={"model": self.model, "stream": False, "format": OUTPUT_SCHEMA, "options": self.options, "messages": messages},
             )
             data = r.json()
             raw = (data.get("message") or {}).get("content", "")
@@ -153,11 +186,14 @@ class LlamaDiscerner:
             if r.status_code != 200 or data.get("error"):
                 return Proposal("llama", None, model=self.model, input_sha=input_sha, duration_ms=ms, error=str(data.get("error") or r.status_code))
             out = json.loads(raw)
-            choice = out.get("choice")
-            if choice not in PATHS:
-                return Proposal("llama", None, model=self.model, input_sha=input_sha, output_sha=sha256_hex(raw), duration_ms=ms, error="choice outside the schema")
+            move = out.get("move")
+            if move not in MOVES:
+                return Proposal("llama", None, model=self.model, input_sha=input_sha, output_sha=sha256_hex(raw), duration_ms=ms, error="move outside the schema")
+            m = out.get("map") if isinstance(out.get("map"), dict) else None
+            wait = ((m or {}).get("pending") or {}).get("wait_seconds")
             return Proposal(
-                "llama", choice, out.get("perceived_state"), list(out.get("paths_reaching_tau") or []), str(out.get("rationale", ""))[:500],
+                "llama", move, m, str(out.get("rationale", ""))[:600], [str(x) for x in (out.get("cites") or [])][:20],
+                wait_seconds=int(wait) if isinstance(wait, (int, float)) else None,
                 model=self.model, input_sha=input_sha, output_sha=sha256_hex(raw), duration_ms=ms,
             )
         except Exception as e:  # noqa: BLE001

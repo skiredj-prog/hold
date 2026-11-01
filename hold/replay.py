@@ -11,7 +11,7 @@ import json
 from collections import defaultdict
 from typing import Any
 
-from .floor import admit_path
+from .floor import admit_proposal
 from .hesitation import PathState, reference_path
 from .journal import Event
 from .profile import Profile
@@ -24,6 +24,7 @@ def fold(events: list[Event], profile: Profile) -> dict[str, Any]:
     usage: dict[str, int] = defaultdict(int)
     requests: dict[str, str] = {}
     grants_consumed: set[str] = set()
+    positions: dict[int, dict[str, Any]] = {}
 
     def budget(action: str) -> bool:
         p = profile.power(action)
@@ -58,16 +59,21 @@ def fold(events: list[Event], profile: Profile) -> dict[str, Any]:
         elif t == "RECONCILED":
             eff = effects[d["effect_key"]]
             eff["status"], eff["receipt"] = "CONFIRMED", d["receipt"]
+        elif t == "POSITION":
+            positions[e.seq] = d["position"]
         elif t == "DECISION":
             applied = d["verdict"]["applied"]
-            key = d["position"]["effect_key"]
-            if applied == "VERIFY":
+            key = positions[d["position_seq"]]["effect_key"]
+            if applied == "WAIT":
+                usage[f"waits:{key}"] += 1
+                usage[f"waited_s:{key}"] += d["verdict"]["wait_seconds"]
+            elif applied == "VERIFY":
                 usage[f"checks:{key}"] += 1
                 if usage[f"directed_checks:{key}"] > 0:
                     usage[f"directed_checks:{key}"] -= 1
             elif applied == "CONTACT_SUPPORT" and profile.support and profile.support.budget is not None:
                 usage[f"power:{profile.support.action}"] += 1
-        elif t == "PRESERVED":
+        elif t in ("PRESERVED", "WAIT_STARTED"):
             status = "HELD"
         elif t == "DECISION_REQUEST":
             requests[d["question_id"]] = "OPEN"
@@ -120,7 +126,11 @@ def state_replay(store, mission_id: str, profile: Profile) -> dict[str, Any]:
 def decision_replay(events: list[Event], profile: Profile | dict[str, Profile]) -> dict[str, Any]:
     """`profile`: the mission's profile, or a map fingerprint -> profile when the mission adopted a revision."""
     checked, mismatches = 0, []
+    positions: dict[int, dict[str, Any]] = {}
     for e in events:
+        if e.type == "POSITION":
+            positions[e.seq] = e.data["position"]
+            continue
         if e.type != "DECISION":
             continue
         if isinstance(profile, dict):
@@ -131,12 +141,15 @@ def decision_replay(events: list[Event], profile: Profile | dict[str, Profile]) 
         else:
             prof = profile
         d = e.data
-        pos = d["position"]
+        pos = positions.get(d["position_seq"])
+        if pos is None:
+            mismatches.append({"seq": e.seq, "round": d["round"], "error": f"position event {d['position_seq']} missing"})
+            continue
         paths = [PathState(**p) for p in pos["paths"]]
         ref = reference_path(paths, prof.hesitation.ladder)
-        v = admit_path(d["proposal"]["path"], pos, d["read_digest"], d["now_digest"], on_refused=d.get("on_refused", prof.hesitation.on_refused_proposal))
+        v = admit_proposal(d["proposal"], pos, d["read_digest"], d["now_digest"], final=d["final"], on_refused=d.get("on_refused", prof.hesitation.on_refused_proposal))
         checked += 1
-        if ref != pos["reference"] or v.__dict__ != d["verdict"]:
+        if ref != pos["reference"] or v.__dict__ != d["verdict"] or v.outcome != d["outcome"]:
             mismatches.append({"seq": e.seq, "round": d["round"], "recorded": d["verdict"], "replayed": v.__dict__, "reference_recorded": pos["reference"], "reference_replayed": ref})
     return {"checked": checked, "matches": not mismatches, "mismatches": mismatches}
 
@@ -144,10 +157,14 @@ def decision_replay(events: list[Event], profile: Profile | dict[str, Profile]) 
 def policy_replay(events: list[Event], *, tau_star: float | None = None, ladder: list[str] | None = None, profile: Profile) -> list[dict[str, Any]]:
     """Ce que la référence aurait choisi, position par position, sous une autre politique. Aucun effet."""
     out = []
+    positions: dict[int, dict[str, Any]] = {}
     for e in events:
-        if e.type != "DECISION":
+        if e.type == "POSITION":
+            positions[e.seq] = e.data["position"]
             continue
-        pos = e.data["position"]
+        if e.type != "DECISION" or e.data["verdict"]["applied"] is None:
+            continue
+        pos = positions[e.data["position_seq"]]
         tau = pos["tau_star"] if tau_star is None else tau_star
         paths = [PathState(**{**p, "reaches_tau": p["open"] and p["sigma"] >= tau if p["name"] != "PRESERVE" else False}) for p in pos["paths"]]
         alt = reference_path(paths, ladder or profile.hesitation.ladder)
