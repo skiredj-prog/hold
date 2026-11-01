@@ -200,8 +200,13 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(bench.rerun_failed(target, model=a.model), ensure_ascii=False, indent=1))
             return 0
         if a.action == "evaluate":
-            # Qualification path: strict identity against the frozen protocol designated by --frozen. Rows are taken
-            # as recorded; nothing is filled in from the file header.
+            # Qualification path: the anchor first. The designated frozen file must match its own SHA-256 and the code
+            # that runs (the same check as bench check / run / rerun); then strict identity of every row against it.
+            # Rows are taken as recorded; nothing is filled in from the file header.
+            ok, problems = bench.check_freeze(a.frozen)
+            if not ok:
+                print("Refused: the designated frozen protocol is not a valid anchor: " + "; ".join(problems), file=sys.stderr)
+                return 1
             frozen_sha = json.loads(Path(a.frozen).read_text(encoding="utf-8"))["sha256"]
             rows = [x for f in a.results or [] for x in json.loads(Path(f).read_text(encoding="utf-8"))["results"]]
             ev = bench.evaluate(rows, expected_protocol=frozen_sha, strict=True)

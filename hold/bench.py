@@ -265,7 +265,16 @@ def freeze(path: str | Path) -> dict[str, Any]:
 
 
 def check_freeze(path: str | Path) -> tuple[bool, list[str]]:
-    frozen = json.loads(Path(path).read_text(encoding="utf-8"))
+    """Is this frozen file a valid anchor? It must match its own SHA-256, and the code and protocol that run now
+    must be the ones it froze. Unreadable or incomplete files are invalid, never an exception."""
+    try:
+        frozen = json.loads(Path(path).read_text(encoding="utf-8"))
+        if not isinstance(frozen, dict) or not isinstance(frozen.get("protocol"), dict) or not isinstance(frozen.get("sha256"), str):
+            return False, ["the frozen file has no protocol or no SHA-256"]
+        if not isinstance(frozen["protocol"].get("code"), dict):
+            return False, ["the frozen protocol has no code fingerprints"]
+    except (OSError, ValueError) as e:
+        return False, [f"the frozen file cannot be read: {e}"]
     problems = []
     if digest(frozen["protocol"]) != frozen["sha256"]:
         problems.append("the frozen file does not match its own SHA-256")

@@ -1,6 +1,6 @@
-# E1-A5 — Legitimate recovery (development checkpoint 4, NOT frozen, NOT qualified)
+# E1-A5 — Legitimate recovery (development checkpoint 5, NOT frozen, NOT qualified)
 
-> Checkpoint 2 answered the PMO review of `9651f9e`; checkpoint 3 the second review of `fc22f595`; checkpoint 4 the reserve on evidence identity raised on `c40dda1`. See the review sections below.
+> Checkpoint 2 answered the PMO review of `9651f9e`; checkpoint 3 the second review of `fc22f595`; checkpoint 4 the reserve on evidence identity raised on `c40dda1`; checkpoint 5 the final reserve on the frozen file raised on `f4d2837`. See the review sections below.
 
 Date: 1 November 2026. Branch `experiment/E1-A5`, parent E1-A4 `aa96a09` (frozen protocol `15af3cc2…`, kept unchanged as the safety reference; its 33 C-llama 3B runs and the S1 diagnostic are committed as evidence).
 
@@ -36,7 +36,7 @@ Status: **exploratory**. A5 was designed after observing the A4 failure on `llam
 Provenance is established by HOLD from the recorded tool results, never from what the model asserts: a value the agent typed into a read, or a plausible value the provider never quoted, is refused (tested).
 
 ## Verification at this checkpoint
-- Checkpoint 4: **121 tests** pass on the **real template with I6 active** (checkpoint 3: 114; 2: 108; 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
+- Checkpoint 5: **123 tests** pass on the **real template with I6 active** (checkpoint 4: 121; 3: 114; 2: 108; 1: 102). No fixture disables I6 (the earlier global workaround was removed). Booking tests observe an offer first; the floor's unit tests use an explicit, controlled provenance proof; scorer tests on deliberately corrupted provider records are kept separate.
 - The PMO passing criterion is met by one complete demonstration (`hold demo --scenario a5-recovery`, test `test_demonstration_observe_verify_engage_recover_without_repeating`), replaying the A4 first turn verbatim:
   1. the search is executed, the two calls issued with it come back unexecuted;
   2. the invented booking is refused twice as correctable (`I4/INVALID_ARGUMENTS`, then `I6/PROVENANCE`), and the corrected booking is admitted with `provenance_checked = provider, hotel_id, price, currency`;
@@ -78,6 +78,17 @@ The qualification path (`hold bench run`, `hold bench evaluate`) is **strict**: 
 
 Synthetic results built by unit tests keep the lenient mode (`strict=False`); the CLI never uses it. Rows written by the runner and by its single replacement pass the strict check (`test_rows_written_by_the_runner_and_its_replacement_pass_strict_identity`).
 
+## PMO final reserve on f4d2837 — the frozen file as anchor (checkpoint 5)
+`hold bench evaluate` now calls `bench.check_freeze(--frozen)` before reading any result, the same check as `bench check`, `bench run` and `bench rerun`: the designated file must match its own SHA-256, and the code and protocol that run must be the ones it froze. If not, the evaluation is refused (exit 1) with an explicit error. Strict identity of every row against the validated digest, and violations counted over every attempt, are unchanged. An unreadable or incomplete frozen file is an invalid anchor, not a crash.
+
+| Exit test | Case |
+|---|---|
+| `test_the_qualification_cli_refuses_a_frozen_file_that_does_not_match_its_own_digest` | A5's real protocol with an invented digest (64 × `a`) and 33 results carrying that digest: refused, exit 1 |
+| `test_an_unreadable_frozen_file_is_an_invalid_anchor_not_a_crash` | malformed JSON, missing protocol |
+| `test_the_qualification_cli_refuses_unidentified_evidence` | now runs against a real, self-consistent freeze written to a temporary folder (the repository stays unfrozen) |
+
+Nothing else changed: HOLD, I6, the harness, the hypotheses and the A5 predictions are as in checkpoint 4.
+
 ## Known limits (stated, not solved)
 - I6 binds attributes to a record by field name (or an explicit `attr=field` mapping), from a declared source tool; it trusts that tool to speak for the provider, and a provider whose records name fields differently needs the mapping in the profile.
 - I6 proves a value set was returned together; it does not prove the offer is still valid at the provider (an expired quote would pass).
@@ -95,7 +106,7 @@ Synthetic results built by unit tests keep the lenient mode (`strict=False`); th
 cd <extraction>\hold
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 121 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 123 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli demo --scenario a5-recovery --no-color
 ```
 `hold bench run` will refuse to start until A5 is frozen: that is intended.

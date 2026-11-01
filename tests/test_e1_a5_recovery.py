@@ -462,23 +462,48 @@ def test_a_violation_still_refutes_h1_when_the_metadata_are_invalid():
     assert not ev["identity"]["valid"] and ev["H1"]["verdict"] == "refuted"
 
 
-def test_the_qualification_cli_refuses_unidentified_evidence(tmp_path):
+def _cli_evaluate(frozen, results):
     import subprocess
     import sys
 
     from conftest import ROOT
 
-    frozen = tmp_path / "frozen.json"
-    frozen.write_text(json.dumps({"sha256": FROZEN}), encoding="utf-8")
+    return subprocess.run([sys.executable, "-m", "hold.cli", "bench", "evaluate", "--frozen", str(frozen), "--results", str(results)],
+                          cwd=ROOT, capture_output=True, text=True)
+
+
+def test_the_qualification_cli_refuses_unidentified_evidence(tmp_path):
+    frozen = tmp_path / "frozen.json"  # a temporary freeze of the current code: the repository itself stays unfrozen
+    sha = bench.freeze(frozen)["sha256"]
     good, bare = tmp_path / "good.json", tmp_path / "bare.json"
-    good.write_text(json.dumps({"protocol_sha256": FROZEN, "results": _campaign()}), encoding="utf-8")
+    good.write_text(json.dumps({"protocol_sha256": sha, "results": _campaign(protocol_sha256=sha)}), encoding="utf-8")
     # the file header claims the right protocol; the rows do not carry it: the CLI must not fill it in
-    bare.write_text(json.dumps({"protocol_sha256": FROZEN, "results": [{k: v for k, v in r.items() if k != "protocol_sha256"} for r in _campaign()]}), encoding="utf-8")
-    run = lambda f: subprocess.run([sys.executable, "-m", "hold.cli", "bench", "evaluate", "--frozen", str(frozen), "--results", str(f)],  # noqa: E731
-                                   cwd=ROOT, capture_output=True, text=True)
-    assert run(good).returncode == 0
-    refused = run(bare)
+    bare.write_text(json.dumps({"protocol_sha256": sha, "results": [{k: v for k, v in r.items() if k != "protocol_sha256"} for r in _campaign()]}), encoding="utf-8")
+    assert _cli_evaluate(frozen, good).returncode == 0
+    refused = _cli_evaluate(frozen, bare)
     assert refused.returncode == 1 and "Refused as evidence" in refused.stderr
+
+
+def test_the_qualification_cli_refuses_a_frozen_file_that_does_not_match_its_own_digest(tmp_path):
+    frozen = tmp_path / "frozen.json"
+    real = bench.freeze(frozen)
+    forged_sha = "a" * 64
+    frozen.write_text(json.dumps(real | {"sha256": forged_sha}), encoding="utf-8")  # A5's real protocol, an invented digest
+    assert bench.check_freeze(frozen)[0] is False
+    results = tmp_path / "results.json"
+    results.write_text(json.dumps({"protocol_sha256": forged_sha, "results": _campaign(protocol_sha256=forged_sha)}), encoding="utf-8")
+    refused = _cli_evaluate(frozen, results)
+    assert refused.returncode == 1 and "not a valid anchor" in refused.stderr and "does not match its own SHA-256" in refused.stderr
+    assert "accepted" not in refused.stdout
+
+
+def test_an_unreadable_frozen_file_is_an_invalid_anchor_not_a_crash(tmp_path):
+    bad = tmp_path / "frozen.json"
+    bad.write_text("{not json", encoding="utf-8")
+    ok, problems = bench.check_freeze(bad)
+    assert not ok and "cannot be read" in problems[0]
+    bad.write_text(json.dumps({"sha256": "a" * 64}), encoding="utf-8")
+    assert bench.check_freeze(bad) == (False, ["the frozen file has no protocol or no SHA-256"])
 
 
 def test_rows_written_by_the_runner_and_its_replacement_pass_strict_identity(monkeypatch, tmp_path):
