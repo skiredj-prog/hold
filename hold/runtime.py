@@ -501,7 +501,7 @@ class Mission:
             if result is not None:
                 return result
         with self.store.tx() as c:
-            self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": f"limit of {h.max_rounds} hesitation rounds"}, status="HELD")
+            self.store.append(c, self.id, "PRESERVED", "CORE", {"effect_key": key, "reason": f"limit of {h.max_rounds} hesitation rounds"}, status="HELD", phase="REEVALUER")
         eff = self.store.effect(key)
         return self._held_message(eff["action"], eff["operation_id"])
 
@@ -800,10 +800,10 @@ class Mission:
             "failed": [{"action": e["action"], "operation_id": e["operation_id"]} for e in effs if e["status"] == "FAILED_PROVEN"],
         }
 
-    def _close(self, c, outcome: str, *, cause: int | None = None, report: dict | None = None) -> None:
+    def _close(self, c, outcome: str, *, cause: int | None = None, report: dict | None = None, phase: str | None = None) -> None:
         c.execute("UPDATE requests SET status='CANCELLED' WHERE mission=? AND status='OPEN'", (self.id,))
         c.execute("DELETE FROM waits WHERE mission=?", (self.id,))
-        self.store.append(c, self.id, "MISSION_CLOSED", "CORE", {"outcome": outcome, "report": report or self._report()}, cause=cause, status=outcome)
+        self.store.append(c, self.id, "MISSION_CLOSED", "CORE", {"outcome": outcome, "report": report or self._report()}, cause=cause, status=outcome, phase=phase)
 
     def close(self, outcome: str = "CLOSED_COMPLETED", report: dict | None = None) -> dict[str, Any]:
         with self.store.tx() as c:
@@ -811,7 +811,7 @@ class Mission:
                 return {"closed": False, "status": self.status}
             if outcome == "CLOSED_COMPLETED" and any(e["status"] in ("UNKNOWN", "DISPATCHING") for e in self.store.effects(self.id)):
                 outcome = "CLOSED_UNCONFIRMED"  # jamais de « terminé » avec un effet sans preuve (I2)
-            self._close(c, outcome, report=report)
+            self._close(c, outcome, report=report, phase="REEVALUER")  # the agent closes: it confronts results with the mission
         return {"closed": True, "status": outcome}
 
     def wait(self, timeout: float = 60.0, poll: float = 0.25) -> str:

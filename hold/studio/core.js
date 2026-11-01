@@ -138,22 +138,24 @@
   const admissibleMoves = (position) => position.paths.filter((p) => p.open).map((p) => p.name);
   const seconds = (v) => (typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1e9 ? Math.trunc(v) : null);
 
-  function verdict(outcome, proposed, applied, reference, credit, rule, reason, mapTrue, coherent, justified, discrepancies, wait) {
-    return { outcome, proposed, applied, reference, credit, rule, reason, map_true: mapTrue, coherent, justified, discrepancies, wait_seconds: wait ?? null };
+  function verdict(outcome, proposed, applied, reference, credit, rule, reason, mapTrue, coherent, admissible, justified, supported, discrepancies, wait) {
+    return { outcome, proposed, applied, reference, credit, rule, reason, map_true: mapTrue, coherent, admissible, justified, supported, discrepancies, wait_seconds: wait ?? null };
   }
   function admitProposal(proposal, position, readDigest, nowDigest, final, onRefused) {
     const ref = position.reference; const p = proposal || {}; const move = p.move ?? null;
-    if (readDigest !== nowDigest) return verdict("STALE", move, null, ref, null, "I5", "The position changed during deliberation: re-read before acting.", null, null, [], []);
+    const admissible = admissibleMoves(position);
+    const justified = justifiedMoves(trueMap(position), position);
+    if (readDigest !== nowDigest) return verdict("STALE", move, null, ref, null, "I5", "The position changed during deliberation: re-read before acting.", null, null, admissible, justified, [], []);
     const mc = checkMap(p.map, position);
-    const justified = justifiedMoves(p.map, position);
-    const coherent = move ? justified.includes(move) : null;
+    const supported = justifiedMoves(p.map, position);
+    const coherent = move ? supported.includes(move) : null;
     let outcome, rule, reason;
     if (!move) { outcome = "NO_PROPOSAL"; rule = "D1/NONE"; reason = "No usable proposal" + (p.error ? ` (${p.error})` : "") + "."; }
     else if (!mc.true) { outcome = "MAP_REFUSED"; rule = "D1/MAP"; reason = "The declared reading is false: " + mc.discrepancies.join("; ") + "."; }
-    else if (!admissibleMoves(position).includes(move)) {
+    else if (!admissible.includes(move)) {
       const path = position.paths.find((x) => x.name === move);
       outcome = "MOVE_REFUSED"; rule = "I4/PATH"; reason = `Path ${move} is closed: ${path ? path.reason : "unknown path"}.`;
-    } else if (!coherent) { outcome = "INCOHERENT"; rule = "D1/COHERENCE"; reason = `${move} does not follow from the declared reading, which justifies ${justified.join(", ")}.`; }
+    } else if (!coherent) { outcome = "INCOHERENT"; rule = "D1/COHERENCE"; reason = `${move} does not follow from the declared reading, which supports ${supported.join(", ")}.`; }
     else {
       let wait = null;
       if (move === "WAIT") {
@@ -161,11 +163,11 @@
         const asked = seconds(p.wait_seconds) || seconds((pendingOf(p.map) || {}).wait_seconds) || left;
         wait = Math.max(1, Math.min(asked, left));
       }
-      return verdict("ADMITTED", move, move, ref, "discerner", "ADMIT", `${move} is open and follows from a true reading.`, true, true, justified, [], wait);
+      return verdict("ADMITTED", move, move, ref, "discerner", "ADMIT", `${move} is open and follows from a true reading.`, true, true, admissible, justified, supported, [], wait);
     }
-    if (!final) return verdict(outcome, move, null, ref, null, rule, reason, mc.true, coherent, justified, mc.discrepancies);
+    if (!final) return verdict(outcome, move, null, ref, null, rule, reason, mc.true, coherent, admissible, justified, supported, mc.discrepancies);
     const applied = onRefused === "reference" ? ref : "PRESERVE";
-    return verdict("REFERENCE_APPLIED", move, applied, ref, "floor", rule, `${reason} Retries exhausted: the floor applies ${applied} (credited to the floor, not to the model).`, mc.true, coherent, justified, mc.discrepancies);
+    return verdict("REFERENCE_APPLIED", move, applied, ref, "floor", rule, `${reason} Retries exhausted: the floor applies ${applied} (credited to the floor, not to the model).`, mc.true, coherent, admissible, justified, supported, mc.discrepancies);
   }
 
   function decisionReplay(events, profiles) {

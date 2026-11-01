@@ -179,8 +179,10 @@ class PathVerdict:
     rule: str
     reason: str
     map_true: bool | None
-    coherent: bool | None
-    justified: list[str]
+    coherent: bool | None  # the move follows from the discerner's own reading (internal consistency)
+    admissible: list[str]  # what the constraints and the authority permit now
+    justified: list[str]  # what the structured facts support, computed without the discerner
+    supported: list[str]  # what the discerner's declared reading supports (may add WAIT on quoted evidence)
     discrepancies: list[str]
     wait_seconds: int | None = None
 
@@ -189,25 +191,27 @@ def admit_proposal(proposal: dict[str, Any] | None, position: dict[str, Any], re
     """The gate, in order: position current (I5), a usable proposal, a true map (D1), an admissible
     move (I4), a move that follows from the declared map. If the attempt is the last one, a refusal
     applies the reference (or PRESERVE), credited to the floor, never to the model."""
-    from .hesitation import admissible_moves, check_map, justified_moves
+    from .hesitation import admissible_moves, check_map, justified_moves, true_map
 
     ref = position["reference"]
     p = proposal or {}
     move = p.get("move")
+    admissible = admissible_moves(position)
+    justified = justified_moves(true_map(position), position)
     if read_digest != now_digest:
-        return PathVerdict("STALE", move, None, ref, None, "I5", "The position changed during deliberation: re-read before acting.", None, None, [], [])
+        return PathVerdict("STALE", move, None, ref, None, "I5", "The position changed during deliberation: re-read before acting.", None, None, admissible, justified, [], [])
     mc = check_map(p.get("map"), position)
-    justified = justified_moves(p.get("map"), position)
-    coherent = move in justified if move else None
+    supported = justified_moves(p.get("map"), position)
+    coherent = move in supported if move else None
     if not move:
         outcome, rule, reason = "NO_PROPOSAL", "D1/NONE", "No usable proposal" + (f" ({p['error']})" if p.get("error") else "") + "."
     elif not mc["true"]:
         outcome, rule, reason = "MAP_REFUSED", "D1/MAP", "The declared reading is false: " + "; ".join(mc["discrepancies"]) + "."
-    elif move not in admissible_moves(position):
+    elif move not in admissible:
         path = next((x for x in position["paths"] if x["name"] == move), None)
         outcome, rule, reason = "MOVE_REFUSED", "I4/PATH", f"Path {move} is closed: {path['reason'] if path else 'unknown path'}."
     elif not coherent:
-        outcome, rule, reason = "INCOHERENT", "D1/COHERENCE", f"{move} does not follow from the declared reading, which justifies {', '.join(justified)}."
+        outcome, rule, reason = "INCOHERENT", "D1/COHERENCE", f"{move} does not follow from the declared reading, which supports {', '.join(supported)}."
     else:
         wait = None
         if move == "WAIT":
@@ -216,8 +220,8 @@ def admit_proposal(proposal: dict[str, Any] | None, position: dict[str, Any], re
             left = next(x for x in position["paths"] if x["name"] == "WAIT").get("left") or 0
             asked = _seconds(p.get("wait_seconds")) or _seconds((pending_of(p.get("map")) or {}).get("wait_seconds")) or left
             wait = max(1, min(asked, left))
-        return PathVerdict("ADMITTED", move, move, ref, "discerner", "ADMIT", f"{move} is open and follows from a true reading.", True, True, justified, [], wait)
+        return PathVerdict("ADMITTED", move, move, ref, "discerner", "ADMIT", f"{move} is open and follows from a true reading.", True, True, admissible, justified, supported, [], wait)
     if not final:
-        return PathVerdict(outcome, move, None, ref, None, rule, reason, mc["true"], coherent, justified, mc["discrepancies"])
+        return PathVerdict(outcome, move, None, ref, None, rule, reason, mc["true"], coherent, admissible, justified, supported, mc["discrepancies"])
     applied = ref if on_refused == "reference" else "PRESERVE"
-    return PathVerdict("REFERENCE_APPLIED", move, applied, ref, "floor", rule, f"{reason} Retries exhausted: the floor applies {applied} (credited to the floor, not to the model).", mc["true"], coherent, justified, mc["discrepancies"])
+    return PathVerdict("REFERENCE_APPLIED", move, applied, ref, "floor", rule, f"{reason} Retries exhausted: the floor applies {applied} (credited to the floor, not to the model).", mc["true"], coherent, admissible, justified, supported, mc["discrepancies"])

@@ -27,25 +27,24 @@ ACTORS = {"CORE", "AGENT", "DISCERNER", "AUTHORITY", "PROVIDER", "RELAY"}
 PHASES = ["RESSENTIR", "CAPTER", "PERCEVOIR", "DISCERNER", "RELIER", "CHOISIR", "ENGAGER", "REEVALUER"]
 
 
-def default_phase(type_: str, data: dict[str, Any]) -> str | None:
-    """The phase an event belongs to, from what it records. Administrative events have none."""
+def default_phase(type_: str, data: dict[str, Any], actor: str = "CORE") -> str | None:
+    """The phase an event belongs to, when it records an observable act of the agent or of the
+    habilitation acting for it. Acts of others (the authority, the relay's transport), timers and
+    bookkeeping have none: the journal reconstructs the cycle actually observed, it does not fill in
+    all eight functions."""
+    if actor in ("AUTHORITY", "RELAY"):
+        return None
     if type_ == "ACTION_ADMITTED" or type_ == "ACTION_RESULT":
         return {"read": "CAPTER", "contact": "RELIER", "effect": "ENGAGER"}.get(data.get("kind"), "CAPTER" if type_ == "ACTION_RESULT" else "ENGAGER")
     if type_ == "EFFECT_OUTCOME":
         return "RESSENTIR" if data.get("status") == "UNKNOWN" else "REEVALUER"
     if type_ == "PATH_EXECUTED":
         return "CAPTER" if data.get("path") == "VERIFY" else "RELIER"
-    if type_ == "REQUEST_CLOSED":
-        return "REEVALUER" if data.get("reason") == "CONDITIONS_CHANGED" else "RESSENTIR"
-    if type_ == "PROFILE_ATTACHED":
-        return "RESSENTIR" if data.get("supersedes") else None
     return {
         "ACTION_REFUSED": "ENGAGER", "EFFECT_RESERVED": "ENGAGER", "EVIDENCE": "CAPTER", "HOLD_ENTERED": "RELIER",
-        "POSITION": "DISCERNER", "PROPOSAL": "PERCEVOIR", "DECISION": "CHOISIR", "WAIT_STARTED": "ENGAGER", "WAIT_ENDED": "RESSENTIR",
-        "DECISION_REQUEST": "RELIER", "AUTHORITY_ANSWER": "RELIER", "AUTHORITY_GRANT": "RELIER", "RELAY_SENT": "RELIER",
-        "RELAY_FAILED": "RELIER", "RELAY_REJECTED": "RELIER", "REVOKED": "RELIER",
-        "RECONCILED": "REEVALUER", "RESUMED": "REEVALUER", "PRESERVED": "REEVALUER", "MISSION_CLOSED": "REEVALUER",
-    }.get(type_)
+        "POSITION": "DISCERNER", "PROPOSAL": "PERCEVOIR", "DECISION": "CHOISIR", "WAIT_STARTED": "ENGAGER", "PRESERVED": "ENGAGER",
+        "DECISION_REQUEST": "RELIER", "RECONCILED": "REEVALUER", "RESUMED": "REEVALUER",
+    }.get(type_)  # MISSION_CLOSED: phase given by whoever closes (REEVALUER when the agent does)
 
 
 EVENT_TYPES: dict[str, set[str]] = {

@@ -83,7 +83,8 @@ def test_a_justified_move_other_than_the_reference_is_the_discerners_and_credite
     d = decisions(m)[0]
     assert d["outcome"] == "ADMITTED" and d["verdict"]["credit"] == "discerner"
     assert d["verdict"]["applied"] == "CONTACT_SUPPORT" != d["verdict"]["reference"] == "VERIFY"
-    assert d["verdict"]["justified"] == ["VERIFY", "CONTACT_SUPPORT"]
+    assert d["verdict"]["justified"] == d["verdict"]["supported"] == ["VERIFY", "CONTACT_SUPPORT"]
+    assert d["verdict"]["admissible"] == ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "WAIT", "PRESERVE"]
     assert hotel.created == 1
     sound(hab, m)
 
@@ -125,6 +126,8 @@ def test_reading_the_evidence_spares_the_authority_where_the_cascade_cannot(book
     assert applied == ["VERIFY", "WAIT"] and m.status == "HELD"
     wait = decisions(m)[1]["verdict"]
     assert wait["credit"] == "discerner" and wait["wait_seconds"] == 600 and wait["reference"] == "VERIFY"
+    # supported by its reading of quoted evidence; not justified by the structured facts alone
+    assert "WAIT" in wait["supported"] and "WAIT" not in wait["justified"]
     clock.advance(600)
     m.sweep()  # the wait is over: the position is read again, the booking has appeared
     assert m.status == "OPEN" and hotel.created == 1
@@ -132,6 +135,7 @@ def test_reading_the_evidence_spares_the_authority_where_the_cascade_cannot(book
     assert hab.relay.outbox == []
     phases = {e.phase for e in m.events() if e.status == "HELD"}
     assert {"CAPTER", "DISCERNER", "PERCEVOIR", "CHOISIR", "ENGAGER"} <= phases  # on hold, and still active
+    assert all(e.phase is None for e in m.events() if e.type == "WAIT_ENDED")  # a timer is not an act of the agent
     sound(hab, m)
 
 
@@ -157,3 +161,20 @@ def test_patience_is_bounded(booking):
     assert len(waits) <= hab.profile.hesitation.max_waits
     assert hotel.created == 1
     sound(hab, m)
+
+
+def test_phases_record_only_the_agents_observable_acts(booking):
+    hab, hotel, clock = setup(ReferenceDiscerner(), visible_after=None)
+    m = hab.open_mission("Lyon")
+    m.call("venue_info")
+    m.call("create_booking", **booking)
+    hab.answer(m.id, m.open_request()["question_id"], "REVOKE", channel="whatsapp")
+    by_type = {}
+    for e in m.events():
+        by_type.setdefault(e.type, set()).add(e.phase)
+    for external in ("MISSION_OPENED", "PROFILE_ATTACHED", "RUNTIME_BOUND", "RELAY_SENT", "AUTHORITY_ANSWER", "REVOKED"):
+        assert by_type[external] == {None}, external
+    assert by_type["DECISION_REQUEST"] == {"RELIER"} and by_type["POSITION"] == {"DISCERNER"}
+    assert by_type["EFFECT_OUTCOME"] == {"RESSENTIR"} and by_type["ACTION_ADMITTED"] >= {"CAPTER", "ENGAGER"}
+    observed = {e.phase for e in m.events()} - {None}
+    assert "REEVALUER" not in observed  # nothing was reassessed: the authority revoked; the journal does not pretend otherwise

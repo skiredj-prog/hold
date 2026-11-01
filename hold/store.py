@@ -48,6 +48,9 @@ CREATE INDEX IF NOT EXISTS relay_mission ON relay_messages(mission);
 """
 
 
+DERIVE = "derive"
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
@@ -109,9 +112,9 @@ class Store:
         c.execute("UPDATE missions SET status=? WHERE id=?", (status, mission_id))
 
     # -- journal ---------------------------------------------------------------------
-    def append(self, c: sqlite3.Connection, mission_id: str, type_: str, actor: str, data: dict[str, Any], cause: int | None = None, *, status: str | None = None, phase: str | None = None) -> Event:
+    def append(self, c: sqlite3.Connection, mission_id: str, type_: str, actor: str, data: dict[str, Any], cause: int | None = None, *, status: str | None = None, phase: str | None = DERIVE) -> Event:
         """Appends an event. `status`: the mission status this event sets (recorded in the event as the
-        status after it). `phase`: overrides the phase derived from the event type."""
+        status after it). `phase`: a phase of the cycle, None for none, or DERIVE from the event."""
         if status is not None:
             self.set_status(c, mission_id, status)
         m = c.execute("SELECT head_seq, head_hash, profile_fp, profile_rev, status FROM missions WHERE id=?", (mission_id,)).fetchone()
@@ -120,7 +123,7 @@ class Store:
         e = make_event(
             mission=mission_id, seq=m["head_seq"] + 1, at=now_iso(), type_=type_, actor=actor, cause=cause,
             profile=m["profile_fp"], revision=m["profile_rev"], data=data, prev=m["head_hash"],
-            phase=phase or default_phase(type_, data), status=m["status"],
+            phase=default_phase(type_, data, actor) if phase == DERIVE else phase, status=m["status"],
         )
         c.execute("INSERT INTO events(mission, seq, type, json, hash) VALUES(?,?,?,?,?)", (mission_id, e.seq, e.type, json.dumps(e.to_dict(), ensure_ascii=False), e.hash))
         c.execute("UPDATE missions SET head_seq=?, head_hash=? WHERE id=?", (e.seq, e.hash, mission_id))
