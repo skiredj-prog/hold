@@ -106,9 +106,33 @@ def envelope_violations(power: Power, attrs: dict[str, Any], locale: str = "en")
     return out
 
 
-def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: ActionContext, *, grant_digest: str | None = None) -> Verdict:
-    """Admission of a tool call by the agent. `grant_digest`: one-off approval by the authority for
-    exactly these attributes (envelope breach approved through a Decision Request)."""
+def parse_time(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def grant_problem(grant: dict[str, Any] | None, *, action: str, attrs: dict[str, Any], profile: Profile, now: datetime) -> str | None:
+    """Why a one-time approval does not apply here, or None if it does.
+
+    Verified authority may override discretionary strategy (here: the envelope), never a hard
+    invariant. The approval is bound to the exact action and attributes, to the profile revision it
+    was given under, to an expiry and to a single use."""
+    if not grant:
+        return "no approval"
+    if grant.get("consumed"):
+        return "approval already used"
+    if grant.get("action") != action or grant.get("attrs_digest") != digest({"action": action, "attrs": attrs}):
+        return "approval given for different attributes"
+    if grant.get("profile") != profile.fingerprint:
+        return "approval given under another profile revision"
+    if not grant.get("expires_at") or now >= parse_time(grant["expires_at"]):
+        return "approval expired"
+    return None
+
+
+def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: ActionContext, *, grant: dict[str, Any] | None = None) -> Verdict:
+    """Admission of a tool call by the agent. `grant`: one-time approval by the authority (envelope
+    breach approved through a Decision Request). It lifts the envelope rule only: revocation, expiry,
+    dependencies (I2, I3), budget and equivalence (I1, checked before admission) still apply."""
     if ctx.revoked:
         return Verdict(False, "I4/REVOKED", "The mandate was revoked by the authority: no further action.")
     if ctx.expired:
@@ -127,8 +151,12 @@ def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: Acti
         return Verdict(False, "I4/BUDGET", f"Budget exhausted for \"{action}\" ({power.budget}).")
     if power.kind == "effect":
         v = envelope_violations(power, attrs)
-        if v and not (grant_digest and grant_digest == digest({"action": action, "attrs": attrs})):
-            return Verdict(False, "I4/ENVELOPE", "Outside the profile's envelope: " + "; ".join(v), v)
+        if v:
+            problem = grant_problem(grant, action=action, attrs=attrs, profile=profile, now=ctx.now) if grant else "no approval"
+            if problem:
+                tail = f" (the authority's approval does not apply: {problem})" if grant else ""
+                return Verdict(False, "I4/ENVELOPE", "Outside the profile's envelope: " + "; ".join(v) + tail, v)
+            return Verdict(True, "ADMIT/APPROVED", "Outside the envelope, approved once by the authority for exactly these attributes.")
     return Verdict(True, "ADMIT", "Power present, budget available, envelope respected.")
 
 

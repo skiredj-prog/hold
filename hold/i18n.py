@@ -25,6 +25,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "fr": "HOLD : le résultat de {action} ({op}) est inconnu. Ne réessayez pas et ne créez rien d'équivalent ; HOLD conduit la réconciliation. Les actions dépendantes sont suspendues, le travail indépendant peut continuer.",
     },
     "held_request": {"en": " A Decision Request is open with {authority}.", "fr": " Decision Request ouverte auprès de {authority}."},
+    "grant_used": {"en": "{action} refused: the authority's one-time approval was already used.", "fr": "{action} refusé : l'autorisation unique de l'autorité a déjà servi."},
     "reconciled": {"en": "{action} confirmed after reconciliation (receipt {receipt}). Nothing was repeated; the mission resumes.", "fr": "{action} confirmé après réconciliation (reçu {receipt}). Rien n'a été répété ; la mission reprend."},
     # -- narration ------------------------------------------------------------------------
     "n_profile": {"en": "Profile “{profile}” rev. {revision} attached · fingerprint {fp}…", "fr": "Profil « {profile} » rév. {revision} attaché · empreinte {fp}…"},

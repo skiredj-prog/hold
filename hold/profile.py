@@ -101,6 +101,8 @@ class Authority(_Model):
     can_revoke: bool = True
     max_extra_checks: int = Field(default=1, ge=0, le=5, description="Contrôles supplémentaires accordables par Decision Request")
     max_requests: int = Field(default=2, ge=0, le=10, description="Decision Requests au plus par mission : l'autorité n'est pas un recours par défaut")
+    question_ttl_minutes: int = Field(default=60, ge=1, le=10080, description="A Decision Request left unanswered expires after this delay; a later tap is refused")
+    grant_ttl_minutes: int = Field(default=15, ge=1, le=1440, description="A one-time approval must be used within this delay, under the same profile revision")
     locale: Literal["fr", "en"] = "fr"
 
     @field_validator("contact")

@@ -74,8 +74,23 @@ def test_admission_rules(profile, booking):
     assert admit_action(profile, "check_booking", {}, ctx()).rule == "I4/STATUS_RESERVED"
     assert admit_action(profile, "create_booking", booking, ctx(usage={"power:create_booking": 1})).rule == "I4/BUDGET"
     assert admit_action(profile, "create_booking", booking | {"price": 999}, ctx()).rule == "I4/ENVELOPE"
-    grant = digest({"action": "create_booking", "attrs": booking | {"price": 999}})
-    assert admit_action(profile, "create_booking", booking | {"price": 999}, ctx(), grant_digest=grant).admitted
+    pricey = booking | {"price": 999}
+    now = datetime(2026, 11, 2, 10, 0, tzinfo=timezone.utc)
+    grant = {"action": "create_booking", "attrs_digest": digest({"action": "create_booking", "attrs": pricey}), "profile": profile.fingerprint, "expires_at": "2026-11-02T10:15:00Z"}
+    assert admit_action(profile, "create_booking", pricey, ctx(now=now), grant=grant).rule == "ADMIT/APPROVED"
+    # the approval lifts the envelope only, for exactly these attributes, under this revision, before expiry, once
+    for g, why in [
+        (grant | {"consumed": True}, "already used"),
+        (grant, "different attributes"),
+        (grant | {"profile": "0" * 64}, "another profile revision"),
+        (grant, "expired"),
+    ]:
+        attrs = booking | {"price": 998} if why == "different attributes" else pricey
+        when = datetime(2026, 11, 2, 10, 15, tzinfo=timezone.utc) if why == "expired" else now
+        v = admit_action(profile, "create_booking", attrs, ctx(now=when), grant=g)
+        assert v.rule == "I4/ENVELOPE" and why in v.reason
+    assert admit_action(profile, "create_booking", pricey, ctx(now=now, revoked=True), grant=grant).rule == "I4/REVOKED"
+    assert admit_action(profile, "create_booking", pricey, ctx(now=now, usage={"power:create_booking": 1}), grant=grant).rule == "I4/BUDGET"
     it = {"traveler": "A", "booking_reference": "R"}
     assert admit_action(profile, "send_itinerary", it, ctx(uncertain_actions={"create_booking"})).rule == "I3"
     assert admit_action(profile, "send_itinerary", it, ctx()).rule == "I2"

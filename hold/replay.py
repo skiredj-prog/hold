@@ -77,6 +77,9 @@ def fold(events: list[Event], profile: Profile) -> dict[str, Any]:
             requests[d["question_id"]] = "ANSWERED"
             if d["answer"] in ("APPROVE_ONCE", "REFUSE"):
                 status = "OPEN"
+        elif t == "REQUEST_CLOSED":
+            requests[d["question_id"]] = d["status"]
+            status = d["mission_status"]
         elif t == "AUTHORITY_GRANT":
             g = d["grant"]
             if g["kind"] == "EXTRA_CHECK":
@@ -114,16 +117,24 @@ def state_replay(store, mission_id: str, profile: Profile) -> dict[str, Any]:
     return {"matches": not diffs, "differences": {k: {"replayed": replayed[k], "store": current[k]} for k in diffs}}
 
 
-def decision_replay(events: list[Event], profile: Profile) -> dict[str, Any]:
+def decision_replay(events: list[Event], profile: Profile | dict[str, Profile]) -> dict[str, Any]:
+    """`profile`: the mission's profile, or a map fingerprint -> profile when the mission adopted a revision."""
     checked, mismatches = 0, []
     for e in events:
         if e.type != "DECISION":
             continue
+        if isinstance(profile, dict):
+            if e.profile not in profile:
+                mismatches.append({"seq": e.seq, "round": e.data["round"], "error": f"profile {e.profile[:12]} missing from the journal"})
+                continue
+            prof = profile[e.profile]
+        else:
+            prof = profile
         d = e.data
         pos = d["position"]
         paths = [PathState(**p) for p in pos["paths"]]
-        ref = reference_path(paths, profile.hesitation.ladder)
-        v = admit_path(d["proposal"]["path"], pos, d["read_digest"], d["now_digest"], on_refused=d.get("on_refused", profile.hesitation.on_refused_proposal))
+        ref = reference_path(paths, prof.hesitation.ladder)
+        v = admit_path(d["proposal"]["path"], pos, d["read_digest"], d["now_digest"], on_refused=d.get("on_refused", prof.hesitation.on_refused_proposal))
         checked += 1
         if ref != pos["reference"] or v.__dict__ != d["verdict"]:
             mismatches.append({"seq": e.seq, "round": d["round"], "recorded": d["verdict"], "replayed": v.__dict__, "reference_recorded": pos["reference"], "reference_replayed": ref})
@@ -142,6 +153,13 @@ def policy_replay(events: list[Event], *, tau_star: float | None = None, ladder:
         alt = reference_path(paths, ladder or profile.hesitation.ladder)
         out.append({"round": e.data["round"], "recorded": e.data["verdict"]["applied"], "replayed": alt, "changed": alt != pos["reference"]})
     return out
+
+
+def journal_profiles(store, events: list[Event]) -> dict[str, Profile]:
+    """Every profile revision the mission wore, as recorded in the store (fingerprint -> profile)."""
+    from .profile import load_profile
+
+    return {fp: load_profile(json.loads(store.profile_json(fp))) for fp in {e.profile for e in events}}
 
 
 def export_journal(store, mission_id: str) -> dict[str, Any]:

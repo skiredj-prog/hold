@@ -38,6 +38,7 @@ EVENT_TYPES: dict[str, set[str]] = {
     "DECISION_REQUEST": {"question_id", "kind", "options"},
     "AUTHORITY_ANSWER": {"question_id", "answer", "channel"},
     "AUTHORITY_GRANT": {"grant"},
+    "REQUEST_CLOSED": {"question_id", "reason", "status", "mission_status"},
     "RECONCILED": {"effect_key", "receipt"},
     "RESUMED": {"effect_key"},
     "PRESERVED": {"effect_key", "reason"},

@@ -74,7 +74,7 @@ def _journal_cmd(a: argparse.Namespace) -> int:
         return 0
     chain = verify_chain(events)
     sr = state_replay(store, a.mission, profile)
-    dr = decision_replay(events, profile)
+    dr = decision_replay(events, journal_profiles(store, events))
     print(f"Chain: {'valid' if chain.valid else 'INVALID at ' + str(chain.broken_at) + ' (' + str(chain.reason) + ')'} · {chain.count} events")
     print(f"State replay: {'identical' if sr['matches'] else 'DIFFERENT ' + ', '.join(sr['differences'])}")
     print(f"Decision replay: {dr['checked']} verdict(s), {'all reproduced' if dr['matches'] else str(len(dr['mismatches'])) + ' mismatch(es)'}")

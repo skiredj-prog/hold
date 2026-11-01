@@ -293,7 +293,12 @@ class Inbound:
         if outcome["accepted"]:
             ack = (f"HOLD · réponse enregistrée : {code}. " + ("Aucune seconde exécution ne sera faite." if fr else "Nothing will be executed twice.")) if fr else f"HOLD · answer recorded: {code}. Nothing will be executed twice."
         else:
-            ack = "HOLD · cette question n'est plus ouverte ; aucune action n'a été effectuée." if fr else "HOLD · this question is no longer open; nothing was done."
+            why = {
+                "QUESTION_EXPIRED": ("cette question a expiré", "this question has expired"),
+                "PROFILE_CHANGED": ("l'habilitation a changé de révision depuis la question", "the habilitation changed revision since the question"),
+                "CONDITIONS_CHANGED": ("la situation a changé depuis la question", "the situation changed since the question"),
+            }.get(outcome.get("reason"), ("cette question n'est plus ouverte", "this question is no longer open"))
+            ack = f"HOLD · {why[0]} ; aucune action n'a été effectuée." if fr else f"HOLD · {why[1]}; nothing was done."
         mission.notify(ack, kind="ACK")
         return {"message_id": r["message_id"], "accepted": outcome["accepted"], "reason": outcome.get("reason"), "mission": mission_id}
 

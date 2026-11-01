@@ -22,13 +22,13 @@ import secrets
 import threading
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
 from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
-from .floor import ActionContext, admit_action, admit_path, effect_key, envelope_violations
+from .floor import ActionContext, admit_action, admit_path, effect_key, envelope_violations, grant_problem, parse_time
 from .hesitation import boundary_position, judge
 from .i18n import t
 from .journal import verify_chain
@@ -39,6 +39,15 @@ from .store import Store, now_iso
 
 UNKNOWN_EXCEPTIONS = (TimeoutError, ConnectionError, OSError)
 CLOSED = {"CLOSED_COMPLETED", "CLOSED_UNCONFIRMED", "CLOSED_FAILED", "REVOKED"}
+REQUEST_END = {"QUESTION_EXPIRED": "EXPIRED", "PROFILE_CHANGED": "SUPERSEDED", "CONDITIONS_CHANGED": "MOOT"}
+
+
+class ProfileMismatch(RuntimeError):
+    """The mission was opened under another profile revision; adopt it explicitly or use that profile."""
+
+
+def _iso(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 @dataclass
@@ -74,12 +83,14 @@ class Habilitation:
         secret: str | None = None,
         require_signature: bool = False,
         background: bool = True,
+        clock: Callable[[], datetime] | None = None,
     ):
         self.profile = profile if isinstance(profile, Profile) else load_profile(profile, secret=secret, require_signature=require_signature)
         self.store = store if isinstance(store, Store) else Store(store)
         self.discerner: Discerner = discerner or ReferenceDiscerner()
         self.relay = relay
         self.background = background
+        self.clock: Callable[[], datetime] = clock or (lambda: datetime.now(timezone.utc))
         self.tools: dict[str, _Tool] = {}
         self._loops: dict[str, threading.Lock] = {}
         self._threads: list[threading.Thread] = []
@@ -125,9 +136,23 @@ class Habilitation:
             })
         return Mission(self, mid)
 
-    def mission(self, mission_id: str) -> "Mission":
-        if not self.store.mission(mission_id):
+    def mission(self, mission_id: str, *, adopt: bool = False) -> "Mission":
+        """A mission keeps the profile revision it was opened with. `adopt=True` attaches this
+        habilitation's revision instead: the change is journaled, and every open question or unused
+        approval given under the previous revision stops being valid."""
+        row = self.store.mission(mission_id)
+        if not row:
             raise KeyError(f"Unknown mission: {mission_id}")
+        if row["profile_fp"] != self.profile.fingerprint:
+            if not adopt:
+                raise ProfileMismatch(f"Mission {mission_id} wears profile {row['profile_fp'][:12]} (revision {row['profile_rev']}), not {self.profile.fingerprint[:12]}")
+            body = canonical_json(self.profile.model_dump(mode="json", exclude_none=True))
+            with self.store.tx() as c:
+                self.store.attach_profile(c, mission_id, self.profile.fingerprint, self.profile.revision, body)
+                self.store.append(c, mission_id, "PROFILE_ATTACHED", "CORE", {
+                    "fingerprint": self.profile.fingerprint, "revision": self.profile.revision, "profile": self.profile.id,
+                    "signed": bool(self.profile.signature), "authority": self.profile.authority.name, "supersedes": row["profile_fp"],
+                })
         return Mission(self, mission_id)
 
     def serve(self, *, host: str = "127.0.0.1", port: int = 8787, background: bool = True):
@@ -152,7 +177,7 @@ class Habilitation:
 
     # -- réponse de l'autorité : même porte pour WhatsApp et la console ------------------------
     def answer(self, mission_id: str, question_id: str, code: str, *, channel: str, evidence: dict[str, Any] | None = None) -> dict[str, Any]:
-        return Mission(self, mission_id).answer(question_id, code, channel=channel, evidence=evidence or {})
+        return self.mission(mission_id).answer(question_id, code, channel=channel, evidence=evidence or {})
 
 
 class Mission:
@@ -197,6 +222,7 @@ class Mission:
             usage=self.store.usage(self.id),
             confirmed_actions={e["action"] for e in effs if e["status"] == "CONFIRMED"},
             uncertain_actions={e["action"] for e in effs if e["status"] in ("UNKNOWN", "DISPATCHING")},
+            now=self.hab.clock(),
         )
 
     def _authority_available(self) -> bool:
@@ -217,6 +243,7 @@ class Mission:
     # -- appel d'une action ------------------------------------------------------------------------
     def call(self, action: str, **attrs: Any) -> ToolResult:
         grant_id = attrs.pop("_grant", None)
+        self.sweep()
         if self.status in CLOSED:
             return ToolResult("CLOSED" if self.status != "REVOKED" else "REVOKED", t("closed", status=self.status), rule="I4")
         tool = self.hab.tools.get(action)
@@ -229,7 +256,7 @@ class Mission:
             if existing and existing["status"] in ("CONFIRMED", "UNKNOWN", "DISPATCHING"):
                 return self._equivalent(power, existing)
         with self.store.tx() as c:
-            v = admit_action(self.profile, action, attrs, ctx, grant_digest=(grant or {}).get("attrs_digest"))
+            v = admit_action(self.profile, action, attrs, ctx, grant=grant)
             if v.admitted and tool is None:
                 v = type(v)(False, "NO_IMPLEMENTATION", f"No implementation registered for \"{action}\".")
             if not v.admitted:
@@ -244,7 +271,7 @@ class Mission:
             self._send_request(request)
             return ToolResult("HELD", t("envelope_held", reason=v.reason.rstrip("."), authority=self.profile.authority.name), rule="I4/ENVELOPE", details={"question_id": request["question_id"]})
         if power.kind == "effect":
-            return self._effect(tool, power, attrs, grant)
+            return self._effect(tool, power, attrs, grant if v.rule == "ADMIT/APPROVED" else None)
         return self._simple(tool, power, attrs)
 
     def _simple(self, tool: _Tool, power: Power, attrs: dict[str, Any]) -> ToolResult:
@@ -264,8 +291,8 @@ class Mission:
         return ToolResult("OK", t("done", action=power.action), data=data)
 
     def _grant(self, grant_id: str) -> dict[str, Any] | None:
-        rows = self.store.read("SELECT * FROM grants WHERE id=? AND mission=? AND consumed=0", (grant_id, self.id))
-        return json.loads(rows[0]["payload"]) | {"id": grant_id} if rows else None
+        rows = self.store.read("SELECT * FROM grants WHERE id=? AND mission=?", (grant_id, self.id))
+        return json.loads(rows[0]["payload"]) | {"id": grant_id, "consumed": bool(rows[0]["consumed"])} if rows else None
 
     def _effect(self, tool: _Tool, power: Power, attrs: dict[str, Any], grant: dict[str, Any] | None) -> ToolResult:
         key = effect_key(self.id, power.action, power.identity, attrs)
@@ -274,6 +301,9 @@ class Mission:
             existing = c.execute("SELECT * FROM effects WHERE effect_key=?", (key,)).fetchone()
             if existing and existing["status"] in ("CONFIRMED", "UNKNOWN", "DISPATCHING"):
                 return self._equivalent(power, existing)  # course perdue face à un appel concurrent
+            if grant and c.execute("UPDATE grants SET consumed=1 WHERE id=? AND consumed=0", (grant["id"],)).rowcount != 1:
+                self.store.append(c, self.id, "ACTION_REFUSED", "CORE", {"action": power.action, "rule": "I4/ENVELOPE", "reason": "Outside the profile's envelope (the authority's approval does not apply: approval already used)"})
+                return ToolResult("REFUSED", t("grant_used", action=power.action), rule="I4/ENVELOPE")
             if existing:  # FAILED_PROVEN : un refus prouvé n'a rien créé, un nouvel essai est admissible
                 c.execute("UPDATE effects SET operation_id=?, status='DISPATCHING', receipt=NULL, attempts=attempts+1, not_found=0, updated_at=? WHERE effect_key=?", (op, now_iso(), key))
             else:
@@ -283,8 +313,6 @@ class Mission:
                 )
             if power.budget is not None:
                 self.store.bump(c, self.id, f"power:{power.action}")
-            if grant:
-                c.execute("UPDATE grants SET consumed=1 WHERE id=?", (grant["id"],))
             adm = self.store.append(c, self.id, "ACTION_ADMITTED", "CORE", {"action": power.action, "kind": "effect", "grant": grant["id"] if grant else None})
             res = self.store.append(c, self.id, "EFFECT_RESERVED", "CORE", {"action": power.action, "effect_key": key, "operation_id": op, "attributes": attrs}, cause=adm.seq)
         try:
@@ -462,6 +490,10 @@ class Mission:
 
     def _resumed(self, key: str, eff) -> ToolResult:
         with self.store.tx() as c:
+            for r in c.execute("SELECT payload FROM requests WHERE mission=? AND status='OPEN' AND kind='UNKNOWN_EFFECT'", (self.id,)).fetchall():
+                payload = json.loads(r["payload"])
+                if payload.get("effect_key") == key:
+                    self._close_request(c, payload, "CONDITIONS_CHANGED")
             already = c.execute("SELECT COUNT(*) AS n FROM events WHERE mission=? AND type='RESUMED' AND json LIKE ?", (self.id, f'%"{key}"%')).fetchone()["n"]
             if not already:
                 self.store.append(c, self.id, "RESUMED", "CORE", {"effect_key": key, "receipt": eff["receipt"], "autonomous": self.profile.hesitation.autonomous_resume})
@@ -503,6 +535,7 @@ class Mission:
             )
             payload = {"question_id": qid, "kind": kind, "action": action, "attrs": attrs, "attrs_digest": digest({"action": action, "attrs": attrs}), "violations": violations, "question": question}
         payload["options"] = [{"code": code, "title": t[code]} for code in codes]
+        payload |= {"profile": self.profile.fingerprint, "revision": self.profile.revision, "expires_at": _iso(self.hab.clock() + timedelta(minutes=a.question_ttl_minutes))}
         c.execute("INSERT INTO requests(question_id, mission, kind, status, payload, created_at) VALUES(?,?,?,?,?,?)", (qid, self.id, kind, "OPEN", json.dumps(payload, ensure_ascii=False), now_iso()))
         self.store.bump(c, self.id, "authority_requests")
         self.store.append(c, self.id, "DECISION_REQUEST", "CORE", {k: v for k, v in payload.items() if k != "attrs"} | {"to": self.profile.authority.name}, cause=cause)
@@ -538,13 +571,21 @@ class Mission:
                 self.store.append(c, self.id, "RELAY_FAILED", "RELAY", {"channel": relay.channel, "error": r.error, "kind": kind})
 
     def answer(self, question_id: str, code: str, *, channel: str, evidence: dict[str, Any]) -> dict[str, Any]:
-        """Réponse de l'autorité. Refusée si la question n'est pas la question ouverte de cette mission."""
+        """Réponse de l'autorité. Refusée si la question n'est pas la question ouverte de cette mission,
+        si elle a expiré, si le profil a changé de révision ou si la situation qui la motivait a changé."""
+        self.sweep()
         with self.store.tx() as c:
             row = c.execute("SELECT * FROM requests WHERE question_id=? AND mission=?", (question_id, self.id)).fetchone()
             if not row or row["status"] != "OPEN" or self.status in CLOSED:
-                self.store.append(c, self.id, "RELAY_REJECTED", "CORE", {"reason": "QUESTION_NOT_OPEN", "question_id": question_id, "answer": code, "channel": channel})
-                return {"accepted": False, "reason": "QUESTION_NOT_OPEN"}
+                reason = {v: k for k, v in REQUEST_END.items()}.get(row["status"], "QUESTION_NOT_OPEN") if row else "QUESTION_NOT_OPEN"
+                self.store.append(c, self.id, "RELAY_REJECTED", "CORE", {"reason": reason, "question_id": question_id, "answer": code, "channel": channel})
+                return {"accepted": False, "reason": reason}
             payload = json.loads(row["payload"])
+            problem = self._request_problem(c, payload, self.hab.clock())
+            if problem:
+                self._close_request(c, payload, problem)
+                self.store.append(c, self.id, "RELAY_REJECTED", "CORE", {"reason": problem, "question_id": question_id, "answer": code, "channel": channel})
+                return {"accepted": False, "reason": problem}
             if code not in {o["code"] for o in payload["options"]}:
                 self.store.append(c, self.id, "RELAY_REJECTED", "CORE", {"reason": "OPTION_NOT_OFFERED", "question_id": question_id, "answer": code, "channel": channel})
                 return {"accepted": False, "reason": "OPTION_NOT_OFFERED"}
@@ -565,7 +606,11 @@ class Mission:
                 self._close(c, "CLOSED_UNCONFIRMED", cause=ans.seq)
             elif code == "APPROVE_ONCE":
                 gid = f"g_{secrets.token_hex(6)}"
-                grant = {"kind": "ENVELOPE_ONCE", "action": payload["action"], "attrs_digest": payload["attrs_digest"], "question_id": question_id}
+                grant = {
+                    "kind": "ENVELOPE_ONCE", "action": payload["action"], "attrs_digest": payload["attrs_digest"], "question_id": question_id,
+                    "profile": self.profile.fingerprint, "revision": self.profile.revision,
+                    "expires_at": _iso(self.hab.clock() + timedelta(minutes=self.profile.authority.grant_ttl_minutes)),
+                }
                 c.execute("INSERT INTO grants(id, mission, kind, payload, created_at) VALUES(?,?,?,?,?)", (gid, self.id, "ENVELOPE_ONCE", json.dumps(grant), now_iso()))
                 self.store.append(c, self.id, "AUTHORITY_GRANT", "AUTHORITY", {"grant": grant | {"id": gid}}, cause=ans.seq)
                 self.store.set_status(c, self.id, "OPEN")
@@ -599,8 +644,55 @@ class Mission:
             req = self.store.read("SELECT payload FROM requests WHERE question_id=?", (grant["question_id"],))
             if req:
                 attrs = json.loads(req[0]["payload"]).get("attrs") or {}
+                if grant_problem(grant, action=grant["action"], attrs=attrs, profile=self.profile, now=self.hab.clock()):
+                    continue
                 return self.call(grant["action"], **attrs, _grant=g["id"])
         return None
+
+    # -- validité des questions ----------------------------------------------------------------------
+    def _request_problem(self, c, payload: dict[str, Any], now: datetime) -> str | None:
+        """Why an open Decision Request can no longer be answered, or None."""
+        if payload.get("expires_at") and now >= parse_time(payload["expires_at"]):
+            return "QUESTION_EXPIRED"
+        if payload.get("profile") != self.profile.fingerprint:
+            return "PROFILE_CHANGED"
+        if payload["kind"] == "UNKNOWN_EFFECT":
+            eff = c.execute("SELECT status FROM effects WHERE effect_key=?", (payload["effect_key"],)).fetchone()
+            if not eff or eff["status"] != "UNKNOWN":
+                return "CONDITIONS_CHANGED"
+        else:
+            power = self.profile.power(payload["action"])
+            if power and power.kind == "effect":
+                existing = c.execute("SELECT status FROM effects WHERE effect_key=?", (effect_key(self.id, payload["action"], power.identity, payload.get("attrs") or {}),)).fetchone()
+                if existing and existing["status"] in ("CONFIRMED", "UNKNOWN", "DISPATCHING"):
+                    return "CONDITIONS_CHANGED"
+        return None
+
+    def _close_request(self, c, payload: dict[str, Any], reason: str, *, cause: int | None = None) -> None:
+        c.execute("UPDATE requests SET status=? WHERE question_id=? AND status='OPEN'", (REQUEST_END[reason], payload["question_id"]))
+        status = self.store.mission(self.id)["status"]
+        if status not in CLOSED:
+            unknown = c.execute("SELECT COUNT(*) AS n FROM effects WHERE mission=? AND status='UNKNOWN'", (self.id,)).fetchone()["n"]
+            status = "HELD" if unknown else "OPEN"
+        self.store.append(c, self.id, "REQUEST_CLOSED", "CORE", {"question_id": payload["question_id"], "kind": payload["kind"], "reason": reason, "status": REQUEST_END[reason], "mission_status": status}, cause=cause)
+        self.store.set_status(c, self.id, status)
+
+    def sweep(self) -> list[str]:
+        """Closes the Decision Requests whose delay has run out. If the hesitation can continue in this
+        process, it resumes: a silent authority is not an answer."""
+        now = self.hab.clock()
+        expired: list[dict[str, Any]] = []
+        for r in self.store.read("SELECT payload FROM requests WHERE mission=? AND status='OPEN'", (self.id,)):
+            payload = json.loads(r["payload"])
+            if payload.get("expires_at") and now >= parse_time(payload["expires_at"]):
+                with self.store.tx() as c:
+                    if c.execute("SELECT status FROM requests WHERE question_id=?", (payload["question_id"],)).fetchone()["status"] == "OPEN":
+                        self._close_request(c, payload, "QUESTION_EXPIRED")
+                        expired.append(payload)
+        for p in expired:
+            if p["kind"] == "UNKNOWN_EFFECT" and self.status == "HELD" and self._can_continue(p):
+                self.hab._spawn(lambda key=p["effect_key"]: self.hesitate(key))
+        return [p["question_id"] for p in expired]
 
     # -- révocation et clôture -----------------------------------------------------------------------
     def _revoke(self, c, *, by: str, channel: str, cause: int | None = None) -> None:
@@ -640,6 +732,7 @@ class Mission:
         """Attend que la mission sorte de HOLD / AWAITING_AUTHORITY (ou le délai)."""
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
+            self.sweep()
             if self.status not in ("HELD", "AWAITING_AUTHORITY"):
                 break
             lock = self.hab._loops.get(self.id)

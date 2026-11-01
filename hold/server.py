@@ -22,7 +22,7 @@ from pydantic import ValidationError
 
 from .profile import Profile, json_schema, load_profile
 from .relay.whatsapp import Inbound, WhatsAppConfig, simulated_tap, button_id, verify_signature
-from .replay import decision_replay, export_journal, state_replay
+from .replay import decision_replay, export_journal, journal_profiles, state_replay
 from .runtime import Habilitation
 from .store import Store
 
@@ -129,7 +129,7 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
             "verification": {
                 "chain": chain.__dict__,
                 "state": state_replay(store, mission_id, h.profile),
-                "decisions": decision_replay(m.events(), h.profile),
+                "decisions": decision_replay(m.events(), journal_profiles(store, m.events())),
             },
             "open_request": m.open_request(),
             "effects": m.effects(),
