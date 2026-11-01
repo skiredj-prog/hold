@@ -74,7 +74,7 @@ No change to A3 or A4: their commits, frozen protocols and evidence are untouche
 cd <extraction>\hold
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 108 expected (5 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 108 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli demo --scenario a5-recovery --no-color
 ```
 `hold bench run` will refuse to start until A5 is frozen: that is intended.
