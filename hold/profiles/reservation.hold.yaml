@@ -9,7 +9,7 @@ revision: 1
 issued_at: "2026-11-01T12:00:00Z"
 expires_at: "2026-11-30T23:59:59Z"
 authority:
-  name: Autorité de la mission
+  name: Mission authority
   channel: whatsapp
   contact: "212600000000"
   sigma: 0.95
@@ -18,13 +18,13 @@ authority:
 powers:
   - action: search_hotels
     kind: read
-    description: Chercher des hôtels disponibles (lecture seule).
+    description: Search available hotels (read only).
   - action: venue_info
     kind: read
-    description: Vérifier l'adresse et les horaires du lieu (lecture seule).
+    description: Check the venue's address and opening hours (read only).
   - action: create_booking
     kind: effect
-    description: Réserver une chambre (effet externe, non idempotent chez le fournisseur).
+    description: Book a room (external effect, not idempotent at the provider).
     budget: 1
     identity: [provider, hotel_id, traveler, check_in, check_out]
     provenance: [provider, hotel_id, price, currency]
@@ -47,16 +47,16 @@ powers:
       decay: 0.6
   - action: check_booking
     kind: status
-    description: Consulter le statut d'une réservation existante par son identifiant d'opération.
+    description: Look up the status of an existing booking by its operation id.
   - action: contact_support
     kind: contact
     role: support
     budget: 1
     sigma: 0.7
-    description: Écrire au support du fournisseur pour retrouver une réservation.
+    description: Write to the provider's support to find a booking.
   - action: send_itinerary
     kind: effect
-    description: Envoyer l'itinéraire final au voyageur (suppose l'hôtel confirmé).
+    description: Send the final itinerary to the traveler (assumes the hotel is confirmed).
     budget: 1
     identity: [traveler, booking_reference]
     provenance: [booking_reference=receipt]

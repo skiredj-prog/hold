@@ -118,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("--port", type=int, default=8787)
 
     pb = sub.add_parser("bench", help="the frozen A/B/C/C2/D comparison")
-    pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate"])
+    pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate", "smoke"])
     pb.add_argument("--frozen", default="bench/protocol.frozen.json")
     pb.add_argument("--conditions", default="C,C2,X", help="comma separated: A,B,C-llama,C,C2,D,X")
     pb.add_argument("--model", help="Ollama model for A, B, C-llama and D (e.g. llama3.2:3b, llama3.1:8b)")
@@ -198,6 +198,22 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
             target = Path(a.out) / "results.json"
             print(json.dumps(bench.rerun_failed(target, model=a.model), ensure_ascii=False, indent=1))
+            return 0
+        if a.action == "smoke":
+            # A6: real model, DEV scenarios, one repetition, before any freeze. Calibration only: never evidence.
+            conds = [c.strip() for c in a.conditions.split(",") if c.strip()]
+            if not a.model:
+                print("--model is required", file=sys.stderr)
+                return 2
+            out = a.out if a.out != "bench/results/run" else f"bench/results/smoke-{a.model.replace(':', '-')}"
+            lines = bench.smoke(conds, model=a.model, out_dir=out)
+            print("SMOKE (DEV scenarios, one repetition): calibration only, never evidence.")
+            for x in lines:
+                print(f"\n{x['run']}  turns={x['turns']} not_executed={x['not_executed']} created={x['created']} status={x['status']}" + (f" ERRORS={x['errors']}" if x["errors"] else ""))
+                print("  " + (" > ".join(x["steps"]) or "(no call reached the tools)"))
+                print("  last: " + (x["last_message"] or "(none)"))
+            Path(out, "smoke.json").write_text(json.dumps(lines, ensure_ascii=False, indent=1), encoding="utf-8")
+            print(f"\nRaw runs and smoke.json: {out}")
             return 0
         if a.action == "evaluate":
             # Qualification path: the anchor first. The designated frozen file must match its own SHA-256 and the code

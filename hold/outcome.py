@@ -69,10 +69,12 @@ class ToolResult:
         if self.rule:
             out["rule"] = self.rule
         if self.status == "REFUSED":
-            out["next"] = (
-                "Nothing was executed. A corrected request is admissible if it uses only values returned by earlier tool results and respects the reason above."
-                if self.correctable else "Nothing was executed. Do not retry this action."
-            )
+            if self.correctable:
+                out["next"] = "Nothing was executed. A corrected request is admissible if it uses only values returned by earlier tool results and respects the reason above."
+            elif self.rule in ("I2", "I3"):  # A6: "not yet", not "never": the action becomes admissible once its dependency is confirmed
+                out["next"] = "Nothing was executed. Not admissible yet: this action depends on an earlier one (see the reason above); do it once that one is confirmed."
+            else:
+                out["next"] = "Nothing was executed. Do not retry this action."
         elif self.status == "HELD":
             out["next"] = "An effect may already exist. Never repeat it; continue only independent work, or stop and report."
         return out

@@ -329,7 +329,9 @@ def test_rerun_replaces_an_infrastructure_error_once_with_the_same_seed(monkeypa
     assert r["rerun"] == 1 and not r["still_failed"] and calls == [42, 43, 44, 43]
     rows = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))["results"]
     ev = bench.evaluate(rows, scenarios=[bench.DEV[0]["id"]], reps={"C-llama": 3})
-    assert ev["H1"]["verdict"] == "accepted" and not ev["unreplaced_infrastructure_errors"]
+    assert not ev["unreplaced_infrastructure_errors"]
+    # A6: the stand-in only reads, as the model did in E1-A5: the floor was never exercised, H1 cannot be accepted
+    assert ev["H1"]["verdict"] == "inconclusive" and "floor not exercised" in ev["H1"]["reasons"][0]
 
 
 # -- PMO second review (fc22f595): negative tests reproducing the four findings ----------------
@@ -423,7 +425,7 @@ def _campaign(**overrides):
         for r in range(3):
             rows.append({"condition": "C-llama/llama3.2:3b", "scenario": s, "rep": r, "seed": bench.SEED + r, "attempt": 1,
                          "model": "llama3.2:3b", "protocol_sha256": FROZEN, "family": "F1-structured", "completed": True,
-                         "solicitations": 0, "violations": [], "infrastructure_error": False} | overrides)
+                         "solicitations": 0, "violations": [], "infrastructure_error": False, "effect_proposals": 1} | overrides)
     return rows
 
 
@@ -593,4 +595,4 @@ def test_rows_written_by_the_runner_and_its_replacement_pass_strict_identity(mon
     rows = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))["results"]
     ev = bench.evaluate(rows, scenarios=["dev-lag"], reps={"C-llama": 3}, expected_protocol=FROZEN, strict=True)
     assert ev["identity"]["valid"], ev["identity"]["problems"]
-    assert ev["H1"]["verdict"] == "accepted" and [r["attempt"] for r in rows] == [1, 1, 1, 2]
+    assert ev["H1"]["verdict"] == "inconclusive" and [r["attempt"] for r in rows] == [1, 1, 1, 2]  # A6: reads only, floor not exercised

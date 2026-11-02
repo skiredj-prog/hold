@@ -154,6 +154,19 @@ def provenance_violations(power: Power, attrs: dict[str, Any], records: list[dic
     return provenance_match(power, attrs, records)[1]
 
 
+def admissible_hint(power: Power, records: list[dict[str, str]]) -> str:
+    """A6: a correctable refusal also says what would be admissible (what HOLD permits, not only what it forbids):
+    the declared attributes copied unchanged from one record of an authorized source, and that source first if it
+    has returned nothing yet. It names fields and tools; it never supplies values."""
+    if not power.provenance or not power.provenance_source:
+        return ""
+    fields = ", ".join(a for a, _ in provenance_fields(power))
+    sources = " or ".join(power.provenance_source)
+    seen = any(r.get(SOURCE) in power.provenance_source for r in records)
+    return (f". Admissible: {fields} copied unchanged from one result of {sources}"
+            + ("" if seen else f"; {power.provenance_source[0]} has returned nothing yet in this mission, call it first"))
+
+
 _V = {
     "en": {"required": "required attribute missing: {k}", "amount_unreadable": "unreadable amount in {k}",
            "currency": "currency {cur} outside the envelope ({exp})", "ceiling": "amount {amount} {cur} above the ceiling of {max} {exp}",
@@ -287,10 +300,10 @@ def admit_action(profile: Profile, action: str, attrs: dict[str, Any], ctx: Acti
     if power.kind == "effect":
         invalid = structural_effect_violations(power, attrs)
         if invalid:
-            return Verdict(False, "I4/INVALID_ARGUMENTS", "Invalid effect attributes (not approvable): " + "; ".join(invalid), invalid)
+            return Verdict(False, "I4/INVALID_ARGUMENTS", "Invalid effect attributes (not approvable): " + "; ".join(invalid) + admissible_hint(power, ctx.records), invalid)
         unobserved = provenance_violations(power, attrs, ctx.records)
         if unobserved:
-            return Verdict(False, "I6/PROVENANCE", "Effect on values never observed (not approvable): " + "; ".join(unobserved), unobserved)
+            return Verdict(False, "I6/PROVENANCE", "Effect on values never observed (not approvable): " + "; ".join(unobserved) + admissible_hint(power, ctx.records), unobserved)
         v = envelope_violations(power, attrs)
         if v:
             problem = grant_problem(grant, action=action, attrs=attrs, profile=profile, now=ctx.now) if grant else "no approval"

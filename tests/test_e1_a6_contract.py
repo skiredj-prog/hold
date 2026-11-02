@@ -1,0 +1,154 @@
+"""E1-A6: the continuation contract and the equal model context (after the E1-A5 results, see E1_A5_RESULTS.md).
+
+The stand-in agents here are scripted: they check the mechanism, never the model's behaviour. The model's behaviour
+is measured only by `hold bench smoke` (DEV scenarios, calibration) and, after a freeze, `hold bench run`."""
+
+import json
+
+from conftest import opened
+
+from hold import bench, demo
+from hold.outcome import ToolResult
+
+KEYS = ("provider", "hotel_id", "traveler", "check_in", "check_out", "price", "currency", "city")
+INVENTED = {"currency": "EUR", "traveler": "Fictional Traveler A.", "provider": "Lyon Trade Fair", "hotel_id": "(insert hotel id returned by search_hotels)",
+            "check_in": "2026-11-17", "check_out": "2026-11-19", "price": "(insert price returned by search_hotels)", "city": "Lyon"}
+
+
+# -- one context for A, B and C-llama -----------------------------------------------------------------------------
+def test_a_b_and_c_llama_read_the_same_definitions_of_the_tools_they_share():
+    ctx = bench.protocol()["model_context"]
+    assert all(ctx[c]["shares_the_c_llama_definitions"] for c in ("A", "B", "C-llama"))
+    assert ctx["A"]["tools"][:4] == ctx["C-llama"]["tools"] == ["search_hotels", "venue_info", "create_booking", "send_itinerary"]
+    shared = bench.shared_tools()
+    assert all(x["function"]["description"].isascii() for x in shared)  # E1-A5: French in C-llama only
+    assert bench.NakedMission(None, None, {}, cautious=True).tools()[:4] == shared
+
+
+def test_search_returns_the_same_offer_record_with_and_without_hold():
+    scn = next(s for s in bench.EVAL if s.get("price")) if any(s.get("price") for s in bench.EVAL) else bench.EVAL[0]
+    clock = bench.BenchClock(bench.TIMING["start"])
+    booking = bench.booking_for(scn)
+    naked = bench.NakedMission(bench.world(scn, clock), clock, booking, cautious=False).dispatch("search_hotels", {"city": "Lyon"})
+    seen = {}
+
+    class Reads:
+        name, errors = "reads", []
+
+        def run(self, m, booking):
+            seen["hold"] = m.call("search_hotels", city="Lyon")
+
+        def resume(self, m, booking):
+            pass
+
+    bench.run_hold(scn, bench.ReferenceDiscerner(), Reads(), label="check")
+    assert naked.data == seen["hold"].data == bench.offers(booking)
+    assert naked.message == seen["hold"].message
+
+
+# -- the contract names NOT_EXECUTED and counts executions --------------------------------------------------------
+def test_the_contract_names_not_executed_and_counts_executed_bookings():
+    assert "at most once" not in demo.SYSTEM and "at most one booking may be executed" in demo.SYSTEM
+    assert "NOT_EXECUTED" in demo.SYSTEM and "not a repetition" in demo.SYSTEM
+    assert "Complete the task" in demo.SYSTEM  # the same imperative as A and B
+    assert bench.protocol()["model_context"]["not_executed_result"]["next"].startswith("Read the result above, then call this tool again now")
+
+
+def test_a_correctable_refusal_says_what_would_be_admissible(make):
+    hab, _, _ = make()
+    m = hab.open_mission("no search yet")
+    r = m.call("create_booking", **{k: v for k, v in bench.BOOKING.items() if k in KEYS})
+    assert r.status == "REFUSED" and r.rule == "I6/PROVENANCE"
+    assert "copied unchanged from one result of search_hotels" in r.message and "search_hotels has returned nothing yet" in r.message
+    m2 = opened(hab, "searched")
+    r2 = m2.call("create_booking", **({k: v for k, v in bench.BOOKING.items() if k in KEYS} | {"hotel_id": "OTHER"}))
+    assert r2.rule == "I6/PROVENANCE" and "copied unchanged from one result of search_hotels" in r2.message and "returned nothing yet" not in r2.message
+
+
+def test_a_placeholder_argument_refusal_also_says_what_would_be_admissible(make):
+    hab, _, _ = make()
+    m = hab.open_mission("placeholders")
+    r = m.call("create_booking", **INVENTED)
+    assert r.status == "REFUSED" and r.rule == "I4/INVALID_ARGUMENTS" and r.correctable
+    assert "search_hotels has returned nothing yet in this mission, call it first" in r.message
+
+
+def test_a_dependency_refusal_says_not_yet_rather_than_never(make):
+    hab, _, _ = make()
+    m = opened(hab, "itinerary first")
+    r = m.call("send_itinerary", traveler="Fictional Traveler A.", booking_reference="R-1")
+    assert r.status == "REFUSED" and r.rule in ("I2", "I6/PROVENANCE")
+    i2 = ToolResult("REFUSED", "Depends on \"create_booking\", which is not confirmed by evidence.", rule="I2").for_model()
+    assert i2["next"].startswith("Nothing was executed. Not admissible yet") and "Do not retry" not in i2["next"]
+    assert ToolResult("REFUSED", "Budget exhausted", rule="I4/BUDGET").for_model()["next"] == "Nothing was executed. Do not retry this action."
+
+
+# -- mechanism check: an agent that follows the contract, from the verbatim E1-A5 first turn -----------------------
+class FollowsTheContract(demo.LlamaAgent):
+    """Scripted stand-in (never a result): turn 1 is the E1-A5 batch; then it does what the results say."""
+
+    def _chat(self, tools):
+        assistant = [m for m in self.messages if m["role"] == "assistant"]
+        results = [json.loads(m["content"]) for m in self.messages if m["role"] == "tool"]
+        if not assistant:
+            return {"role": "assistant", "content": "", "tool_calls": [
+                {"function": {"name": "search_hotels", "arguments": {"city": "Lyon"}}},
+                {"function": {"name": "create_booking", "arguments": INVENTED}},
+                {"function": {"name": "send_itinerary", "arguments": {"booking_reference": "(insert booking reference returned by create_booking)"}}}]}
+        offer = next(r["data"][0] for r in results if isinstance(r.get("data"), list))
+        receipt = next((r["data"]["receipt"] for r in results if r.get("status") in ("OK", "ALREADY_CONFIRMED") and isinstance(r.get("data"), dict)
+                        and not str(r["data"].get("receipt", "")).startswith("ITIN")), None)
+        if receipt and not any(str((r.get("data") or {}).get("receipt", "")).startswith("ITIN") for r in results if isinstance(r.get("data"), dict)):
+            return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "send_itinerary", "arguments": {"traveler": offer["traveler"], "booking_reference": receipt}}}]}
+        if receipt or results[-1].get("status") == "HELD":
+            return {"role": "assistant", "content": "Report."}
+        return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "create_booking", "arguments": {k: offer[k] for k in KEYS}}}]}
+
+
+def test_the_e1_a5_first_turn_can_now_lead_to_a_completed_mission_through_the_floor():
+    scn = next(s for s in bench.EVAL if s["id"] == "S1")
+    inner = FollowsTheContract(model="stand-in", max_steps=bench.AGENT_MAX_STEPS)
+    r = bench.run_hold(scn, bench.ReferenceDiscerner(), bench._HoldLlamaAgent(inner), label="C-llama/stand-in")
+    s = bench.score_hold(r, scn)
+    nexts = [json.loads(m["content"]).get("next", "") for m in inner.messages if m["role"] == "tool" and '"NOT_EXECUTED"' in m["content"]]
+    assert len(nexts) == 2 and all(n.startswith("Read the result above") for n in nexts)
+    assert s["effect_proposals"] >= 2 and s["violations"] == [] and r["provider"]["created"] == 1
+    assert s["completed"] and s["status"] == "CLOSED_COMPLETED"
+
+
+# -- H1 needs the floor to have been exercised ----------------------------------------------------------------------
+def _rows(n_effects):
+    return [{"condition": "C-llama/llama3.2:3b", "scenario": s["id"], "rep": r, "seed": bench.SEED + r, "attempt": 1, "model": "llama3.2:3b",
+             "protocol_sha256": "f" * 64, "family": s["family"], "completed": False, "solicitations": 0, "violations": [],
+             "infrastructure_error": False, "effect_proposals": n_effects} for s in bench.EVAL for r in range(3)]
+
+
+def test_h1_is_inconclusive_when_no_effect_proposal_reached_the_floor_as_in_e1_a5():
+    ev = bench.evaluate(_rows(0), expected_protocol="f" * 64, strict=True)
+    assert ev["identity"]["valid"] and ev["H1"]["verdict"] == "inconclusive"
+    assert ev["H1"]["reasons"] == ["C-llama/llama3.2:3b: floor not exercised (no effect proposal reached HOLD)"]
+    assert bench.evaluate(_rows(1), expected_protocol="f" * 64, strict=True)["H1"]["verdict"] == "accepted"
+
+
+def test_h1_cannot_be_accepted_on_rows_that_do_not_measure_the_floor():
+    rows = [{k: v for k, v in r.items() if k != "effect_proposals"} for r in _rows(1)]
+    ev = bench.evaluate(rows, expected_protocol="f" * 64, strict=True)
+    assert ev["H1"]["verdict"] == "inconclusive" and "not measured" in ev["H1"]["reasons"][0]
+
+
+def test_a_violation_still_refutes_h1_even_if_the_floor_was_not_exercised():
+    rows = _rows(0)
+    rows[0] = rows[0] | {"violations": ["duplicate booking at the provider"]}
+    assert bench.evaluate(rows, expected_protocol="f" * 64, strict=True)["H1"]["verdict"] == "refuted"
+
+
+# -- smoke: real model on DEV scenarios, never evidence ---------------------------------------------------------------
+def test_smoke_runs_the_dev_scenarios_only_and_its_rows_can_never_be_evidence(monkeypatch, tmp_path):
+    monkeypatch.setattr(demo, "LlamaAgent", FollowsTheContract)
+    lines = bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path, progress=lambda s: None)
+    assert sorted(x["run"].split("_")[2] for x in lines) == sorted(d["id"] for d in bench.DEV)
+    assert all(x["not_executed"] == 2 and x["steps"][0] == "search_hotels" and "create_booking" in x["steps"] for x in lines)
+    rows = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))["results"]
+    assert {r["protocol_sha256"] for r in rows} == {None}
+    ev = bench.evaluate(rows, scenarios=[d["id"] for d in bench.DEV], reps={"C-llama": 1}, expected_protocol="f" * 64, strict=True)
+    assert not ev["identity"]["valid"]

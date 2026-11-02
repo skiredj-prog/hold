@@ -28,7 +28,7 @@ from typing import Any, Callable, get_type_hints
 
 from .canonical import canonical_json, digest
 from .discern import Discerner, Proposal, ReferenceDiscerner
-from .floor import CORRECTABLE, SOURCE, ActionContext, Verdict, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, observed_records, parse_time, provenance_match, value_digest
+from .floor import CORRECTABLE, SOURCE, ActionContext, Verdict, admissible_hint, admit_action, admit_proposal, effect_key, envelope_violations, grant_problem, observed_records, parse_time, provenance_match, value_digest
 from .hesitation import boundary_position
 from .i18n import t
 from .journal import verify_chain
@@ -339,7 +339,8 @@ class Mission:
         with self.store.tx() as c:
             problem = self._arguments_problem(tool, attrs) if tool else None
             if problem and power:
-                v = Verdict(False, "I4/INVALID_ARGUMENTS", f"Arguments do not match the tool: {problem}.", [problem])
+                hint = admissible_hint(power, ctx.records) if power.kind == "effect" else ""  # A6: what would be admissible
+                v = Verdict(False, "I4/INVALID_ARGUMENTS", f"Arguments do not match the tool: {problem}{hint}.", [problem])
                 if ctx.usage.get(f"corrections:{action}", 0) >= power.max_corrections + 1:
                     v = Verdict(False, "I4/CORRECTIONS", f"Corrected requests exhausted for \"{action}\": stop and report.")
             else:
