@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -202,19 +203,28 @@ def main(argv: list[str] | None = None) -> int:
         if a.action == "smoke":
             # A6: real model, DEV scenarios, one repetition, before any freeze. Calibration only: never evidence.
             conds = [c.strip() for c in a.conditions.split(",") if c.strip()]
+            if a.conditions == "C,C2,X":  # the bench default: for a smoke, the pre-qualification condition only
+                conds = list(bench.PREQUAL["conditions"])
             if not a.model:
                 print("--model is required", file=sys.stderr)
                 return 2
             out = a.out if a.out != "bench/results/run" else f"bench/results/smoke-{a.model.replace(':', '-')}"
+            started = time.monotonic()
             lines = bench.smoke(conds, model=a.model, out_dir=out)
             print("SMOKE (DEV scenarios, one repetition): calibration only, never evidence.")
             for x in lines:
                 print(f"\n{x['run']}  turns={x['turns']} not_executed={x['not_executed']} created={x['created']} status={x['status']}" + (f" ERRORS={x['errors']}" if x["errors"] else ""))
                 print("  " + (" > ".join(x["steps"]) or "(no call reached the tools)"))
                 print("  last: " + (x["last_message"] or "(none)"))
-            Path(out, "smoke.json").write_text(json.dumps(lines, ensure_ascii=False, indent=1), encoding="utf-8")
-            print(f"\nRaw runs and smoke.json: {out}")
-            return 0
+            pq = bench.prequalify(out) if "C-llama" in conds else None
+            Path(out, "smoke.json").write_text(json.dumps({"runs": lines, "prequalification": pq}, ensure_ascii=False, indent=1), encoding="utf-8")
+            print(f"\nRaw runs and smoke.json: {out}  ({len(lines)} runs, {time.monotonic() - started:.0f} s)")
+            if pq is None:
+                return 0
+            print(f"\nPRE-QUALIFICATION: {pq['verdict']}  · continued after a block: {pq['continued_after_block']}")
+            for reason in pq["failed"]:
+                print("  - " + reason)
+            return 0 if pq["verdict"] == "GO" else 1
         if a.action == "evaluate":
             # Qualification path: the anchor first. The designated frozen file must match its own SHA-256 and the code
             # that runs (the same check as bench check / run / rerun); then strict identity of every row against it.

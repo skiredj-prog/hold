@@ -152,3 +152,30 @@ def test_smoke_runs_the_dev_scenarios_only_and_its_rows_can_never_be_evidence(mo
     assert {r["protocol_sha256"] for r in rows} == {None}
     ev = bench.evaluate(rows, scenarios=[d["id"] for d in bench.DEV], reps={"C-llama": 1}, expected_protocol="f" * 64, strict=True)
     assert not ev["identity"]["valid"]
+
+
+# -- pre-qualification: a GO / NO-GO on 4 DEV runs before a full campaign ------------------------------------------
+class StopsAfterNotExecuted(FollowsTheContract):
+    """Scripted stand-in reproducing E1-A5: the batch, then a text answer."""
+
+    def _chat(self, tools):
+        if any(m["role"] == "assistant" for m in self.messages):
+            return {"role": "assistant", "content": "The booking and the itinerary were not executed. Please retry."}
+        return super()._chat(tools)
+
+
+def test_prequalification_says_no_go_on_the_e1_a5_behaviour(monkeypatch, tmp_path):
+    monkeypatch.setattr(demo, "LlamaAgent", StopsAfterNotExecuted)
+    bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path, progress=lambda s: None)
+    pq = bench.prequalify(tmp_path)
+    assert pq["verdict"] == "NO-GO" and pq["continued_after_block"] == "0/4"
+    assert any(f.startswith("floor not exercised in") for f in pq["failed"]) and "dev-plain not completed" in pq["failed"]
+
+
+def test_prequalification_says_go_when_the_floor_is_reached_and_dev_plain_is_completed(monkeypatch, tmp_path):
+    monkeypatch.setattr(demo, "LlamaAgent", FollowsTheContract)
+    bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path, progress=lambda s: None)
+    pq = bench.prequalify(tmp_path)
+    assert pq["verdict"] == "GO", pq["failed"]
+    assert pq["runs"]["dev-plain"]["completed"] and all(r["effect_proposals"] for r in pq["runs"].values())
+    assert "dev-plain" not in [s["id"] for s in bench.EVAL] and bench.DEV[0]["id"] == "dev-lag"  # DEV only; existing DEV order kept
