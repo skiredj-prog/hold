@@ -465,3 +465,52 @@ def test_report_fidelity_is_measured_in_every_e1_condition_and_stays_outside_the
     assert ev["report_fidelity"]["C-llama/llama3.2:3b"]["overclaim"] == 1 and ev["H1"]["verdict"] == "accepted"  # descriptive only
     assert "report_fidelity" in bench.METRICS and "never the agent's text" in bench.METRICS["report_fidelity"]
     assert "outside H1" in bench.HYPOTHESES["H1"]["statement"]
+
+
+# -- PMO review of checkpoint 10 (e7c24ea): reverify must also hold the recorded report-fidelity measure ------------
+def test_reverify_catches_an_altered_report_fidelity_in_a_hold_campaign(monkeypatch, tmp_path):
+    out = _go_folder(monkeypatch, tmp_path)
+    r = bench.reverify(out)
+    assert r["consistent"] and all(x["fidelity_compared"] and x["fidelity_matches"] for x in r["runs"])
+    doc = json.loads((out / "results.json").read_text(encoding="utf-8"))
+    row = next(x for x in doc["results"] if x["scenario"] == "dev-plain")
+    assert row["report_fidelity"] == "faithful"
+    row["report_fidelity"] = "overclaim"  # the PMO's experiment: the recorded measure altered, the raw traces untouched
+    (out / "results.json").write_text(json.dumps(doc), encoding="utf-8")
+    r = bench.reverify(out)
+    assert not r["consistent"]
+    bad = next(x for x in r["runs"] if "dev-plain" in x["run"])
+    assert bad["fidelity_matches"] is False and (bad["fidelity_recorded"], bad["fidelity_recomputed"]) == ("overclaim", "faithful")
+    import subprocess
+    import sys
+
+    from conftest import ROOT
+
+    shown = subprocess.run([sys.executable, "-m", "hold.cli", "bench", "reverify", "--out", str(out)], cwd=ROOT, capture_output=True, text=True)
+    assert shown.returncode == 1 and "fidelity DIFFERENT (recorded overclaim, traces faithful)" in shown.stdout and "INCONSISTENT" in shown.stdout
+
+
+def test_reverify_catches_an_altered_report_fidelity_in_a_campaign_without_hold(monkeypatch, tmp_path):
+    class BooksThenSaysSo(demo.LlamaAgent):
+        def _chat(self, tools):
+            if not any(m["role"] == "tool" for m in self.messages):
+                return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "create_booking", "arguments": {k: bench.BOOKING[k] for k in KEYS}}}]}
+            return {"role": "assistant", "content": "The hotel is booked."}
+
+    monkeypatch.setattr(demo, "LlamaAgent", BooksThenSaysSo)
+    plain = next(d for d in bench.DEV if d["id"] == "dev-plain")
+    bench.run(["A"], scenarios=[plain], reps={"A": 1}, model="stand-in", out_dir=tmp_path, progress=lambda s: None)
+    r = bench.reverify(tmp_path)
+    assert r["consistent"] and r["runs"][0]["fidelity_compared"] and r["runs"][0]["report_fidelity"] == "faithful"  # booked, receipt returned
+    doc = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))
+    doc["results"][0]["report_fidelity"] = "overclaim"
+    (tmp_path / "results.json").write_text(json.dumps(doc), encoding="utf-8")
+    assert not bench.reverify(tmp_path)["consistent"]
+
+
+def test_the_dev_archives_without_the_measure_remain_auditable():
+    from conftest import ROOT
+
+    for folder in sorted((ROOT / "bench" / "prequalification").glob("smoke-*")):
+        r = bench.reverify(folder)
+        assert r["consistent"] and all(x["fidelity_compared"] is False and x["fidelity_matches"] is None for x in r["runs"])

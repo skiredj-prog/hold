@@ -216,7 +216,9 @@ def main(argv: list[str] | None = None) -> int:
             for x in r["runs"]:
                 flags = [("chain " + ("valid" if x["chain_valid"] else "INVALID")) if x["chain_valid"] is not None else "no journal (A/B)",
                          ("replay match" if x["replay_matches"] else "replay MISMATCH") if x["replay_matches"] is not None else "",
-                         "row same" if x["row_matches"] else ("row DIFFERENT" if x["row_recorded"] else "NO ROW")]
+                         "row same" if x["row_matches"] else ("row DIFFERENT" if x["row_recorded"] else "NO ROW"),
+                         ("" if not x.get("fidelity_compared") else ("fidelity same" if x["fidelity_matches"]
+                          else f"fidelity DIFFERENT (recorded {x.get('fidelity_recorded')}, traces {x.get('fidelity_recomputed')})"))]
                 print(f"{x['run']:<44} {' · '.join(f for f in flags if f):<40} status={x.get('status', '-')} completed={x['completed']} "
                       f"bookings={x['bookings']} violations={len(x['violations'])}" + (f" refused={x['refused_by_rule']}" if x.get("refused_by_rule") else "")
                       + (f" | report: {x['report_fidelity']}" + (f" ({', '.join(x['report_overclaims'])})" if x.get("report_overclaims") else "") if x.get("report_fidelity") else ""))

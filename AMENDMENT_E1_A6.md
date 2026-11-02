@@ -1,4 +1,4 @@
-# E1-A6 — Continuation contract and equal model context (development checkpoint 10, NOT frozen, NOT qualified — proposed for freeze)
+# E1-A6 — Continuation contract and equal model context (development checkpoint 11, NOT frozen, NOT qualified — candidate for freeze)
 
 > Branch `experiment/E1-A6`, from `94d0319` (the code frozen for E1-A5). E1-A5 and its results are untouched (`E1_A5_RESULTS.md`).
 > Status: **exploratory.** A6 was designed after reading the E1-A5 traces, on the same evaluation scenarios and seeds. It can show whether the defects found explain E1-A5; it cannot confirm a performance claim. Confirmation would need scenarios not used to design it.
@@ -142,15 +142,26 @@ H1's statement now says this scope explicitly (HOLD's declarations in, the agent
 
 The GO / NO-GO verdicts are unchanged: report fidelity is not a gate criterion. Tests: `test_a_success_declared_by_hold_without_the_providers_receipt_is_a_violation`, `test_the_claim_rule_reads_the_reports_found_in_the_traces`, `test_report_fidelity_is_measured_in_every_e1_condition_and_stays_outside_the_verdicts`, and the re-evaluation of the real traces in `test_the_recorded_prequalifications_reverify`.
 
+## PMO review of checkpoint 10 (`e7c24ea`) — reverify holds the recorded report fidelity (checkpoint 11)
+PMO decisions recorded: the separation of responsibilities is approved (H1 protects HOLD's declarations; `report_fidelity` describes the gaps in the agent's); the reserve on it is lifted. One traceability gap remained: with `report_fidelity` altered in a copy of `results.json` and the raw traces untouched, `reverify` still answered consistent.
+
+Correction (evidence checking only): when a recorded row carries the measure (`report_fidelity`, `report_claims`, `report_evidence`), `reverify` recomputes it from the traces and compares; a difference makes the folder INCONSISTENT and is printed as "fidelity DIFFERENT (recorded …, traces …)". For HOLD runs the measure is recomputed from the journal and the model messages; for A and B, the claims are re-read from the model messages and the evidence is the provider's as the run recorded it. Rows written before the measure existed (the DEV archives of checkpoints 5–7) do not carry it: they are shown as not compared and stay auditable. No call to Llama, no smoke, no change to HOLD's invariants, runtime or agent interface.
+
+Tests: `test_reverify_catches_an_altered_report_fidelity_in_a_hold_campaign` (the PMO's experiment, through the function and the CLI), `test_reverify_catches_an_altered_report_fidelity_in_a_campaign_without_hold`, `test_the_dev_archives_without_the_measure_remain_auditable`.
+
+Limits to carry into the scientific report (both also written into the protocol's `METRICS`, so they are frozen with it):
+- `faithful` means that the declared rule detected no overclaim; it does not prove that every statement of the model is true.
+- The receipts HOLD's declarations are checked against come from the laboratory's synthetic provider; this is not a guarantee about any real provider's conformity.
+
 ## Verification at this checkpoint
-154 tests pass (A5 checkpoint 6: 127, plus 27 for A6). The A5 demonstration still passes. A fresh freeze of this code passes `check_freeze`, and its SHA-256 equals the digest of the protocol the code computes. New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
+157 tests pass (A5 checkpoint 6: 127, plus 30 for A6). The A5 demonstration still passes. A fresh freeze of this code passes `check_freeze`, and its SHA-256 equals the digest of the protocol the code computes. New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
 
 ## Windows (PowerShell)
 ```powershell
 cd <extraction>\hold-a6
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 154 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 157 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli bench probe --model llama3.2:3b --probes P2,P3,F --systems neutral,hold-min --reps 2   # ~20 calls
 & $py -m hold.cli bench probe --model llama3.1:8b --systems neutral,hold-min --reps 1                      # after: ollama pull llama3.1:8b
 & $py -m hold.cli bench smoke --model llama3.2:3b --contract hold-min                                     # the candidate in the real pipeline, 4 runs
