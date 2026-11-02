@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("--port", type=int, default=8787)
 
     pb = sub.add_parser("bench", help="the frozen A/B/C/C2/D comparison")
-    pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate", "smoke", "probe"])
+    pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate", "smoke", "probe", "reverify"])
     pb.add_argument("--reps", type=int, default=3, help="probe: repetitions per cell (seeds 42, 43, …)")
     pb.add_argument("--probes", default="P1,P2,P3,F", help="probe: which micro-tests (P1,P2,P3,F)")
     pb.add_argument("--systems", default="neutral,hold,hold-a6-initial", help="probe: which system prompts (neutral, hold, hold-a6-initial)")
@@ -210,6 +210,22 @@ def main(argv: list[str] | None = None) -> int:
             target = Path(a.out) / "results.json"
             print(json.dumps(bench.rerun_failed(target, model=a.model), ensure_ascii=False, indent=1))
             return 0
+        if a.action == "reverify":
+            # A6: re-check a smoke or campaign folder from its raw traces alone (no model): chains, replay, re-scoring, GO/NO-GO
+            r = bench.reverify(a.out)
+            for x in r["runs"]:
+                flags = [("chain " + ("valid" if x["chain_valid"] else "INVALID")) if x["chain_valid"] is not None else "no journal (A/B)",
+                         ("replay match" if x["replay_matches"] else "replay MISMATCH") if x["replay_matches"] is not None else "",
+                         "row same" if x["row_matches"] else ("row DIFFERENT" if x["row_recorded"] else "NO ROW")]
+                print(f"{x['run']:<44} {' · '.join(f for f in flags if f):<40} status={x.get('status', '-')} completed={x['completed']} "
+                      f"bookings={x['bookings']} violations={len(x['violations'])}" + (f" refused={x['refused_by_rule']}" if x.get("refused_by_rule") else ""))
+            if r["rows_without_raw_run"]:
+                print("rows without a raw run: " + ", ".join(r["rows_without_raw_run"]))
+            if r.get("prequalification"):
+                pq = r["prequalification"]
+                print(f"pre-qualification recomputed: {pq['verdict']}" + (" — " + "; ".join(pq["failed"]) if pq["failed"] else "") + f" · continued after a block {pq['continued_after_block']}")
+            print("CONSISTENT: every trace and every recorded row agree." if r["consistent"] else "INCONSISTENT: see above.")
+            return 0 if r["consistent"] else 1
         if a.action == "probe":
             # A6: diagnostic micro-tests asked by the PMO (progression, fidelity), real model, simplified interface: never evidence
             if not a.model:

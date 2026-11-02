@@ -914,6 +914,49 @@ def prequalify(out_dir: str | Path) -> dict[str, Any]:
     return {"verdict": "NO-GO" if failed else "GO", "failed": failed, "continued_after_block": f"{cont}/{blocks}", "runs": runs}
 
 
+def reverify(folder: str | Path) -> dict[str, Any]:
+    """A6 (PMO, checkpoint 7): re-check a smoke or campaign folder from its raw traces alone, without the model: the hash
+    chain of every journal, the replay of every decision (positions, verdicts, status), the re-scoring of every HOLD run
+    from its journal compared with the row recorded in results.json, and, for a smoke folder, the GO / NO-GO."""
+    from .journal import verify_chain
+
+    out_dir = Path(folder)
+    scns = {s["id"]: s for s in EVAL + DEV}
+    doc = json.loads((out_dir / "results.json").read_text(encoding="utf-8"))
+    rows = {(r["condition"], r["scenario"], r.get("rep"), r.get("attempt", 1)): r for r in doc["results"]}
+    runs, seen = [], set()
+    for f in sorted(out_dir.glob("*.json")):
+        m = re.search(r"_r(\d+)(?:_attempt(\d+))?\.json$", f.name)
+        if not m or f.name in ("results.json", "smoke.json", "probe.json"):
+            continue
+        raw = json.loads(f.read_text(encoding="utf-8"))
+        key = (raw["condition"], raw["scenario"], int(m.group(1)) - 1, int(m.group(2) or 1))
+        seen.add(key)
+        row = rows.get(key)
+        check: dict[str, Any] = {"run": f.stem, "row_recorded": row is not None}
+        if raw.get("hold"):
+            chain = verify_chain(raw["journal"]["events"])
+            s = score_hold(raw, scns[raw["scenario"]])
+            fields = ("completed", "violations", "status", "effect_proposals")
+            check |= {"chain_valid": chain.valid, "events": chain.count, "replay_matches": bool(s["verified"]),
+                      "row_matches": row is not None and all(s[k] == row.get(k) for k in fields),
+                      "status": s["status"], "completed": s["completed"], "bookings": raw["provider"]["created"], "violations": s["violations"],
+                      "effect_proposals": s["effect_proposals"], "refused_by_rule": s["overreach"]["refused_by_rule"]}
+        else:  # A and B have no journal: their recorded row must say what their raw run says
+            check |= {"chain_valid": None, "replay_matches": None,
+                      "row_matches": row is not None and all(raw[k] == row.get(k) for k in ("completed", "violations", "infrastructure_error")),
+                      "completed": raw["completed"], "bookings": raw["provider"]["created"], "violations": raw["violations"]}
+        runs.append(check)
+    orphan_rows = sorted(f"{c}/{s}/rep{r}/attempt{a}" for (c, s, r, a) in rows if (c, s, r, a) not in seen)
+    consistent = (bool(runs) and not orphan_rows and all(x["row_recorded"] and x["row_matches"] for x in runs)
+                  and all(x["chain_valid"] in (True, None) and x["replay_matches"] in (True, None) for x in runs))
+    out: dict[str, Any] = {"folder": str(out_dir), "runs": runs, "rows_without_raw_run": orphan_rows, "consistent": consistent,
+                           "protocol_sha256": doc.get("protocol_sha256"), "stopped_early": doc.get("stopped_early")}
+    if runs and all(x["run"].split("_")[2] in {d["id"] for d in DEV} for x in runs if x["run"].startswith("C-llama_")) and any(x["run"].startswith("C-llama_") for x in runs):
+        out["prequalification"] = prequalify(out_dir)
+    return out
+
+
 def _not_executed(messages) -> int:
     return sum(1 for m in messages or [] if m.get("role") == "tool" and '"NOT_EXECUTED"' in (m.get("content") or ""))
 

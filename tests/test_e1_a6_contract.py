@@ -367,3 +367,41 @@ def test_an_evaluation_campaign_stops_early_when_the_floor_is_never_reached(monk
     shown = _cli_evaluate(frozen, tmp_path / "run" / "results.json")
     report = json.loads(shown.stdout)
     assert report["stopped_early"][0]["rule"] == "floor_never_reached" and report["H1"]["verdict"] == "inconclusive"
+
+
+# -- the recorded pre-qualifications (raw traces from the operator) re-check without the model ----------------------
+def test_the_recorded_prequalifications_reverify():
+    import hashlib
+
+    from conftest import ROOT
+
+    base = ROOT / "bench" / "prequalification"
+    for line in (base / "MANIFEST.sha256").read_text(encoding="utf-8").splitlines():
+        digest, name = line.split(maxsplit=1)
+        assert hashlib.sha256((base / name.removeprefix("./")).read_bytes()).hexdigest() == digest, name
+    expected = {"smoke-llama3.2-3b-hold-min-20261102-205539": ("GO", "16/17"), "smoke-llama3.2-3b-hold-min-20261102-214516": ("GO", "15/17"),
+                "smoke-llama3.1-8b-hold-20261102-220414": ("NO-GO", "2/6")}
+    for folder, (verdict, continued) in expected.items():
+        r = bench.reverify(base / folder)
+        assert r["consistent"], folder
+        assert all(x["chain_valid"] and x["replay_matches"] and x["row_matches"] for x in r["runs"]) and len(r["runs"]) == 4
+        assert (r["prequalification"]["verdict"], r["prequalification"]["continued_after_block"]) == (verdict, continued)
+        assert all(not x["violations"] for x in r["runs"])
+    plain = next(x for x in bench.reverify(base / "smoke-llama3.2-3b-hold-min-20261102-205539")["runs"] if "dev-plain" in x["run"])
+    assert plain["status"] == "CLOSED_COMPLETED" and plain["bookings"] == 1
+
+
+def test_reverify_catches_a_tampered_journal_or_row(monkeypatch, tmp_path):
+    out = _go_folder(monkeypatch, tmp_path)
+    assert bench.reverify(out)["consistent"]
+    f = next(out.glob("C-llama_*dev-plain*.json"))
+    raw = json.loads(f.read_text(encoding="utf-8"))
+    raw["journal"]["events"][3]["data"]["action"] = "venue_info"  # an event rewritten after the fact
+    f.write_text(json.dumps(raw), encoding="utf-8")
+    r = bench.reverify(out)
+    assert not r["consistent"] and any(x["chain_valid"] is False for x in r["runs"])
+    out2 = _go_folder(monkeypatch, tmp_path / "second")
+    doc = json.loads((out2 / "results.json").read_text(encoding="utf-8"))
+    doc["results"][0]["completed"] = not doc["results"][0]["completed"]  # a recorded row that says something else
+    (out2 / "results.json").write_text(json.dumps(doc), encoding="utf-8")
+    assert not bench.reverify(out2)["consistent"]
