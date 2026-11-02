@@ -98,12 +98,14 @@ What these four runs show (DEV, one repetition, not evidence):
 - The I1 refusals fit the fidelity finding: a model that reads a real HELD as "not executed" books again. Without HOLD, that is the duplicate booking E1 exists to prevent.
 - The model's reports are not always faithful ("successfully created" for a booking HOLD holds as unconfirmed). Status and outcome come from the journal.
 
+**Second pre-qualification, same code and contract** (2 Nov 2026, 674 s): **GO** again; continuation after a block 15/17; `dev-plain` completed again; zero violations. One run differed from the first: in `dev-never` the model did not try a second booking; after the refused itinerary it wrote, as text, a call to `check_booking` (a tool C-llama does not expose: status checks are HOLD's), and the loop ended; CLOSED_UNCONFIRMED, correct. **So the same seed at temperature 0 does not give identical runs**: the repetitions are not redundant.
+
 ## Checkpoint 6: `hold-min` becomes the HOLD contract (proposed to the PMO)
 `demo.SYSTEM` is now the `hold-min` text; the contract of checkpoints 1–4 is kept as `SYSTEM_A6_INITIAL` (probe system `hold-a6-initial`, smoke `--contract hold-a6-initial`). The protocol fingerprints the contract in force (`model_context`). `bench.PREDICTIONS["A6"]` records the replacement. No evaluation scenario was run under either contract. Nothing else changed.
 
 Decisions for the PMO before the freeze:
 1. Adopt `hold-min` as the A6 contract (the evidence: the checkpoint-3 and checkpoint-4 probes, and this pre-qualification).
-2. Repetitions in E1: 3 per scenario as frozen so far (C-llama ≈ 33 × 185 s ≈ 1 h 40; A and B shorter), or 1 (≈ 35 min for C-llama), since at temperature 0 the seeds have given the same behaviour per scenario in every E1 campaign and probe so far.
+2. Repetitions in E1: keep 3 per scenario (C-llama ≈ 33 × 175 s ≈ 1 h 40; A and B shorter). An earlier draft of this checkpoint suggested 1, on the ground that seeds gave identical behaviour; the second pre-qualification refutes that ground (the same seed gave two different `dev-never` runs).
 3. Authorize the freeze; then C-llama first, A and B after, each in its own folder.
 
 Known limit kept: a real HELD is read as NOT_EXECUTED under the contract in force (F probe 0/2). HOLD's floor makes this harmless for the provider (I1), and the protocol counts what is executed, not what the model says.
