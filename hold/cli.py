@@ -123,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
     pb.add_argument("--reps", type=int, default=3, help="probe: repetitions per cell (seeds 42, 43, …)")
     pb.add_argument("--probes", default="P1,P2,P3,F", help="probe: which micro-tests (P1,P2,P3,F)")
     pb.add_argument("--systems", default="neutral,hold,hold-min", help="probe: which system prompts (neutral,hold,hold-min)")
+    pb.add_argument("--contract", default="hold", choices=["hold", "hold-min"], help="smoke: the HOLD contract C-llama reads (diagnostic)")
     pb.add_argument("--frozen", default="bench/protocol.frozen.json")
     pb.add_argument("--conditions", default="C,C2,X", help="comma separated: A,B,C-llama,C,C2,D,X")
     pb.add_argument("--model", help="Ollama model for A, B, C-llama and D (e.g. llama3.2:3b, llama3.1:8b)")
@@ -210,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
             from .probe import run_probes
 
-            out = Path(a.out if a.out != "bench/results/run" else f"bench/results/probe-{a.model.replace(':', '-')}")
+            out = Path(a.out if a.out != "bench/results/run" else f"bench/results/probe-{a.model.replace(':', '-')}-{time.strftime('%Y%m%d-%H%M%S')}")
             out.mkdir(parents=True, exist_ok=True)
             r = run_probes(a.model, reps=a.reps, systems_=[x.strip() for x in a.systems.split(",") if x.strip()],
                            probes=[x.strip() for x in a.probes.split(",") if x.strip()])
@@ -232,10 +233,11 @@ def main(argv: list[str] | None = None) -> int:
             if not a.model:
                 print("--model is required", file=sys.stderr)
                 return 2
-            out = a.out if a.out != "bench/results/run" else f"bench/results/smoke-{a.model.replace(':', '-')}"
+            stamp = time.strftime("%Y%m%d-%H%M%S")
+            out = a.out if a.out != "bench/results/run" else f"bench/results/smoke-{a.model.replace(':', '-')}-{a.contract}-{stamp}"
             started = time.monotonic()
-            lines = bench.smoke(conds, model=a.model, out_dir=out)
-            print("SMOKE (DEV scenarios, one repetition): calibration only, never evidence.")
+            lines = bench.smoke(conds, model=a.model, out_dir=out, contract=a.contract)
+            print(f"SMOKE (DEV scenarios, one repetition, contract {a.contract}): calibration only, never evidence.")
             for x in lines:
                 print(f"\n{x['run']}  turns={x['turns']} not_executed={x['not_executed']} created={x['created']} status={x['status']}" + (f" ERRORS={x['errors']}" if x["errors"] else ""))
                 print("  " + (" > ".join(x["steps"]) or "(no call reached the tools)"))

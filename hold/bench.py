@@ -801,12 +801,17 @@ def run_naked(scn: dict[str, Any], *, cautious: bool, model: str, label: str, ag
             "overreach": {"proposed": len(violations) + not_executed, "executed": len(violations), "not_executed_by_harness": not_executed}}
 
 
-def smoke(conditions: list[str], *, model: str, out_dir: str | Path, progress: Callable[[str], None] = print) -> list[dict[str, Any]]:
+def smoke(conditions: list[str], *, model: str, out_dir: str | Path, progress: Callable[[str], None] = print,
+          contract: str = "hold") -> list[dict[str, Any]]:
     """A6: a calibration run with the real model on the DEV scenarios (never on the evaluation scenarios), one
     repetition per condition, before any freeze. Its rows carry no protocol digest: they can never be evidence.
-    It answers one question: does the model reach the floor, and what does it do next?"""
+    It answers one question: does the model reach the floor, and what does it do next? `contract` selects the HOLD
+    system prompt for C-llama: "hold" (the A6 contract) or "hold-min" (the candidate the probes point to)."""
+    from .probe import HOLD_MIN
+
     out = Path(out_dir)
-    run(conditions, scenarios=DEV, reps={c: 1 for c in conditions}, model=model, out_dir=out, progress=progress)
+    run(conditions, scenarios=DEV, reps={c: 1 for c in conditions}, model=model, out_dir=out, progress=progress,
+        hold_system={"hold": None, "hold-min": HOLD_MIN}[contract])
     lines = []
     for f in sorted(out.glob("*_r1.json")):
         r = json.loads(f.read_text(encoding="utf-8"))
@@ -888,8 +893,10 @@ def _not_executed(messages) -> int:
 # -- running the bench -----------------------------------------------------------------------------
 def run(conditions: list[str], *, scenarios: list[dict[str, Any]] | None = None, model: str | None = None, frozen: str | Path | None = None,
         out_dir: str | Path | None = None, reps: dict[str, int] | None = None, progress: Callable[[str], None] = print, only_rep: int | None = None,
-        attempt: int = 1) -> dict[str, Any]:
+        attempt: int = 1, hold_system: str | None = None) -> dict[str, Any]:
     evaluation = scenarios is None
+    if evaluation and hold_system is not None:
+        raise RuntimeError("An evaluation run uses the frozen HOLD contract; a candidate contract is for smoke runs only.")
     if evaluation:
         if not frozen:
             raise RuntimeError("An evaluation run needs the frozen protocol (hold bench freeze).")
@@ -920,7 +927,7 @@ def run(conditions: list[str], *, scenarios: list[dict[str, Any]] | None = None,
 
                         inner = LlamaAgent(model=model or MODELS[0], max_steps=AGENT_MAX_STEPS)
                         inner.seed = SEED + rep
-                        agent = _HoldLlamaAgent(inner)
+                        agent = _HoldLlamaAgent(inner, system=hold_system)
                         disc = ReferenceDiscerner()
                     else:
                         agent = ScriptedAgent()
@@ -945,6 +952,7 @@ class _HoldLlamaAgent:
 
     inner: Any
     name: str = "llama"
+    system: str | None = None  # A6: a candidate contract, for smoke runs only (an evaluation run uses the frozen one)
 
     def __post_init__(self):
         self.errors: list[str] = []
@@ -952,7 +960,7 @@ class _HoldLlamaAgent:
     def run(self, m, booking):
         from .demo import SYSTEM as HOLD_SYSTEM
 
-        self.inner.messages = [{"role": "system", "content": HOLD_SYSTEM}, {"role": "user", "content": TASK}]
+        self.inner.messages = [{"role": "system", "content": self.system or HOLD_SYSTEM}, {"role": "user", "content": TASK}]
         try:
             self.inner._loop(m, lambda name, r: None)
         except Exception as e:  # noqa: BLE001 — recorded as an infrastructure error (A5), never swallowed

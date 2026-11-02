@@ -268,3 +268,22 @@ def test_p3_measures_what_a_bare_continue_changes(monkeypatch):
     assert s["P2 next move"]["neutral"] == "booking on the observed offer 0/1; text 1/1 (claims HELD: 0, narrates a confirmation: 1)"
     assert s['P3 after "Continue."']["neutral"] == "booking on the observed offer 1/1; text 0/1"
     assert r["P1"] == {} and r["F"] == {}  # only what was asked ran
+
+
+def test_a_smoke_can_try_the_candidate_contract_but_an_evaluation_run_cannot(monkeypatch, tmp_path):
+    from hold import probe
+
+    seen = []
+
+    class Records(FollowsTheContract):
+        def _chat(self, tools):
+            seen.append(self.messages[0]["content"])
+            return super()._chat(tools)
+
+    monkeypatch.setattr(demo, "LlamaAgent", Records)
+    bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path, progress=lambda s: None, contract="hold-min")
+    assert seen and set(seen) == {probe.HOLD_MIN}
+    import pytest
+
+    with pytest.raises(RuntimeError, match="candidate contract is for smoke runs only"):
+        bench.run(["C-llama"], model="stand-in", frozen=tmp_path / "none.json", hold_system=probe.HOLD_MIN, progress=lambda s: None)

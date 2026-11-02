@@ -1,4 +1,4 @@
-# E1-A6 — Continuation contract and equal model context (development checkpoint 4, NOT frozen, NOT qualified)
+# E1-A6 — Continuation contract and equal model context (development checkpoint 5, NOT frozen, NOT qualified)
 
 > Branch `experiment/E1-A6`, from `94d0319` (the code frozen for E1-A5). E1-A5 and its results are untouched (`E1_A5_RESULTS.md`).
 > Status: **exploratory.** A6 was designed after reading the E1-A5 traces, on the same evaluation scenarios and seeds. It can show whether the defects found explain E1-A5; it cannot confirm a performance claim. Confirmation would need scenarios not used to design it.
@@ -66,17 +66,34 @@ Reading, as stated before the run:
 - The probe now keeps every argument the model wrote, tells a text stop from a stop on values or on another tool, and flags texts that claim HELD or narrate a confirmation. `--probes` and `--systems` select what runs.
 - Same probes on **llama3.1:8b**, to see whether progression is a matter of model size.
 
+## Probe results on llama3.2:3b (checkpoint 4 code, 2 Nov 2026, 2 seeds per cell, 269 s) — diagnostic, never evidence
+| | neutral prompt | `hold-min` candidate |
+|---|---|---|
+| P2: after an OK search, the four tools offered | 0/2 book; 2/2 text (1 narrates a booking confirmation) | **2/2 call `create_booking`**, with values that differ from the offer on at least one of the eight fields (which ones: `arguments` in probe.json) |
+| P3: then the principal says only "Continue." | 2/2 call `search_hotels` again, none books | n/a: it had already acted |
+| F: search OK / booking OK | 4/4 right | 4/4 right |
+| F: booking really HELD | 2/2 right | 0/2: answer NOT_EXECUTED |
+
+Reading:
+- `hold-min` is the first prompt under which the model calls `create_booking` after observing the offer. A bare "Continue." makes the neutral model act again but repeat the search: the turn-taking habit is part of the stop, but what restores progression here is the content of the contract (results say what happened and what may follow; only observed values may be used), not the extra turn.
+- `hold-min` removes the false HELD narrative (no text answer at all in P2), but a real HELD is still read as NOT_EXECUTED, where the neutral prompt reads it right. A hypothesis, not acted on: its words "checks it before anything is executed" may prime NOT_EXECUTED.
+- With temperature 0, the seeds gave the same behaviour in every cell: these are close to single observations per cell.
+
+## Checkpoint 5: the candidate contract in the real pipeline
+`hold bench smoke --model … --contract hold-min` runs the pre-qualification (C-llama, four DEV scenarios, real runtime, barrier, floor, journal) with `hold-min` as C-llama's system prompt. Diagnostic only: an evaluation run refuses a candidate contract (`test_a_smoke_can_try_the_candidate_contract_but_an_evaluation_run_cannot`). Nothing is adopted until the PMO decides on the evidence. Smoke and probe folders are now time-stamped, so a run never overwrites the previous one.
+
 ## Verification at this checkpoint
-143 tests pass (A5 checkpoint 6: 127, plus 16 for A6). New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
+144 tests pass (A5 checkpoint 6: 127, plus 17 for A6). New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
 
 ## Windows (PowerShell)
 ```powershell
 cd <extraction>\hold-a6
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 143 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 144 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli bench probe --model llama3.2:3b --probes P2,P3,F --systems neutral,hold-min --reps 2   # ~20 calls
 & $py -m hold.cli bench probe --model llama3.1:8b --systems neutral,hold-min --reps 1                      # after: ollama pull llama3.1:8b
+& $py -m hold.cli bench smoke --model llama3.2:3b --contract hold-min                                     # the candidate in the real pipeline, 4 runs
 & $py -m hold.cli bench smoke --model llama3.2:3b    # pre-qualification: 4 C-llama runs on DEV, then GO / NO-GO
 ```
 Use a new folder: the E1-A5 folder and its results stay as they are. `hold bench run` refuses to start until A6 is frozen.
