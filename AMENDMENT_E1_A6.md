@@ -1,4 +1,4 @@
-# E1-A6 — Continuation contract and equal model context (development checkpoint 6, NOT frozen, NOT qualified — proposed for freeze)
+# E1-A6 — Continuation contract and equal model context (development checkpoint 8, NOT frozen, NOT qualified — proposed for freeze)
 
 > Branch `experiment/E1-A6`, from `94d0319` (the code frozen for E1-A5). E1-A5 and its results are untouched (`E1_A5_RESULTS.md`).
 > Status: **exploratory.** A6 was designed after reading the E1-A5 traces, on the same evaluation scenarios and seeds. It can show whether the defects found explain E1-A5; it cannot confirm a performance claim. Confirmation would need scenarios not used to design it.
@@ -110,15 +110,26 @@ Decisions for the PMO before the freeze:
 
 Known limit kept: a real HELD is read as NOT_EXECUTED under the contract in force (F probe 0/2). HOLD's floor makes this harmless for the provider (I1), and the protocol counts what is executed, not what the model says.
 
+## PMO review of checkpoint 7 (`0eaffe6`) — corrections before the freeze (checkpoint 8)
+PMO decisions recorded: `hold-min` accepted as the A6 contract; 3 repetitions kept for the qualification; early-stop criteria may be defined before the freeze; the 8B smoke is a separate diagnostic.
+
+| PMO finding | Correction | Test |
+|---|---|---|
+| `TOOL_SURFACE` still declared the A5 order, contradicting `model_context` | The declared tool surface is now derived from `model_context` (what each model is actually shown, in that order): one source, no second declaration to drift. The note on what is intrinsic to HOLD is kept. | `test_the_declared_tool_surface_is_what_each_model_is_shown_in_that_order` |
+| `prequalify()` did not check that the four DEV scenarios are present: a partial collection with `dev-plain` could give GO | GO now also requires exactly the four DEV scenarios, once each, in the raw runs and in `results.json` alike; missing, non-DEV and duplicated scenarios are named in the NO-GO. | `test_prequalification_refuses_a_partial_collection_even_with_dev_plain_completed`, `test_prequalification_refuses_duplicated_or_unmatched_rows` |
+| Early-stop criteria (invited) | Declared in the protocol (`early_stop`), applied to evaluation runs only, never to a replacement re-run: (1) three consecutive runs of a condition with an infrastructure error; (2) C-llama: 11 runs and no effect proposal has reached the floor in any. A stopped campaign is written with `stopped_early`, shown as such by `bench run` (exit 1) and `bench evaluate`, and its missing runs make the verdicts inconclusive: never a success. | `test_an_evaluation_campaign_stops_early_when_the_model_server_does_not_answer`, `test_an_evaluation_campaign_stops_early_when_the_floor_is_never_reached` |
+
+The raw files of the two 3B pre-qualifications (`smoke.json`, `results.json`, four traces each) are on the operator's machine, in `bench/results/smoke-llama3.2-3b-hold-min-20261102-205539` and `…-214516`; they are sent to the PMO with this checkpoint, and added to the repository under `bench/prequalification/` when received.
+
 ## Verification at this checkpoint
-144 tests pass (A5 checkpoint 6: 127, plus 17 for A6). The A5 demonstration still passes. New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
+149 tests pass (A5 checkpoint 6: 127, plus 22 for A6). The A5 demonstration still passes. A fresh freeze of this code passes `check_freeze`, and its SHA-256 equals the digest of the protocol the code computes. New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
 
 ## Windows (PowerShell)
 ```powershell
 cd <extraction>\hold-a6
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 144 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 149 expected (4 skipped if Node.js is absent)
 & $py -m hold.cli bench probe --model llama3.2:3b --probes P2,P3,F --systems neutral,hold-min --reps 2   # ~20 calls
 & $py -m hold.cli bench probe --model llama3.1:8b --systems neutral,hold-min --reps 1                      # after: ollama pull llama3.1:8b
 & $py -m hold.cli bench smoke --model llama3.2:3b --contract hold-min                                     # the candidate in the real pipeline, 4 runs

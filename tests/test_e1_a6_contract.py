@@ -294,3 +294,76 @@ def test_a_smoke_can_try_the_candidate_contract_but_an_evaluation_run_cannot(mon
 
     with pytest.raises(RuntimeError, match="candidate contract is for smoke runs only"):
         bench.run(["C-llama"], model="stand-in", frozen=tmp_path / "none.json", hold_system=demo.SYSTEM_A6_INITIAL, progress=lambda s: None)
+
+
+# -- PMO review of checkpoint 7 (0eaffe6): before the freeze ------------------------------------------------------
+def test_the_declared_tool_surface_is_what_each_model_is_shown_in_that_order():
+    p = bench.protocol()
+    for cond in ("A", "B", "C-llama"):
+        assert p["tool_surface"][cond] == p["model_context"][cond]["tools"]
+    assert p["tool_surface"]["C-llama"] == ["search_hotels", "venue_info", "create_booking", "send_itinerary"]
+    assert p["tool_surface"]["A"][:4] == p["tool_surface"]["C-llama"] and "intrinsic to HOLD" in p["tool_surface"]["note"]
+
+
+def _go_folder(monkeypatch, tmp_path):
+    monkeypatch.setattr(demo, "LlamaAgent", FollowsTheContract)
+    bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path, progress=lambda s: None)
+    assert bench.prequalify(tmp_path)["verdict"] == "GO"
+    return tmp_path
+
+
+def test_prequalification_refuses_a_partial_collection_even_with_dev_plain_completed(monkeypatch, tmp_path):
+    out = _go_folder(monkeypatch, tmp_path)
+    for f in out.glob("C-llama_*.json"):
+        if "dev-plain" not in f.name:
+            f.unlink()
+    doc = json.loads((out / "results.json").read_text(encoding="utf-8"))
+    doc["results"] = [r for r in doc["results"] if r["scenario"] == "dev-plain"]
+    (out / "results.json").write_text(json.dumps(doc), encoding="utf-8")
+    pq = bench.prequalify(out)
+    assert pq["runs"]["dev-plain"]["completed"] and pq["verdict"] == "NO-GO"
+    assert any("missing: dev-envelope, dev-lag, dev-never" in f for f in pq["failed"])
+
+
+def test_prequalification_refuses_duplicated_or_unmatched_rows(monkeypatch, tmp_path):
+    out = _go_folder(monkeypatch, tmp_path)
+    doc = json.loads((out / "results.json").read_text(encoding="utf-8"))
+    doc["results"].append(dict(doc["results"][0]))  # the same scenario twice in results.json
+    (out / "results.json").write_text(json.dumps(doc), encoding="utf-8")
+    pq = bench.prequalify(out)
+    assert pq["verdict"] == "NO-GO" and any("coverage of results.json" in f and "duplicated" in f for f in pq["failed"])
+
+
+def test_an_evaluation_campaign_stops_early_when_the_model_server_does_not_answer(monkeypatch, tmp_path):
+    class Down(demo.LlamaAgent):
+        def _chat(self, tools):
+            raise ConnectionError("model server unreachable")
+
+    monkeypatch.setattr(demo, "LlamaAgent", Down)
+    frozen = tmp_path / "frozen.json"
+    bench.freeze(frozen)
+    r = bench.run(["C-llama"], model="stand-in", frozen=frozen, out_dir=tmp_path / "run", progress=lambda s: None)
+    assert r["stopped_early"]["rule"] == "infrastructure" and r["stopped_early"]["after_runs"] == 3 and len(r["results"]) == 3
+    ev = bench.evaluate(r["results"], expected_protocol=r["protocol_sha256"], strict=True)
+    assert ev["H1"]["verdict"] in ("inconclusive",) and ev["H2"]["verdict"] == "inconclusive"  # incomplete, never a success
+
+
+def test_an_evaluation_campaign_stops_early_when_the_floor_is_never_reached(monkeypatch, tmp_path):
+    class ReadsOnly(demo.LlamaAgent):
+        def _chat(self, tools):
+            if any(m["role"] == "tool" for m in self.messages):
+                return {"role": "assistant", "content": "Report."}
+            return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "search_hotels", "arguments": {"city": "Lyon"}}}]}
+
+    monkeypatch.setattr(demo, "LlamaAgent", ReadsOnly)
+    frozen = tmp_path / "frozen.json"
+    bench.freeze(frozen)
+    r = bench.run(["C-llama"], model="stand-in", frozen=frozen, out_dir=tmp_path / "run", progress=lambda s: None)
+    assert r["stopped_early"]["rule"] == "floor_never_reached" and len(r["results"]) == 11
+    saved = json.loads((tmp_path / "run" / "results.json").read_text(encoding="utf-8"))
+    assert saved["stopped_early"]["after_runs"] == 11
+    from test_e1_a5_recovery import _cli_evaluate
+
+    shown = _cli_evaluate(frozen, tmp_path / "run" / "results.json")
+    report = json.loads(shown.stdout)
+    assert report["stopped_early"][0]["rule"] == "floor_never_reached" and report["H1"]["verdict"] == "inconclusive"

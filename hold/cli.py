@@ -195,7 +195,12 @@ def main(argv: list[str] | None = None) -> int:
             r = bench.run(conds, model=a.model, frozen=a.frozen, out_dir=a.out)
             print(f"Raw runs and results: {a.out}")
             ev = bench.evaluate(r["results"], expected_protocol=r["protocol_sha256"], strict=True)
+            if r.get("stopped_early"):
+                ev = {"stopped_early": r["stopped_early"]} | ev
             print(json.dumps(ev, ensure_ascii=False, indent=1))
+            if r.get("stopped_early"):
+                print(f"STOPPED EARLY ({r['stopped_early']['rule']}): the campaign is incomplete; it is not a result.", file=sys.stderr)
+                return 1
             return 0 if ev["identity"]["valid"] else 1
         if a.action == "rerun":
             ok, problems = bench.check_freeze(a.frozen)
@@ -261,8 +266,12 @@ def main(argv: list[str] | None = None) -> int:
                 print("Refused: the designated frozen protocol is not a valid anchor: " + "; ".join(problems), file=sys.stderr)
                 return 1
             frozen_sha = json.loads(Path(a.frozen).read_text(encoding="utf-8"))["sha256"]
-            rows = [x for f in a.results or [] for x in json.loads(Path(f).read_text(encoding="utf-8"))["results"]]
+            files = [json.loads(Path(f).read_text(encoding="utf-8")) for f in a.results or []]
+            rows = [x for doc in files for x in doc["results"]]
             ev = bench.evaluate(rows, expected_protocol=frozen_sha, strict=True)
+            stops = [doc["stopped_early"] for doc in files if doc.get("stopped_early")]
+            if stops:  # A6: an early-stopped campaign is shown as such; its missing runs already make the verdicts inconclusive
+                ev = {"stopped_early": stops} | ev
             # the digest of the anchor that was validated, to be compared with the one in the independent register
             print(json.dumps({"anchor": {"frozen": a.frozen, "sha256": frozen_sha}} | ev, ensure_ascii=False, indent=1))
             if not ev["identity"]["valid"]:
