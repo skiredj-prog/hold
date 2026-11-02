@@ -122,8 +122,9 @@ def main(argv: list[str] | None = None) -> int:
     pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate", "smoke", "probe"])
     pb.add_argument("--reps", type=int, default=3, help="probe: repetitions per cell (seeds 42, 43, …)")
     pb.add_argument("--probes", default="P1,P2,P3,F", help="probe: which micro-tests (P1,P2,P3,F)")
-    pb.add_argument("--systems", default="neutral,hold,hold-min", help="probe: which system prompts (neutral,hold,hold-min)")
-    pb.add_argument("--contract", default="hold", choices=["hold", "hold-min"], help="smoke: the HOLD contract C-llama reads (diagnostic)")
+    pb.add_argument("--systems", default="neutral,hold,hold-a6-initial", help="probe: which system prompts (neutral, hold, hold-a6-initial)")
+    pb.add_argument("--contract", default="hold", choices=["hold", "hold-min", "hold-a6-initial"],
+                    help="smoke: the HOLD contract C-llama reads (hold = in force; hold-min = its name as a candidate)")
     pb.add_argument("--frozen", default="bench/protocol.frozen.json")
     pb.add_argument("--conditions", default="C,C2,X", help="comma separated: A,B,C-llama,C,C2,D,X")
     pb.add_argument("--model", help="Ollama model for A, B, C-llama and D (e.g. llama3.2:3b, llama3.1:8b)")

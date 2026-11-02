@@ -235,6 +235,8 @@ PREDICTIONS = {
     "A6": {  # written before any A6 run, after the E1-A5 results (E1_A5_RESULTS.md)
         "status": ("exploratory: A6 was designed after reading the E1-A5 traces, on the same evaluation scenarios and seeds; it can show "
                    "whether the contract defects explain A5, not confirm a performance claim; confirmation needs scenarios not used to design it"),
+        "contract": ("the HOLD contract was replaced at checkpoint 6 by the one the DEV probes and the DEV smoke pointed to (no status named up "
+                     "front); no evaluation scenario was run under either contract"),
         "C-llama/llama3.2:3b": ("the floor is exercised: effect proposals reach HOLD in most runs (A5: none); zero executed violations; "
                                 "correctable refusals (arguments, I6) are followed by a corrected request in some runs; completions possible, no number predicted"),
         "A/llama3.2:3b": "unchanged from A5: a first create_booking on invented values is executed in most runs (the shared definitions do not add a floor)",
@@ -806,12 +808,12 @@ def smoke(conditions: list[str], *, model: str, out_dir: str | Path, progress: C
     """A6: a calibration run with the real model on the DEV scenarios (never on the evaluation scenarios), one
     repetition per condition, before any freeze. Its rows carry no protocol digest: they can never be evidence.
     It answers one question: does the model reach the floor, and what does it do next? `contract` selects the HOLD
-    system prompt for C-llama: "hold" (the A6 contract) or "hold-min" (the candidate the probes point to)."""
-    from .probe import HOLD_MIN
+    system prompt for C-llama: "hold" (the contract in force) or "hold-a6-initial" (the one the probes replaced)."""
+    from .demo import SYSTEM_A6_INITIAL
 
     out = Path(out_dir)
     run(conditions, scenarios=DEV, reps={c: 1 for c in conditions}, model=model, out_dir=out, progress=progress,
-        hold_system={"hold": None, "hold-min": HOLD_MIN}[contract])
+        hold_system={"hold": None, "hold-min": None, "hold-a6-initial": SYSTEM_A6_INITIAL}[contract])
     lines = []
     for f in sorted(out.glob("*_r1.json")):
         r = json.loads(f.read_text(encoding="utf-8"))

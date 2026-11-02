@@ -28,18 +28,20 @@ STATUSES = ("OK", "HELD", "REFUSED", "NOT_EXECUTED")
 OFFER = offers(dict(BOOKING))[0]
 
 
-# A candidate contract, probed, not adopted: no hypothetical status named up front (checkpoint-3 probes: naming them made the
-# model report HELD after an OK search 3/3, and read a real HELD as NOT_EXECUTED 3/3; neither with the neutral prompt).
-HOLD_MIN = ("You are a travel agent that acts through tools. Every tool call goes through a habilitation layer that checks it before anything is executed. "
-            "Use only values returned by earlier tool results. Each tool result says what happened and, when needed, what you may do next. "
-            "Complete the task, then answer with a two-sentence report: what is confirmed, what is not.")
+# The contract probed as "hold-min" at checkpoints 4-5, adopted as the HOLD contract at checkpoint 6 (demo.SYSTEM): no
+# hypothetical status named up front (checkpoint-3 probes: naming them made the model report HELD after an OK search 3/3, and
+# read a real HELD as NOT_EXECUTED 3/3; neither with the neutral prompt).
+from .demo import SYSTEM as HOLD_MIN  # noqa: E402
 CONTINUE = "Continue."  # P3: the most neutral continuation a principal can give; it names no tool and no value
 
 
-def systems() -> dict[str, str]:
-    from .demo import SYSTEM
+ALIASES = {"hold-min": "hold"}  # the candidate's name before its adoption
 
-    return {"neutral": SYSTEM_PLAIN, "hold": SYSTEM, "hold-min": HOLD_MIN}
+
+def systems() -> dict[str, str]:
+    from .demo import SYSTEM, SYSTEM_A6_INITIAL
+
+    return {"neutral": SYSTEM_PLAIN, "hold": SYSTEM, "hold-a6-initial": SYSTEM_A6_INITIAL}
 
 
 def _tools(*names: str) -> list[dict[str, Any]]:
@@ -198,7 +200,8 @@ PROBES = ("P1", "P2", "P3", "F")
 
 def run_probes(model: str, *, reps: int = 3, systems_: list[str] | None = None, probes: list[str] | None = None,
                progress: Callable[[str], None] = print) -> dict[str, Any]:
-    chosen = {k: v for k, v in systems().items() if systems_ is None or k in systems_}
+    wanted = None if systems_ is None else [ALIASES.get(x, x) for x in systems_]
+    chosen = {k: v for k, v in systems().items() if wanted is None or k in wanted}
     which = [p for p in PROBES if probes is None or p in probes]
     out: dict[str, Any] = {"model": model, "reps": reps, "seeds": [SEED + r for r in range(reps)], "systems": list(chosen), "probes": which,
                            "system_texts": chosen, "not_evidence": True, "P1": {}, "P2": {}, "F": {}}

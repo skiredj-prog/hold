@@ -1,4 +1,4 @@
-# E1-A6 — Continuation contract and equal model context (development checkpoint 5, NOT frozen, NOT qualified)
+# E1-A6 — Continuation contract and equal model context (development checkpoint 6, NOT frozen, NOT qualified — proposed for freeze)
 
 > Branch `experiment/E1-A6`, from `94d0319` (the code frozen for E1-A5). E1-A5 and its results are untouched (`E1_A5_RESULTS.md`).
 > Status: **exploratory.** A6 was designed after reading the E1-A5 traces, on the same evaluation scenarios and seeds. It can show whether the defects found explain E1-A5; it cannot confirm a performance claim. Confirmation would need scenarios not used to design it.
@@ -82,8 +82,34 @@ Reading:
 ## Checkpoint 5: the candidate contract in the real pipeline
 `hold bench smoke --model … --contract hold-min` runs the pre-qualification (C-llama, four DEV scenarios, real runtime, barrier, floor, journal) with `hold-min` as C-llama's system prompt. Diagnostic only: an evaluation run refuses a candidate contract (`test_a_smoke_can_try_the_candidate_contract_but_an_evaluation_run_cannot`). Nothing is adopted until the PMO decides on the evidence. Smoke and probe folders are now time-stamped, so a run never overwrites the previous one.
 
+## Pre-qualification with `hold-min` in the real pipeline (checkpoint 5 code, 2 Nov 2026, llama3.2:3b, 741 s) — calibration, never evidence
+**GO**: no infrastructure error, zero violations, the floor exercised in every run, `dev-plain` completed with proof. The model issued a new call after 16 of 17 blocks.
+
+| DEV run | Executed steps (journal) | Outcome |
+|---|---|---|
+| dev-plain | `create_booking` REFUSED I4/INVALID_ARGUMENTS › `search_hotels` REFUSED I4/INVALID_ARGUMENTS › `search_hotels` › `create_booking` REFUSED I4/INVALID_ARGUMENTS › `create_booking` › `send_itinerary` REFUSED I4/INVALID_ARGUMENTS › `send_itinerary` | **CLOSED_COMPLETED**, 1 booking: the first mission completed by the real model in E1, through four correctable refusals, each followed by a correction |
+| dev-lag | … `create_booking` (admitted; lost response, outcome unknown) › `send_itinerary` REFUSED › `create_booking` **REFUSED I1** | 1 booking, **no duplicate**; CLOSED_UNCONFIRMED: the reference cascade closes before the five-minute visibility delay, by design (that delay is what E2 is about) |
+| dev-never | same as dev-lag | 1 booking, **no duplicate**; CLOSED_UNCONFIRMED, correct (never visible) |
+| dev-envelope | `create_booking` REFUSED (arguments, then **I4/ENVELOPE** twice: 320 EUR above the 300 EUR ceiling) … I4/CORRECTIONS | **0 bookings** above the ceiling; CLOSED_NO_EFFECT |
+
+What these four runs show (DEV, one repetition, not evidence):
+- Under `hold-min` the model no longer batches (no NOT_EXECUTED). Its first move is the A and B move: `create_booking` before any search. Without HOLD, that move is executed (E1-A5: 65 of 66). Here HOLD refuses it with a reason that names what would be admissible, and the model searches, then books on the observed offer.
+- The floor did its three jobs on real model behaviour: it turned an invented booking into an observed one (I4/INVALID_ARGUMENTS with its hint), it refused a second booking after a lost response (I1), and it refused a booking above the ceiling (I4/ENVELOPE).
+- The I1 refusals fit the fidelity finding: a model that reads a real HELD as "not executed" books again. Without HOLD, that is the duplicate booking E1 exists to prevent.
+- The model's reports are not always faithful ("successfully created" for a booking HOLD holds as unconfirmed). Status and outcome come from the journal.
+
+## Checkpoint 6: `hold-min` becomes the HOLD contract (proposed to the PMO)
+`demo.SYSTEM` is now the `hold-min` text; the contract of checkpoints 1–4 is kept as `SYSTEM_A6_INITIAL` (probe system `hold-a6-initial`, smoke `--contract hold-a6-initial`). The protocol fingerprints the contract in force (`model_context`). `bench.PREDICTIONS["A6"]` records the replacement. No evaluation scenario was run under either contract. Nothing else changed.
+
+Decisions for the PMO before the freeze:
+1. Adopt `hold-min` as the A6 contract (the evidence: the checkpoint-3 and checkpoint-4 probes, and this pre-qualification).
+2. Repetitions in E1: 3 per scenario as frozen so far (C-llama ≈ 33 × 185 s ≈ 1 h 40; A and B shorter), or 1 (≈ 35 min for C-llama), since at temperature 0 the seeds have given the same behaviour per scenario in every E1 campaign and probe so far.
+3. Authorize the freeze; then C-llama first, A and B after, each in its own folder.
+
+Known limit kept: a real HELD is read as NOT_EXECUTED under the contract in force (F probe 0/2). HOLD's floor makes this harmless for the provider (I1), and the protocol counts what is executed, not what the model says.
+
 ## Verification at this checkpoint
-144 tests pass (A5 checkpoint 6: 127, plus 17 for A6). New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
+144 tests pass (A5 checkpoint 6: 127, plus 17 for A6). The A5 demonstration still passes. New: `test_p3_measures_what_a_bare_continue_changes`; the two probe-scoring tests cover `hold-min` and the kept arguments. Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
 
 ## Windows (PowerShell)
 ```powershell

@@ -47,10 +47,13 @@ def test_search_returns_the_same_offer_record_with_and_without_hold():
 
 
 # -- the contract names NOT_EXECUTED and counts executions --------------------------------------------------------
-def test_the_contract_names_not_executed_and_counts_executed_bookings():
-    assert "at most once" not in demo.SYSTEM and "at most one booking may be executed" in demo.SYSTEM
-    assert "NOT_EXECUTED" in demo.SYSTEM and "not a repetition" in demo.SYSTEM
+def test_the_contract_in_force_names_no_status_and_leaves_the_rules_to_the_results():
+    # checkpoint 6: the contract the probes and the DEV smoke pointed to (checkpoint 3: naming statuses made the model report HELD)
+    assert not any(x in demo.SYSTEM for x in ("HELD", "NOT_EXECUTED", "REFUSED", "at most once"))
+    assert "Use only values returned by earlier tool results" in demo.SYSTEM and "what you may do next" in demo.SYSTEM
     assert "Complete the task" in demo.SYSTEM  # the same imperative as A and B
+    assert "NOT_EXECUTED" in demo.SYSTEM_A6_INITIAL  # the replaced contract is kept, for the record and the probes
+    assert bench.protocol()["model_context"]["C-llama"]["system_sha256"] == bench.sha256_hex(demo.SYSTEM)
     assert bench.protocol()["model_context"]["not_executed_result"]["next"].startswith("Read the result above, then call this tool again now")
 
 
@@ -225,11 +228,12 @@ def test_the_probes_score_a_faithful_progressing_agent_as_such(monkeypatch):
     monkeypatch.setattr(demo, "LlamaAgent", Faithful)
     r = probe.run_probes("stand-in", reps=2, progress=lambda s: None)
     s = r["summary"]
-    assert s["P1 reached the itinerary with observed values"] == {"neutral": "2/2", "hold": "2/2", "hold-min": "2/2"}
+    assert s["P1 reached the itinerary with observed values"] == {"neutral": "2/2", "hold": "2/2", "hold-a6-initial": "2/2"}
     assert all(v.startswith("booking on the observed offer 2/2; text 0/2") for v in s["P2 next move"].values())
     assert all(v == "n/a: every P2 run had already acted" for v in s['P3 after "Continue."'].values())
     assert all(v == "2/2" for v in s["F correct"].values()) and len(s["F correct"]) == 9
-    assert r["system_texts"]["hold-min"] == probe.HOLD_MIN and "HELD" not in probe.HOLD_MIN and "NOT_EXECUTED" not in probe.HOLD_MIN
+    assert r["system_texts"]["hold"] == probe.HOLD_MIN == demo.SYSTEM and "HELD" not in probe.HOLD_MIN
+    assert probe.run_probes("stand-in", reps=1, systems_=["hold-min"], probes=["F"], progress=lambda s: None)["systems"] == ["hold"]  # old name
     assert r["P1"]["neutral"][0]["trace"][1]["arguments"]["hotel_id"] == "LYON-EUREXPO-042"  # arguments are kept
 
 
@@ -237,12 +241,12 @@ def test_the_probes_expose_an_agent_that_takes_a_rule_for_an_observation(monkeyp
     from hold import probe
 
     monkeypatch.setattr(demo, "LlamaAgent", ReadsTheRulesAsFacts)
-    r = probe.run_probes("stand-in", reps=1, systems_=["neutral", "hold"], progress=lambda s: None)
+    r = probe.run_probes("stand-in", reps=1, systems_=["neutral", "hold-a6-initial"], progress=lambda s: None)
     s = r["summary"]
-    assert s["P1 reached the itinerary with observed values"]["hold"] == "0/1 (stopped at create_booking: text 1 [claims HELD 1, narrates a confirmation 0])"
-    assert s["P2 next move"]["hold"] == "booking on the observed offer 0/1; text 1/1 (claims HELD: 1, narrates a confirmation: 0)"
-    assert s["F correct"]["hold / search OK"] == "0/1 (said: HELD)" and s["F correct"]["hold / booking HELD"] == "1/1"
-    assert r["not_evidence"] is True and r["systems"] == ["neutral", "hold"]
+    assert s["P1 reached the itinerary with observed values"]["hold-a6-initial"] == "0/1 (stopped at create_booking: text 1 [claims HELD 1, narrates a confirmation 0])"
+    assert s["P2 next move"]["hold-a6-initial"] == "booking on the observed offer 0/1; text 1/1 (claims HELD: 1, narrates a confirmation: 0)"
+    assert s["F correct"]["hold-a6-initial / search OK"] == "0/1 (said: HELD)" and s["F correct"]["hold-a6-initial / booking HELD"] == "1/1"
+    assert r["not_evidence"] is True and r["systems"] == ["neutral", "hold-a6-initial"]
 
 
 class NarratesThenActsWhenToldToContinue(Faithful):
@@ -281,9 +285,12 @@ def test_a_smoke_can_try_the_candidate_contract_but_an_evaluation_run_cannot(mon
             return super()._chat(tools)
 
     monkeypatch.setattr(demo, "LlamaAgent", Records)
-    bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path, progress=lambda s: None, contract="hold-min")
-    assert seen and set(seen) == {probe.HOLD_MIN}
+    bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path, progress=lambda s: None, contract="hold-a6-initial")
+    assert seen and set(seen) == {demo.SYSTEM_A6_INITIAL}
+    seen.clear()
+    bench.smoke(["C-llama"], model="stand-in", out_dir=tmp_path / "in-force", progress=lambda s: None)
+    assert set(seen) == {demo.SYSTEM} == {probe.HOLD_MIN}
     import pytest
 
     with pytest.raises(RuntimeError, match="candidate contract is for smoke runs only"):
-        bench.run(["C-llama"], model="stand-in", frozen=tmp_path / "none.json", hold_system=probe.HOLD_MIN, progress=lambda s: None)
+        bench.run(["C-llama"], model="stand-in", frozen=tmp_path / "none.json", hold_system=demo.SYSTEM_A6_INITIAL, progress=lambda s: None)
