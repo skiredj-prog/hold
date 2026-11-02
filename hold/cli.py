@@ -218,12 +218,15 @@ def main(argv: list[str] | None = None) -> int:
                          ("replay match" if x["replay_matches"] else "replay MISMATCH") if x["replay_matches"] is not None else "",
                          "row same" if x["row_matches"] else ("row DIFFERENT" if x["row_recorded"] else "NO ROW")]
                 print(f"{x['run']:<44} {' · '.join(f for f in flags if f):<40} status={x.get('status', '-')} completed={x['completed']} "
-                      f"bookings={x['bookings']} violations={len(x['violations'])}" + (f" refused={x['refused_by_rule']}" if x.get("refused_by_rule") else ""))
+                      f"bookings={x['bookings']} violations={len(x['violations'])}" + (f" refused={x['refused_by_rule']}" if x.get("refused_by_rule") else "")
+                      + (f" | report: {x['report_fidelity']}" + (f" ({', '.join(x['report_overclaims'])})" if x.get("report_overclaims") else "") if x.get("report_fidelity") else ""))
             if r["rows_without_raw_run"]:
                 print("rows without a raw run: " + ", ".join(r["rows_without_raw_run"]))
             if r.get("prequalification"):
                 pq = r["prequalification"]
                 print(f"pre-qualification recomputed: {pq['verdict']}" + (" — " + "; ".join(pq["failed"]) if pq["failed"] else "") + f" · continued after a block {pq['continued_after_block']}")
+            if r.get("report_fidelity"):
+                print("agent reports (descriptive, outside the verdicts): " + ", ".join(f"{k} {v}" for k, v in sorted(r["report_fidelity"].items())))
             print("CONSISTENT: every trace and every recorded row agree." if r["consistent"] else "INCONSISTENT: see above.")
             return 0 if r["consistent"] else 1
         if a.action == "probe":
