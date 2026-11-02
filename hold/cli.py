@@ -121,6 +121,8 @@ def main(argv: list[str] | None = None) -> int:
     pb = sub.add_parser("bench", help="the frozen A/B/C/C2/D comparison")
     pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate", "smoke", "probe"])
     pb.add_argument("--reps", type=int, default=3, help="probe: repetitions per cell (seeds 42, 43, …)")
+    pb.add_argument("--probes", default="P1,P2,P3,F", help="probe: which micro-tests (P1,P2,P3,F)")
+    pb.add_argument("--systems", default="neutral,hold,hold-min", help="probe: which system prompts (neutral,hold,hold-min)")
     pb.add_argument("--frozen", default="bench/protocol.frozen.json")
     pb.add_argument("--conditions", default="C,C2,X", help="comma separated: A,B,C-llama,C,C2,D,X")
     pb.add_argument("--model", help="Ollama model for A, B, C-llama and D (e.g. llama3.2:3b, llama3.1:8b)")
@@ -210,10 +212,13 @@ def main(argv: list[str] | None = None) -> int:
 
             out = Path(a.out if a.out != "bench/results/run" else f"bench/results/probe-{a.model.replace(':', '-')}")
             out.mkdir(parents=True, exist_ok=True)
-            r = run_probes(a.model, reps=a.reps)
+            r = run_probes(a.model, reps=a.reps, systems_=[x.strip() for x in a.systems.split(",") if x.strip()],
+                           probes=[x.strip() for x in a.probes.split(",") if x.strip()])
             (out / "probe.json").write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")
             print(f"\nPROBES ({a.model}, {a.reps} seeds per cell, {r['elapsed_s']} s): diagnostic only, never evidence.")
             for section, rows in r["summary"].items():
+                if not rows:
+                    continue
                 print(f"\n{section}")
                 for k, v in rows.items():
                     print(f"  {k:<26} {v}")

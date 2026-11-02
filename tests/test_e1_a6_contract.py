@@ -225,18 +225,46 @@ def test_the_probes_score_a_faithful_progressing_agent_as_such(monkeypatch):
     monkeypatch.setattr(demo, "LlamaAgent", Faithful)
     r = probe.run_probes("stand-in", reps=2, progress=lambda s: None)
     s = r["summary"]
-    assert s["P1 reached the itinerary with observed values"] == {"neutral": "2/2", "hold": "2/2"}
+    assert s["P1 reached the itinerary with observed values"] == {"neutral": "2/2", "hold": "2/2", "hold-min": "2/2"}
     assert all(v.startswith("booking on the observed offer 2/2; text 0/2") for v in s["P2 next move"].values())
-    assert all(v == "2/2" for v in s["F correct"].values()) and len(s["F correct"]) == 6
+    assert all(v == "n/a: every P2 run had already acted" for v in s['P3 after "Continue."'].values())
+    assert all(v == "2/2" for v in s["F correct"].values()) and len(s["F correct"]) == 9
+    assert r["system_texts"]["hold-min"] == probe.HOLD_MIN and "HELD" not in probe.HOLD_MIN and "NOT_EXECUTED" not in probe.HOLD_MIN
+    assert r["P1"]["neutral"][0]["trace"][1]["arguments"]["hotel_id"] == "LYON-EUREXPO-042"  # arguments are kept
 
 
 def test_the_probes_expose_an_agent_that_takes_a_rule_for_an_observation(monkeypatch):
     from hold import probe
 
     monkeypatch.setattr(demo, "LlamaAgent", ReadsTheRulesAsFacts)
-    r = probe.run_probes("stand-in", reps=1, progress=lambda s: None)
+    r = probe.run_probes("stand-in", reps=1, systems_=["neutral", "hold"], progress=lambda s: None)
     s = r["summary"]
-    assert s["P1 reached the itinerary with observed values"]["hold"].startswith("0/1 (stopped at: create_booking")
-    assert s["P2 next move"]["hold"] == "booking on the observed offer 0/1; text 1/1 (claims HELD: 1)"
+    assert s["P1 reached the itinerary with observed values"]["hold"] == "0/1 (stopped at create_booking: text 1 [claims HELD 1, narrates a confirmation 0])"
+    assert s["P2 next move"]["hold"] == "booking on the observed offer 0/1; text 1/1 (claims HELD: 1, narrates a confirmation: 0)"
     assert s["F correct"]["hold / search OK"] == "0/1 (said: HELD)" and s["F correct"]["hold / booking HELD"] == "1/1"
-    assert r["not_evidence"] is True
+    assert r["not_evidence"] is True and r["systems"] == ["neutral", "hold"]
+
+
+class NarratesThenActsWhenToldToContinue(Faithful):
+    """Scripted stand-in for the checkpoint-3 observation: after the search it narrates a booking confirmation as text;
+    told only "Continue.", it books on the observed offer."""
+
+    def _chat(self, tools):
+        last = self.messages[-1]
+        if last["role"] == "tool" and last["tool_name"] == "search_hotels":
+            return {"role": "assistant", "content": "**Booking Confirmation** Here is the booking confirmation for Fictional Traveler A."}
+        if last["role"] == "user" and last["content"] == "Continue.":
+            offer = _last_tool(self.messages, "search_hotels")["data"][0]
+            return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "create_booking", "arguments": {k: offer[k] for k in KEYS}}}]}
+        return super()._chat(tools)
+
+
+def test_p3_measures_what_a_bare_continue_changes(monkeypatch):
+    from hold import probe
+
+    monkeypatch.setattr(demo, "LlamaAgent", NarratesThenActsWhenToldToContinue)
+    r = probe.run_probes("stand-in", reps=1, systems_=["neutral"], probes=["P2", "P3"], progress=lambda s: None)
+    s = r["summary"]
+    assert s["P2 next move"]["neutral"] == "booking on the observed offer 0/1; text 1/1 (claims HELD: 0, narrates a confirmation: 1)"
+    assert s['P3 after "Continue."']["neutral"] == "booking on the observed offer 1/1; text 0/1"
+    assert r["P1"] == {} and r["F"] == {}  # only what was asked ran
