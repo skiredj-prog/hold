@@ -50,7 +50,8 @@ VERSION = "hold.bench/v1-e1-a6"
 CODE = ["hesitation.py", "floor.py", "runtime.py", "discern.py", "bench.py", "testing.py", "demo.py", "replay.py", "outcome.py", "profile.py",
         "store.py", "journal.py", "cli.py", "narrate.py", "studio/core.js", "profiles/reservation.hold.yaml",
         # checkpoint 6: every other module the bench and its CLI load (digests, the messages returned to the agent, relays)
-        "__init__.py", "canonical.py", "i18n.py", "relay/__init__.py", "relay/base.py", "relay/whatsapp.py"]
+        "__init__.py", "canonical.py", "i18n.py", "relay/__init__.py", "relay/base.py", "relay/whatsapp.py",
+        "probe.py"]  # A6: the diagnostic micro-tests (never evidence) are part of the instrument
 SEED = 42  # A5: repetition r runs with seed SEED + r (at temperature 0, a fixed seed made the repetitions identical)
 AGENT_MAX_STEPS = 16  # A5: the same budget of model turns for A, B and C-llama (A4: 16, 16 and 12)
 TOOL_SURFACE = {

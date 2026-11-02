@@ -119,7 +119,8 @@ def main(argv: list[str] | None = None) -> int:
     ps.add_argument("--port", type=int, default=8787)
 
     pb = sub.add_parser("bench", help="the frozen A/B/C/C2/D comparison")
-    pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate", "smoke"])
+    pb.add_argument("action", choices=["freeze", "check", "run", "rerun", "evaluate", "smoke", "probe"])
+    pb.add_argument("--reps", type=int, default=3, help="probe: repetitions per cell (seeds 42, 43, …)")
     pb.add_argument("--frozen", default="bench/protocol.frozen.json")
     pb.add_argument("--conditions", default="C,C2,X", help="comma separated: A,B,C-llama,C,C2,D,X")
     pb.add_argument("--model", help="Ollama model for A, B, C-llama and D (e.g. llama3.2:3b, llama3.1:8b)")
@@ -199,6 +200,24 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
             target = Path(a.out) / "results.json"
             print(json.dumps(bench.rerun_failed(target, model=a.model), ensure_ascii=False, indent=1))
+            return 0
+        if a.action == "probe":
+            # A6: diagnostic micro-tests asked by the PMO (progression, fidelity), real model, simplified interface: never evidence
+            if not a.model:
+                print("--model is required", file=sys.stderr)
+                return 2
+            from .probe import run_probes
+
+            out = Path(a.out if a.out != "bench/results/run" else f"bench/results/probe-{a.model.replace(':', '-')}")
+            out.mkdir(parents=True, exist_ok=True)
+            r = run_probes(a.model, reps=a.reps)
+            (out / "probe.json").write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")
+            print(f"\nPROBES ({a.model}, {a.reps} seeds per cell, {r['elapsed_s']} s): diagnostic only, never evidence.")
+            for section, rows in r["summary"].items():
+                print(f"\n{section}")
+                for k, v in rows.items():
+                    print(f"  {k:<26} {v}")
+            print(f"\nEvery answer and trace: {out / 'probe.json'}")
             return 0
         if a.action == "smoke":
             # A6: real model, DEV scenarios, one repetition, before any freeze. Calibration only: never evidence.

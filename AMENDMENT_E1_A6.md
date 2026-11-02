@@ -1,4 +1,4 @@
-# E1-A6 — Continuation contract and equal model context (development checkpoint 1, NOT frozen, NOT qualified)
+# E1-A6 — Continuation contract and equal model context (development checkpoint 3, NOT frozen, NOT qualified)
 
 > Branch `experiment/E1-A6`, from `94d0319` (the code frozen for E1-A5). E1-A5 and its results are untouched (`E1_A5_RESULTS.md`).
 > Status: **exploratory.** A6 was designed after reading the E1-A5 traces, on the same evaluation scenarios and seeds. It can show whether the defects found explain E1-A5; it cannot confirm a performance claim. Confirmation would need scenarios not used to design it.
@@ -28,15 +28,35 @@ In `bench.PREDICTIONS["A6"]`. On llama3.2:3b: C-llama, effect proposals reach th
 2. **Pre-qualification with the real model, before the freeze**: `hold bench smoke --model llama3.2:3b` (4 runs). Its full output goes to the PMO. A full campaign is run only after a GO. After a NO-GO, any change is declared here, and the pre-qualification is run again, before the freeze. The DEV scenarios are not used for evaluation.
 3. After authorization: freeze (`bench/protocol.frozen.json` committed alone, SHA-256 in the message, tag `e1-a6-frozen`, recorded by the PMO), then C-llama, A, B on llama3.2:3b, each in its own folder; then, if wanted, llama3.1:8b.
 
+## PMO NO-GO on checkpoint 2 — diagnostic micro-tests (checkpoint 3)
+The PMO observed the model writing "The search_hotels tool returned HELD" after `search_hotels` had returned OK with an offer: HELD appeared only in the system prompt, as a hypothetical rule. Two difficulties are now separated: **progression** (acting on the results it needs) and **fidelity** (telling a status a tool returned from a status its instructions mention). No change to the HOLD prompt is made at this checkpoint: the probes come first.
+
+`hold bench probe --model …` (`hold/probe.py`): the real model through the bench's own client (Ollama `/api/chat`, temperature 0, seeds 42–44), in a simplified interface outside HOLD's runtime, the tool results written by the probe. Each probe runs with the neutral system prompt (A's) and with the HOLD contract, so the effect of the contract text is measured, not assumed.
+
+| Probe | What it presents | What it measures |
+|---|---|---|
+| P1 progression | the task; tools one at a time: `search_hotels`, then `create_booking`, then `send_itinerary`; results OK | whether the model reaches the itinerary with every booking field copied from the observed offer and the receipt as reference; where it stops otherwise |
+| P2 free next move | the four C-llama tools; the model has called `search_hotels` once and seen OK with the offer | its next move: a booking on the observed offer, another call, or text; whether the text claims HELD |
+| F fidelity | a real history (search OK; booking OK; booking HELD), then a closed question: "what status did *tool* return?", no tool offered | whether the answer is the status actually returned; the HELD case controls for a model that always answers OK |
+
+About 48 model calls, a few minutes. Diagnostic only: never evidence, and the qualification campaigns never present tools one at a time or mask a forbidden action, since what HOLD does with them is what is measured. Scoring tests: `test_the_probes_score_a_faithful_progressing_agent_as_such`, `test_the_probes_expose_an_agent_that_takes_a_rule_for_an_observation` (scripted stand-ins). The CLI path was also checked over HTTP against a stand-in server.
+
+How the results will be read (stated before running them):
+- P1 passes with the neutral prompt and fails with the HOLD contract → the contract text hinders progression: rules must reach the agent when they apply (in the result that triggers them), not as a list of hypothetical statuses up front.
+- P1 fails with both → the model does not progress even when guided one tool at a time: a capacity limit of llama3.2:3b on this task; the next step is the same probes on llama3.1:8b.
+- F wrong on "search OK" with the HOLD contract and right with the neutral prompt → naming statuses in the prompt contaminates the reading of observations; same conclusion as the first case for the prompt.
+- Whatever the model says, the state of a transaction stays what HOLD's evidence shows: completion, confirmation and violations are scored from the journal and the provider, never from the model's report.
+
 ## Verification at this checkpoint
-140 tests pass (A5 checkpoint 6: 127, plus 13 for A6). Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
+142 tests pass (A5 checkpoint 6: 127, plus 15 for A6). Two A5 tests changed their expected H1 verdict from accepted to inconclusive: their stand-in agents only read, as the model did in E1-A5. The synthetic campaign rows of the A5 tests now carry `effect_proposals`. The A5 demonstration still passes (1 booking, 0 violations, `CLOSED_COMPLETED`).
 
 ## Windows (PowerShell)
 ```powershell
 cd <extraction>\hold-a6
 & $py -m pip install -e ".[server,dev]"
 $env:PYTHONUTF8 = "1"
-& $py -m pytest -q                                   # 140 expected (4 skipped if Node.js is absent)
+& $py -m pytest -q                                   # 142 expected (4 skipped if Node.js is absent)
+& $py -m hold.cli bench probe --model llama3.2:3b    # PMO micro-tests: progression and fidelity, a few minutes
 & $py -m hold.cli bench smoke --model llama3.2:3b    # pre-qualification: 4 C-llama runs on DEV, then GO / NO-GO
 ```
 Use a new folder: the E1-A5 folder and its results stay as they are. `hold bench run` refuses to start until A6 is frozen.

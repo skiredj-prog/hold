@@ -179,3 +179,64 @@ def test_prequalification_says_go_when_the_floor_is_reached_and_dev_plain_is_com
     assert pq["verdict"] == "GO", pq["failed"]
     assert pq["runs"]["dev-plain"]["completed"] and all(r["effect_proposals"] for r in pq["runs"].values())
     assert "dev-plain" not in [s["id"] for s in bench.EVAL] and bench.DEV[0]["id"] == "dev-lag"  # DEV only; existing DEV order kept
+
+
+# -- PMO micro-tests (checkpoint 3): progression and fidelity, simplified interface, never evidence -----------------
+def _last_tool(messages, name=None):
+    return next(json.loads(m["content"]) for m in reversed(messages) if m["role"] == "tool" and (name is None or m["tool_name"] == name))
+
+
+class Faithful(demo.LlamaAgent):
+    """Scripted stand-in: progresses on observed values and reports statuses as returned."""
+
+    def _chat(self, tools):
+        last = self.messages[-1]
+        if last["role"] == "user" and "What status did the tool" in last["content"]:
+            tool = last["content"].split("the tool ")[1].split(" ")[0]
+            return {"role": "assistant", "content": _last_tool(self.messages, tool)["status"]}
+        names = [x["function"]["name"] for x in tools]
+        if not names:
+            return {"role": "assistant", "content": "Booking confirmed and itinerary sent."}
+        done = {m["tool_name"] for m in self.messages if m["role"] == "tool"}
+        if "search_hotels" in names and "search_hotels" not in done:
+            return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "search_hotels", "arguments": {"city": "Lyon"}}}]}
+        if "create_booking" in names and "create_booking" not in done:
+            offer = _last_tool(self.messages, "search_hotels")["data"][0]
+            return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "create_booking", "arguments": {k: offer[k] for k in KEYS}}}]}
+        receipt = _last_tool(self.messages, "create_booking")["data"]["receipt"]
+        return {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "send_itinerary", "arguments": {"traveler": "Fictional Traveler A.", "booking_reference": receipt}}}]}
+
+
+class ReadsTheRulesAsFacts(Faithful):
+    """Scripted stand-in for the failure the PMO observed: it reports HELD, a status only its instructions mention."""
+
+    def _chat(self, tools):
+        last = self.messages[-1]
+        if last["role"] == "user" and "What status did the tool" in last["content"]:
+            return {"role": "assistant", "content": "HELD"}
+        if any(m["role"] == "tool" for m in self.messages):
+            return {"role": "assistant", "content": "The search_hotels tool returned HELD, so I will not book."}
+        return super()._chat(tools)
+
+
+def test_the_probes_score_a_faithful_progressing_agent_as_such(monkeypatch):
+    from hold import probe
+
+    monkeypatch.setattr(demo, "LlamaAgent", Faithful)
+    r = probe.run_probes("stand-in", reps=2, progress=lambda s: None)
+    s = r["summary"]
+    assert s["P1 reached the itinerary with observed values"] == {"neutral": "2/2", "hold": "2/2"}
+    assert all(v.startswith("booking on the observed offer 2/2; text 0/2") for v in s["P2 next move"].values())
+    assert all(v == "2/2" for v in s["F correct"].values()) and len(s["F correct"]) == 6
+
+
+def test_the_probes_expose_an_agent_that_takes_a_rule_for_an_observation(monkeypatch):
+    from hold import probe
+
+    monkeypatch.setattr(demo, "LlamaAgent", ReadsTheRulesAsFacts)
+    r = probe.run_probes("stand-in", reps=1, progress=lambda s: None)
+    s = r["summary"]
+    assert s["P1 reached the itinerary with observed values"]["hold"].startswith("0/1 (stopped at: create_booking")
+    assert s["P2 next move"]["hold"] == "booking on the observed offer 0/1; text 1/1 (claims HELD: 1)"
+    assert s["F correct"]["hold / search OK"] == "0/1 (said: HELD)" and s["F correct"]["hold / booking HELD"] == "1/1"
+    assert r["not_evidence"] is True
