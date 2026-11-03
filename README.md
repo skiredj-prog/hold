@@ -256,6 +256,8 @@ Technical due-diligence file (architecture, threat model, runbook, integration, 
 
 ## Verify and replay
 
+> **Judge note:** use `python -m hold.journal_verify DB MISSION` for the correct verification exit code. The legacy `hold journal verify` path remains in the frozen E1-A6 perimeter and has a known exit-code defect documented below; it is not used for the benchmark results.
+
 ```bash
 hold profile validate hold/profiles/reservation.hold.yaml
 python -m hold.journal_verify hold.db <mission>   # chain + state replay + decision replay; exit code 0 only if all hold
