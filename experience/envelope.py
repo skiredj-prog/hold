@@ -95,7 +95,8 @@ def capture(mission, hotel, *, channel: str, agent: str) -> tuple[dict[str, Any]
         rel: hashlib.sha256((root / rel).read_bytes()).hexdigest()
         for rel in ("hold/runtime.py", "hold/floor.py", "hold/relay/whatsapp.py",
                     "hold/server.py", "hold/demo.py", "hold/testing.py", "hold/replay.py",
-                    "experience/core.py", "experience/envelope.py")
+                    "experience/core.py", "experience/envelope.py",
+                    "experience/index.html", "experience/gateway.py")
         if (root / rel).is_file()
     }
     revision, dirty = _source_revision()

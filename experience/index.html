@@ -1,7 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>HOLD | The execution boundary — live mission</title>
 <style>
 :root{--paper:#f4f3ee;--navy:#152739;--ink:#172435;--line:#d9ddd9;--amber:#bb6b2a;--sage:#1c8065;--red:#a43d34;--blue:#2b658a;--surface:#fff;--muted:#63717a}
@@ -14,50 +15,306 @@ header{background:var(--navy);color:#fff;border-bottom:3px solid #d7a74c}.hdr{di
 .timeline{height:370px;overflow:auto;margin:0;padding:0;list-style:none}.timeline li{padding:12px 0;display:grid;grid-template-columns:40px 1fr;gap:12px;border-bottom:1px solid #eef0ee}.timeline li:last-child{border:0}.timeline .idx{color:#9ba3a9;font-size:12px}.event{font-size:12px;font-weight:800;letter-spacing:.04em}.detail{font-size:12px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}.flag{display:inline-block;font-size:10px;font-weight:800;color:#3a6481;padding:2px 6px;background:#eff5fa;margin-left:6px}.flag.hit{color:var(--amber);background:#fff1df}.flag.out{color:var(--sage);background:#ecf7f0}
 .reply{background:#e9efe9;border:1px solid #c7dacc;padding:18px;margin-top:17px}.reply strong{font-size:14px}.reply p{font-size:12px;line-height:1.55;color:#4a5c57}.reply-actions{display:flex;gap:7px;flex-wrap:wrap}.reply-actions button{font-size:11px;padding:9px 11px}.tiny{font-size:11px;color:var(--muted)}
 .evidence-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:15px}.evi{padding:17px;border:1px solid var(--line);background:#fff}.evi b{display:block;font-size:14px}.evi small{display:block;margin-top:6px;color:var(--muted);line-height:1.5}.foot{background:var(--navy);color:#d1dde0;margin-top:50px;padding:24px 0;font-size:12px}.foot a{color:#f1ce8f}.error{color:#a33b30;font-weight:700}
+
+/* v2 — mission-first presentation, all phases grounded in HOLD events */
+.usecase{display:inline-flex;align-items:center;gap:8px;background:#e9ede9;color:#254a4f;border-left:3px solid var(--sage);padding:8px 11px;font-size:12px;font-weight:800;letter-spacing:.035em;margin-top:6px}
+.benefitrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 0}
+.benefit{background:white;border:1px solid var(--line);padding:16px 19px;min-height:101px}.benefit .smallcaps{color:#875822}.benefit strong{display:block;font-size:15px;margin:6px 0}.benefit p{margin:0;font-size:12px;color:var(--muted)}
+.stack{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}.stack-card{background:#fff;border:1px solid var(--line);padding:17px 20px}.stack-card b{display:block;font-size:15px;margin:6px 0}.stack-card p{font-size:12px;color:var(--muted);line-height:1.5;margin:0}.stack-card .role{font-size:10px;letter-spacing:.11em;color:#9a591c;font-weight:850}
+.storyframe{border:1px solid var(--line);background:white;margin-bottom:17px}.storyhead{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:15px}.storyhead b{font-size:15px}.story-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;padding:12px}.story-step{padding:13px 12px;border:1px solid #dde2df;background:#f7f8f6;opacity:.59;min-height:132px;position:relative}.story-step+.story-step{border-left:0}.story-step .ordinal{font-size:10px;color:#89959b;font-weight:800}.story-step strong{display:block;font-size:13px;margin:8px 0 4px;line-height:1.25}.story-step small{font-size:11px;color:var(--muted);display:block;line-height:1.4}.story-step.done{opacity:1;background:#f0f6f2;border-color:#c5d8cd}.story-step.active{opacity:1;background:#fff2e2;border-color:#c88a4a;box-shadow:inset 0 3px 0 #bc732e}.story-step.active+.story-step,.story-step.done+.story-step{border-left:1px solid #dde2df}.story-step.fail{background:#fff0eb;opacity:1;border-color:#cb8f86}
+.story-summary{padding:18px 24px;border-top:1px solid var(--line);display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.story-summary strong{font-size:15px}.story-summary p{font-size:13px;margin:6px 0 0;color:#56636a}.story-benefit{padding:13px 16px;background:#e9f2ee;border-left:3px solid #238164}.story-benefit .smallcaps{color:#225d4e}
+.truth{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:18px 0}.truth-card{padding:13px;border:1px solid #cbd9d3;background:#f7faf8}.truth-card:nth-child(2){border-color:#e4c8a8;background:#fff9f1}.truth-card .smallcaps{font-size:9px}.truth-card b{display:block;margin:5px 0;font-size:14px}.truth-card p{font-size:11px;color:#65717a;margin:0}
+.reply[hidden]{display:none}.reply{background:#fff3e4;border:2px solid #ce8d4d;padding:22px;margin:20px 0 0}.reply strong{font-size:19px;display:block;margin-top:7px}.reply p{font-size:13px}.reply .reply-actions button:first-child{background:#152739;color:#fff}.reply .smallcaps{color:#9c5723}.reply[aria-live]{outline-offset:2px}
+.inspector-actions{display:flex;gap:8px;flex-wrap:wrap;margin:17px 0 8px}.inspector-actions button{font-size:11px;padding:9px 11px}.inspector-actions button[aria-pressed=true]{background:#152739;color:#fff}.jsonbox{border:1px solid #bed0d8;background:#172735;color:#e6edf1;max-height:380px;overflow:auto;padding:18px;margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;line-height:1.55}.jsonmeta{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+@media(max-width:900px){.story-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.story-step{border:1px solid #dde2df!important}.story-summary{grid-template-columns:1fr}.stack{grid-template-columns:1fr}.benefitrow{grid-template-columns:1fr}}
+@media(max-width:530px){.story-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px}.story-step{min-height:114px;padding:11px}.storyhead{padding:15px}.story-summary{padding:15px}.truth{grid-template-columns:1fr}.reply strong{font-size:16px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
+
 @media(max-width:800px){.hero{grid-template-columns:1fr;padding-top:35px;gap:14px}.columns,.evidence-grid{grid-template-columns:1fr}.workflow{grid-template-columns:1fr}.hdr-right{display:none}.wrap{padding:0 16px}h1{font-size:40px}.metric{padding:13px}.frame-header{padding:16px}.frame-body{padding:16px}}
+
+/* v3 — stage-setting and user-guided action: borrowed the actor-to-provider journey from the supplied reference */
+.welcome{padding:30px 0 24px}
+.welcome-top{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(270px,.65fr);gap:25px;align-items:center}
+.welcome h1{font-size:clamp(34px,4.6vw,58px);margin:10px 0 12px;max-width:800px}
+.welcome-lede{max-width:710px;font-size:17px;line-height:1.58;color:#475969;margin:0}
+.mission-card{background:#fff;border:1px solid var(--line);border-top:3px solid #c99444;padding:18px 22px}
+.mission-card>strong{font-size:20px;display:block;margin:6px 0 13px}
+.mission-detail{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid #e8ebeb;font-size:12px}
+.mission-detail span{color:#64727a}.mission-detail b{text-align:right;color:var(--ink)}
+.four-questions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:20px 0 10px}
+.four-questions article{background:#fff;border:1px solid var(--line);border-top:3px solid #9caeb6;padding:16px;min-height:160px}
+.four-questions article:nth-child(2){border-top-color:#c6784c}.four-questions article:nth-child(3){border-top-color:#50809e}.four-questions article:nth-child(4){border-top-color:#278065}
+.four-questions strong{font-size:15px;display:block;margin:6px 0}.four-questions p{font-size:12px;color:#52616c;margin:0;line-height:1.5}
+.journey-ribbon{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr 18px 1fr 18px 1fr;gap:3px;align-items:center;padding:13px 10px;background:#e9eee9;border:1px solid #d1ddd5;margin:10px 0 18px}
+.journey-ribbon span{text-align:center;font-size:10px;color:#45616b;letter-spacing:.08em;font-weight:850}.journey-ribbon b{font-size:12px;display:block;letter-spacing:0;color:#1d3542}
+.journey-ribbon i{font-style:normal;color:#5b887e;text-align:center;font-size:17px}
+.guide-action{background:#fff;border:2px solid #a8bfc3;box-shadow:0 7px 26px rgba(21,39,57,.07);padding:22px 26px;margin:0;scroll-margin-top:18px;outline-offset:4px}
+.guide-action h2{font-size:25px;line-height:1.25;margin:7px 0 8px;letter-spacing:-.025em}
+.guide-action>p{font-size:14px;color:#52616c;line-height:1.6;margin:0;max-width:850px}
+.guide-action .controls{margin-top:15px}.guide-action .btn.primary{padding:12px 21px;font-size:14px}
+.guide-eyebrow{font-size:11px;letter-spacing:.13em;color:#386173;font-weight:850;display:flex;align-items:center;gap:9px}
+.guide-pulse{display:inline-block;background:#6f9a90;width:9px;height:9px;border-radius:50%}
+.guide-action.needs-you{border-color:#c78a4b;background:#fffcf6}.guide-action.needs-you .guide-pulse{background:#c67841}
+.guide-action.finished{border-color:#78ad98;background:#f8fdf9}.guide-action.finished .guide-pulse{background:#248466}
+.guide-action.stopped{border-color:#d4b1a6}.mode-strip{border-top:1px solid #e3e7e6;padding-top:11px;margin-top:16px;font-size:11px;color:#63717a}
+.mode-dot{display:inline-block;width:7px;height:7px;background:#8da89c;border-radius:50%;margin-right:7px}
+.mode-details{padding:9px 14px;border:1px solid var(--line);background:#fdfdfb;font-size:12px;color:#52616c;margin-top:10px}
+.mode-details summary{cursor:pointer;color:#344b5b;font-size:12px;font-weight:700}.mode-details p{margin:9px 0 3px}
+.after-action{margin-top:14px;background:#e8f3ed;border-left:3px solid #238064;padding:13px 16px}.after-action strong{display:block;font-size:14px}.after-action p{margin:3px 0 0;font-size:12px;color:#42635a}
+#replyMount .reply{margin:17px 0 0;background:#fff5e9;border:2px solid #c68a45;padding:20px}
+#replyMount .reply .smallcaps{font-size:11px}#replyMount .reply strong{font-size:20px;line-height:1.3}
+#replyMount .reply-actions{gap:9px;margin-top:10px}#replyMount .reply-actions button{font-size:13px;padding:11px 14px}
+#replyMount .reply-actions button:first-child{font-weight:850;background:#152739;color:#fff}
+.technical-journal{margin-top:12px;grid-column:1/-1}.technical-journal summary{cursor:pointer;background:#fafbf9;list-style-position:inside}
+.technical-journal .timeline{height:auto;max-height:320px}.technical-journal .event{font-size:11px}
+@media(max-width:950px){.welcome-top{grid-template-columns:1fr}.four-questions{grid-template-columns:repeat(2,1fr)}.journey-ribbon{grid-template-columns:1fr 14px 1fr 14px 1fr 14px 1fr 14px 1fr}}
+@media(max-width:560px){.welcome{padding-top:23px}.four-questions{grid-template-columns:1fr 1fr}.four-questions article{min-height:0;padding:12px}.four-questions strong{font-size:13px}.four-questions p{font-size:11px}.journey-ribbon{grid-template-columns:1fr;gap:0;padding:8px}.journey-ribbon span{padding:5px 0;font-size:9px}.journey-ribbon b{display:inline;margin-left:7px}.journey-ribbon i{transform:rotate(90deg);font-size:11px;line-height:11px}.guide-action{padding:17px}.guide-action h2{font-size:21px}.welcome h1{font-size:36px}.welcome-lede{font-size:15px}}
+
+.workflow{grid-template-columns:1fr}.workflow>.frame:first-child{grid-column:1/-1}.technical-journal{grid-column:1/-1}button[hidden]{display:none!important}
 </style></head><body>
 <header><div class="wrap hdr"><div class="brand"><div class="glyph">H</div><div><div class="name">HOLD<span style="color:#d7a74c">.</span></div><div class="over">Execution governance · live experience</div></div></div><div class="hdr-right"><span><i class="point"></i> LOCAL CONTROL PLANE</span><span class="mono">EXPERIENCE / 01</span></div></div></header>
 <main class="wrap">
-<section class="hero"><div><div class="eyebrow">The moment AI becomes action</div><h1>An agent can act.<br>It cannot assume.</h1><p class="lede">One hotel booking. One lost response. A human decision when evidence runs out. See where authority is defined, where execution is governed, and what remains inspectable after the mission.</p><div class="controls"><button class="btn primary" id="start">Start governed mission</button><button class="btn secondary" id="inspect" disabled>Inspect Evidence</button><button class="btn secondary" id="download" disabled>Export Envelope ZIP</button><span id="status" class="st">READY</span></div><p class="tiny" id="runHint">No external hotel or payment provider is contacted. The experiment uses a synthetic hotel.</p></div><aside class="panel-side"><div class="smallcaps">Mission / 001</div><strong>Trade-fair hotel, Lyon</strong><p>Booking amount €238 · maximum €300<br>Dates 17–19 November 2026<br>Responsible authority: Mission authority</p><div class="smallcaps" style="margin-top:19px">Runtime</div><p><span id="mode">SIMULATED RELAY</span><br><span id="agent">SCRIPTED AGENT</span></p><div class="smallcaps" style="margin-top:19px">Evidence</div><p class="mono" id="mission">Not started</p></aside></section>
+<section class="welcome" id="intro">
+<div class="welcome-top">
+<div>
+<div class="eyebrow">HOLD · A guided mission, not a dashboard tour</div>
+<h1>Did the hotel book it—or not?</h1>
+<p class="welcome-lede">An AI travel assistant must book a room. The hotel will create the reservation, but its confirmation will never reach the agent. <strong>Should the agent try again, give up, or find out what happened?</strong></p>
+</div>
+<aside class="mission-card">
+<div class="smallcaps">THE REAL-WORLD JOB · LAB SIMULATION</div>
+<strong>One room. One reservation.</strong>
+<div class="mission-detail"><span>Trip</span><b>Lyon · 17–19 Nov 2026</b></div>
+<div class="mission-detail"><span>Price</span><b>€238</b></div>
+<div class="mission-detail"><span>Spending limit</span><b>€300</b></div>
+<div class="mission-detail"><span>Authority</span><b>You, the human</b></div>
+</aside>
+</div>
+<div aria-label="Before the demo: understand the task, incident, experience, and benefit" class="four-questions">
+<article><div class="smallcaps">01 · USE CASE</div><strong>Make a hotel booking</strong><p>An AI agent has permission to reserve one room within a fixed budget.</p></article>
+<article><div class="smallcaps">02 · SCENARIO</div><strong>The confirmation gets lost</strong><p>The hotel books the room, but the agent receives no answer. A retry could create a duplicate.</p></article>
+<article><div class="smallcaps">03 · WHAT YOU'LL SEE</div><strong>A decision you control</strong><p>The agent attempts the booking, HOLD investigates, then you choose whether to allow another check.</p></article>
+<article><div class="smallcaps">04 · WHY IT MATTERS</div><strong>The agent can finish safely</strong><p>Instead of guessing or quitting, the agent can continue with an authorized next step and proof.</p></article>
+</div>
+<div aria-label="The five steps to expect" class="journey-ribbon">
+<span>AGENT <b>Asks to book</b></span><i aria-hidden="true">→</i>
+<span>HOTEL <b>Reply disappears</b></span><i aria-hidden="true">→</i>
+<span>HOLD <b>Checks, no retry</b></span><i aria-hidden="true">→</i>
+<span>YOU <b>Choose next step</b></span><i aria-hidden="true">→</i>
+<span>RECORD <b>Shows what is proven</b></span>
+</div>
+<div aria-live="polite" class="guide-action" id="guideAction" tabindex="-1">
+<div class="guide-eyebrow"><span aria-hidden="true" class="guide-pulse"></span><span id="guidePhase">BEFORE WE BEGIN</span></div>
+<h2 id="guideActionTitle">You know the scenario. Ready to watch it happen?</h2>
+<p id="guideActionExplain">Press the button once. You will see the booking request, the lost response and why HOLD needs a human decision. <strong>Nothing is being purchased:</strong> the hotel and booking are simulated.</p>
+<div class="controls">
+<button class="btn primary" id="start">Start the guided booking</button>
+<button class="btn secondary" disabled="" id="inspect">View proof of the outcome</button>
+<button class="btn secondary" disabled="" id="download">Download evidence files</button>
+<span class="st" id="status">READY TO BEGIN</span>
+</div>
+<div id="replyMount"><div class="reply" hidden="" id="reply"><div class="smallcaps">YOUR DECISION · STEP 4 OF 6</div><strong id="question">The hotel did not answer. Do you allow one more lookup?</strong><p id="questionWhy">HOLD has not found a confirmation yet. <strong>Checking is safe; making a second booking is not.</strong> Choose one option below. The recommended choice only checks the original booking.</p><div class="reply-actions" id="replyActions"></div><p class="tiny" id="replyHint"></p></div></div>
+<div class="after-action" hidden="" id="guideAfter"><strong id="guideAfterTitle"></strong><p id="guideAfterBody"></p></div>
+<div class="mode-strip"><span aria-hidden="true" class="mode-dot"></span><span id="runHint">Guided lab simulation · scripted agent · no payment · no live phone message.</span></div>
+</div>
+<details class="mode-details"><summary>Which parts are Meta, which parts are HOLD?</summary><p><strong>Meta Llama 3.2</strong> provides agent reasoning in the frozen E1-A6 experiment and optional local-model mode. <strong>Meta WhatsApp Cloud API</strong> is the optional real human-reply channel. <strong>HOLD</strong> provides the permission limits, execution checks and evidence. <strong>This default tour uses a scripted agent and simulated authority replies.</strong></p><p class="tiny">Run settings: <span id="mode">SIMULATED RELAY · NO PHONE</span> · <span id="agent">SCRIPTED · NO LLAMA INFERENCE</span>. Evidence reference: <span class="mono" id="mission">Not started</span>.</p></details>
+</section>
+<section class="section" style="padding-top:23px"><div class="smallcaps">Why this matters</div><h2>Not just safer agents. Agents that can finish.</h2><p class="intro">The benefit is not another refusal. It is bounded initiative through uncertainty, with honest evidence of what happened.</p>
+<div class="benefitrow"><div class="benefit"><div class="smallcaps">FOR THE TRAVELER</div><strong>One booking. No blind repeat.</strong><p>The task can finish without gambling on a second external action.</p></div><div class="benefit"><div class="smallcaps">FOR THE AI AGENT ON THE GROUND</div><strong>A legitimate next step.</strong><p>Verify what happened, obtain narrowly scoped human authority, then resume rather than guess or give up.</p></div><div class="benefit"><div class="smallcaps">FOR THE ORGANIZATION</div><strong>Governed action, inspectable proof.</strong><p>Review the mandate, decisions, provider receipt, and unresolved outcomes in one record.</p></div></div></section>
+<section class="section" style="padding-top:10px"><div class="smallcaps">Mission execution · an agent finishing its work</div><h2>Follow what happened, one step at a time.</h2><p class="intro">Each step below appears only when HOLD records the corresponding event. No invented stages or timers.</p><div aria-label="Mission causal timeline" class="storyframe"><div class="storyhead"><div><div class="smallcaps">The story of this run · driven by recorded events</div><b>From a lost response to an evidenced outcome</b></div><span class="st" id="storyState">READY TO BEGIN</span></div><div aria-live="polite" class="story-grid" id="storySteps"></div><div class="story-summary"><div><div class="smallcaps">What just happened — and why</div><strong id="storyTitle">The agent has a mission, not unlimited permission.</strong><p id="storyExplanation">Start to see the consequential decisions in order, with their event evidence.</p></div><div class="story-benefit"><div class="smallcaps">What the agent gains</div><strong id="agentGain">A bounded path to completion.</strong><p id="agentGainDetail">HOLD supplies a legitimate response to uncertainty instead of guessing or giving up.</p></div></div></div><div class="workflow"><div class="frame"><div class="frame-header"><b>Execution boundary</b><span class="st" id="missionState">NOT STARTED</span></div><div class="metricbar"><div class="metric"><strong id="bookings">0</strong><div>Simulated bookings</div></div><div class="metric"><strong id="receipts">0</strong><div>Effects backed by receipts</div></div><div class="metric"><strong id="events">0</strong><div>Recorded steps</div></div></div><div class="frame-body"><div aria-live="polite" class="truth"><div class="truth-card"><div class="smallcaps">WHAT THE HOTEL DID · SIMULATION</div><b id="providerReality">No booking created</b><p id="providerExplanation">The simulated provider records what happened independently of the agent's beliefs.</p></div><div class="truth-card"><div class="smallcaps">WHAT THE AGENT CAN PROVE</div><b id="holdKnowledge">No external effect yet</b><p id="holdExplanation">Only a correlated receipt can prove that an uncertain operation succeeded.</p></div></div><div class="status-note" id="narrative">Start the mission to observe the difference between a lost response and a failed booking.</div><div style="margin-top:24px"><div class="smallcaps">Execution status</div><p id="bookStatus" style="font-size:13px;color:var(--muted)">No action submitted</p></div></div></div><details class="frame technical-journal"><summary class="frame-header"><b>Show the technical event log (optional)</b><span class="mono tiny" id="chain">NOT STARTED</span></summary><div class="frame-body" style="padding-top:0"><ol class="timeline" id="timeline"><li><span class="idx">—</span><div class="detail">Waiting for the first event.</div></li></ol></div></details></div></section>
+<section class="section" style="padding-top:10px"><div class="smallcaps">Technology roles · explicit attribution</div><h2>Meta supplies the model and messaging channel. HOLD governs execution.</h2><p class="intro">These are distinct components, with distinct responsibilities and evidence.</p>
+<div class="stack"><div class="stack-card"><div class="role">META · OPEN-WEIGHT MODEL</div><b>Llama 3.2 — agent reasoning</b><p>Used in the frozen E1-A6 experiment and available in optional local Ollama mode. <strong id="metaModelActive">The current default demonstration uses a scripted agent, not Llama inference.</strong> Model reasoning does not enforce external effects.</p></div><div class="stack-card"><div class="role">HOLD · INDEPENDENT GOVERNANCE</div><b>Habilitation + execution kernel</b><p>The authority boundary, deterministic checks, reconciliation and evidence are HOLD components, not properties claimed of the model.</p></div><div class="stack-card"><div class="role">META · WHATSAPP CLOUD API</div><b>Human decision relay</b><p id="metaRelayActive">Optional live delivery and signed webhook replies when configured. This run uses a simulated relay; no phone interaction is implied.</p></div></div></section>
 <section class="section"><div class="smallcaps">The operating model</div><h2>One mandate. Three accountable layers.</h2><p class="intro">The agent proposes within a bounded mission. The enforcement boundary owns consequences. The evidence outlives both.</p><div class="columns"><div class="tile"><div class="num">01 · AUTHORITY</div><strong>Habilitation</strong><p>Defines mission purpose, scope, budget, expiry, available tools, and when the agent must return to a human.</p></div><div class="tile kern"><div class="num">02 · ENFORCEMENT</div><strong>Execution kernel</strong><p>Evaluates consequential proposals before dispatch. Prevents equivalent repeats and preserves unknown external outcomes.</p></div><div class="tile evidence"><div class="num">03 · ACCOUNTABILITY</div><strong>Evidence Envelope</strong><p>Captures decisions, authority replies, receipts and unresolved states for inspection and deterministic reconstruction.</p></div></div></section>
-<section class="section" style="padding-top:10px"><div class="smallcaps">Mission execution</div><h2>What actually happened?</h2><p class="intro">This view reads the live HOLD mission journal; it is not a fixed animation.</p><div class="workflow"><div class="frame"><div class="frame-header"><b>Execution boundary</b><span class="st" id="missionState">IDLE</span></div><div class="metricbar"><div class="metric"><strong id="bookings">0</strong><div>Synthetic bookings</div></div><div class="metric"><strong id="receipts">0</strong><div>Confirmed effects</div></div><div class="metric"><strong id="events">0</strong><div>Recorded events</div></div></div><div class="frame-body"><div class="rail"><div class="node">AGENT<span>Proposes</span></div><i class="conn"></i><div class="node hot">HOLD<span>Admits / holds</span></div><i class="conn"></i><div class="node">PROVIDER<span>Synthetic</span></div></div><div class="status-note" id="narrative">Start the mission to observe the difference between a lost response and a failed booking.</div><div class="reply" id="reply" hidden><div class="smallcaps">Decision request · accountable human</div><strong id="question">Authority required</strong><p>Allow one further status check or close without confirmation. An approval does not authorize another booking or prove that the first one succeeded.</p><div class="reply-actions" id="replyActions"></div><p class="tiny" id="replyHint"></p></div><div style="margin-top:24px"><div class="smallcaps">Execution status</div><p id="bookStatus" style="font-size:13px;color:var(--muted)">No action submitted</p></div></div></div><div class="frame"><div class="frame-header"><b>Event journal</b><span class="mono tiny" id="chain">NOT STARTED</span></div><div class="frame-body" style="padding-top:0"><ol class="timeline" id="timeline"><li><span class="idx">—</span><div class="detail">Waiting for the first event.</div></li></ol></div></div></div></section>
-<section class="section"><div class="smallcaps">Evidence after the action</div><h2>Inspect the record, not the agent's claim.</h2><p class="intro">Export a portable ZIP of recorded mission events, provider receipts, relay evidence, independent-of-model decision replay, and per-file SHA-256 checks. This is a laboratory evidence export, not a regulatory attestation.</p><div class="evidence-grid"><div class="evi"><b>Authority & decisions</b><small>Habilitation revision, binding, proposed effects, kernel decisions and human replies.</small></div><div class="evi"><b>Effect & uncertainty</b><small>The synthetic provider's own register and check history, including the correlated receipt or explicit UNKNOWN.</small></div><div class="evi"><b>Replay & integrity</b><small>Hash-chain verification and reconstructed deterministic decisions, without re-executing the transaction.</small></div></div><div class="frame" id="inspector" style="display:none;margin-top:18px">
+<section class="section"><div class="smallcaps">Evidence after the action</div><h2>Inspect the record, not the agent's claim.</h2><p class="intro">Export a portable ZIP of recorded mission events, provider receipts, relay evidence, independent-of-model decision replay, and per-file SHA-256 checks. This is a laboratory evidence export, not a regulatory attestation.</p><div class="evidence-grid"><div class="evi"><b>Authority &amp; decisions</b><small>Habilitation revision, binding, proposed effects, kernel decisions and human replies.</small></div><div class="evi"><b>Effect &amp; uncertainty</b><small>The synthetic provider's own register and check history, including the correlated receipt or explicit UNKNOWN.</small></div><div class="evi"><b>Replay &amp; integrity</b><small>Hash-chain verification and reconstructed deterministic decisions, without re-executing the transaction.</small></div></div><div class="frame" id="inspector" style="display:none;margin-top:18px">
 <div class="frame-header"><b>Evidence verification · local reconstruction</b><span class="st" id="inspectorVerdict">NOT CHECKED</span></div>
-<div class="frame-body"><div class="evidence-grid" style="margin-top:0"><div class="evi"><b>Journal chain</b><small id="iChain">—</small></div><div class="evi"><b>State reconstruction</b><small id="iState">—</small></div><div class="evi"><b>Decision replay</b><small id="iDecisions">—</small></div></div><p class="tiny" id="iClaims" style="margin-top:15px"></p><p class="tiny mono" id="iRevision"></p><p class="tiny">Local hashes and replay are checkable; they do not authenticate the origin or completeness of the entire record.</p></div></div><p class="tiny" id="error" style="margin-top:15px"></p></section>
-</main><footer class="foot"><div class="wrap">HOLD · Research prototype. This is a new integration demonstration, separate from frozen E1-A6. Human relay is simulated unless explicitly labeled WhatsApp Cloud API. No real booking, external custody, or production compliance is claimed. <a href="/">Open HOLD Studio</a></div></footer>
+<div class="frame-body"><div class="evidence-grid" style="margin-top:0"><div class="evi"><b>Journal chain</b><small id="iChain">—</small></div><div class="evi"><b>State reconstruction</b><small id="iState">—</small></div><div class="evi"><b>Decision replay</b><small id="iDecisions">—</small></div></div><p class="tiny" id="iClaims" style="margin-top:15px"></p><p class="tiny mono" id="iRevision"></p><p class="tiny">Local hashes and replay are checkable; they do not authenticate the origin or completeness of the entire record.</p><div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px"><div class="smallcaps">Raw Evidence · directly from exported files</div><p class="tiny">Inspect the actual JSON, the SHA-256 recorded in the manifest, and per-file checksum verification without opening the ZIP. Authority metadata may contain contact details; review before sharing the screen.</p><div class="inspector-actions" id="evidenceTabs"></div><div class="jsonmeta"><span id="rawFilename">Select an evidence file</span><span class="mono" id="rawSha"></span></div><pre class="jsonbox mono" id="rawEvidence" tabindex="0">Select a file above to inspect its content.</pre></div></div></div><p class="tiny" id="error" style="margin-top:15px"></p></section>
+</main><footer class="foot"><div class="wrap">HOLD · Research prototype · Separate from frozen E1-A6. Meta Llama 3.2 runs only in optional local-model mode; the default agent is scripted. Meta WhatsApp Cloud API is used only in configured live-relay mode. Hotel/provider is always synthetic. Local evidence is not independently attested. <a href="/">Open HOLD Studio</a></div></footer>
 <script>
 const $=x=>document.getElementById(x);let last="",busy=false;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const setStatus=(text,tone='')=>{for(const id of ['status','missionState']){$(id).textContent=text;$(id).className='st '+tone;}};
+
+// The milestones are derived solely from recorded HOLD events, actual test-provider calls and mission state.
+// A stage never advances because a timer elapsed or because a demo presenter clicked Next.
+const phases=[
+ ['The task is approved','One room, €300 limit'],
+ ['The agent acts','One booking request'],
+ ['The hotel goes silent','Did it book the room?'],
+ ['HOLD investigates','No second booking request'],
+ ['You make a choice','One more check, or stop'],
+ ['The receipt is found','Complete with evidence']
+];
+function milestones(s){
+ const types=new Set((s.events||[]).map(e=>e.type));
+ const pending=(s.open_request!=null)||types.has('DECISION_REQUEST');
+ const lost=(s.provider_requests||[]).some(e=>e.kind==='CREATE'&&e.response==='LOST_RESPONSE')&&types.has('EFFECT_OUTCOME');
+ const recon=types.has('RECONCILED') && (s.effects||[]).some(e=>e.action==='create_booking'&&e.status==='CONFIRMED'&&e.receipt);
+ return [types.has('MISSION_OPENED')&&types.has('PROFILE_ATTACHED'),types.has('EFFECT_RESERVED'),lost,types.has('HOLD_ENTERED'),types.has('AUTHORITY_ANSWER'),recon];
+}
+function story(s){
+ const yes=s.started?milestones(s):[false,false,false,false,false,false];
+ const fail=['CLOSED_UNCONFIRMED','REVOKED'].includes(s.status);
+ let focus=fail?-1:yes.indexOf(false);if(focus<0&&!fail)focus=6;
+ $('storySteps').innerHTML=phases.map((p,i)=>{
+    const cls=yes[i]?'done':(!fail&&i===focus?'active':fail&&i===4?'fail':'');
+    const annotation=yes[i]?'✓ SHOWN':(!fail&&i===focus?'NEXT':'LATER');
+    return `<div class="story-step ${cls}"><span class="ordinal">${String(i+1).padStart(2,'0')} · ${annotation}</span><strong>${p[0]}</strong><small>${p[1]}</small></div>`;
+ }).join('');
+ const reality=(s.provider_requests||[]).find(q=>q.kind==='CREATE');
+ const confirmed=(s.effects||[]).some(e=>e.action==='create_booking'&&e.status==='CONFIRMED'&&e.receipt);
+ const createCount=(s.provider_requests||[]).filter(q=>q.kind==='CREATE').length;
+ const unknown=(s.effects||[]).some(e=>e.action==='create_booking'&&e.status==='UNKNOWN');
+ $('providerReality').textContent=!reality?'No hotel request yet':reality.response==='LOST_RESPONSE'?`${s.synthetic_bookings} booking made by the simulated hotel`:`${s.synthetic_bookings} simulated booking(s)`;
+ $('providerExplanation').textContent=reality?.response==='LOST_RESPONSE'?'The simulated hotel made the booking. But its confirmation never reached the agent.': 'This is a simulated hotel, not a real reservation or payment.';
+ $('holdKnowledge').textContent=confirmed?'Booking proved by a receipt':unknown?'Still no confirmation':!s.started?'No booking requested yet':'No confirmed booking';
+ $('holdExplanation').textContent=confirmed?(createCount===1?'A correlated receipt now supports the earlier operation. Exactly one CREATE was issued.':'A correlated receipt supports this operation. Inspect the provider request log for repeats.'):unknown?'The agent still needs a matching receipt. Silence does not mean the booking failed.':'The system will only confirm a booking when a matching receipt is found.';
+ let title='The agent knows what it is allowed to do.';
+ let explain='The agent is allowed to book one room within a €300 limit. You remain in control of exceptions.';
+ let gain='Autonomy with boundaries.';
+ let benefit='The agent can make legitimate progress without unrestricted tool access.';
+ let tag='READY';
+ if(yes[5]&&s.status==='CLOSED_COMPLETED'){
+ title='The existing booking was found. The agent finished without rebooking.';
+ explain='After the authorized verification, HOLD reconciled the original booking. The agent then sent the synthetic itinerary; the recorded outcome is supported by evidence.';
+ gain='Continue and complete — based on a receipt.';
+ benefit=createCount===1?'One provider CREATE, a correlated receipt, then a confirmed itinerary. The agent did not have to guess.':'A correlated receipt supported completion; inspect provider requests for any repeated CREATE calls.';
+ tag='COMPLETED WITH EVIDENCE';
+ }else if(fail){
+ title=s.status==='REVOKED'?'Authority revoked — the mission stops.':'Closed without confirmation — uncertainty stays visible.';
+ explain='No unsupported success is claimed. Revoking or closing the mission does not erase effects that may already exist.';
+ gain='Fail truthfully, without inventing success.';benefit='HOLD preserves the unresolved outcome and the decision trail.';tag='FINISHED WITHOUT CONFIRMATION';
+ }else if(yes[4]&&!yes[5]){
+ title='You allowed one more lookup, not another booking.';
+ explain='Your decision permits a further check of the existing request. It does not authorize a new reservation, and it does not count as confirmation.';
+ gain='Resume authorized investigation.';benefit='The agent gets a legitimate next action instead of an unsafe retry.';tag='YOUR CHECK WAS AUTHORIZED';
+ }else if(s.status==='AWAITING_AUTHORITY'){
+ title='The provider did not answer. Now the human decides.';
+ explain='The simulated provider created one booking and lost its response. Earlier status checks found no receipt. HOLD will not retry CREATE blindly; a human may authorize one more status check.';
+ gain='Escalate without losing the mission.';benefit='The agent retains context and waits for narrowly scoped permission to continue verifying.';tag='HUMAN DECISION REQUIRED';
+ }else if(yes[3]){
+ title='HOLD is investigating an uncertain external effect.';
+ explain='HOLD checks the original booking instead of blindly sending another booking request.';
+ gain='Investigate instead of repeat.';benefit='HOLD gives the agent a safe recovery path before it can claim completion.';tag='CHECKING THE FIRST BOOKING';
+ }else if(yes[2]){
+ title='The hotel did not answer. That does not mean the booking failed.';
+ explain='The confirmation never arrived. The agent cannot safely assume the booking failed, because another request might book twice.';
+ gain='Avoid the false failure assumption.';benefit='The agent can distinguish lack of evidence from evidence of failure.';tag='NO CONFIRMATION RECEIVED';
+ }else if(yes[1]){
+ title='The agent made one authorized booking proposal.';
+ explain='HOLD admits consequential actions only within the attached habilitation and execution constraints.';
+ gain='A governed path to real action.';benefit='The agent can attempt legitimate transactions rather than remain passive.';tag='BOOKING REQUESTED';
+ }else if(yes[0]){tag='MANDATE ACTIVE';}
+ $('storyTitle').textContent=title;$('storyExplanation').textContent=explain;
+ $('agentGain').textContent=gain;$('agentGainDetail').textContent=benefit;
+ $('storyState').textContent=tag;
+ $('storyState').className='st '+((s.status==='AWAITING_AUTHORITY'||tag==='NO CONFIRMATION RECEIVED')?'warn':fail?'fail':'');
+}
+function technicalRoles(s){
+ $('metaModelActive').textContent=s.agent==='llama'
+   ? 'Active in this run via local Ollama. Its proposals remain subject to HOLD governance.'
+   : 'Not active in this scripted run. Llama 3.2 is used in E1-A6 and can be selected via --agent llama.';
+ const accepted=(s.events||[]).some(e=>e.type==='AUTHORITY_ANSWER');
+ $('metaRelayActive').textContent=s.relay==='whatsapp'
+   ? accepted?'Signed WhatsApp reply accepted by HOLD in this run. Provider effects remain separately verified.':'Live WhatsApp mode configured. Delivery and a signed human reply are not yet verified.'
+   : 'The current run uses a simulated authority relay. Meta WhatsApp Cloud API is supported as an optional live integration, but no real message is implied.';
+ $('mode').textContent=s.relay==='whatsapp'?(accepted?'WHATSAPP SIGNED REPLY ACCEPTED':'WHATSAPP MODE · REPLY PENDING'):'SIMULATED RELAY · NO PHONE';
+ $('agent').textContent=s.agent==='llama'?'META LLAMA 3.2 · LOCAL OLLAMA':'SCRIPTED · NO LLAMA INFERENCE';
+}
+const evidenceFiles=[['findings.json','Findings'],['manifest.json','SHA-256 manifest'],['mission-journal.json','Journal'],['governance-replay.json','Replay'],['synthetic-provider.json','Provider'],['authority-relay.json','Authority']];
+let openedFile='';
+async function showEvidence(name){
+ const r=await fetch('/api/experience/evidence/'+encodeURIComponent(name),{cache:'no-store'});
+ if(!r.ok)throw new Error('Unable to load '+name);
+ const v=await r.json();openedFile=name;
+ $('rawFilename').textContent=name+' · '+(v.expected_sha256===null?'MANIFEST IS NOT INDEPENDENTLY SIGNED':v.matches?'FILE SHA-256 MATCH':'CHECK FAILED');
+ $('rawSha').textContent='sha256 '+v.sha256;
+ $('rawEvidence').textContent=JSON.stringify(v.data,null,2);
+ for(const b of $('evidenceTabs').querySelectorAll('button'))b.setAttribute('aria-pressed',b.dataset.file===name?'true':'false');
+}
+function prepareEvidenceTabs(){
+ $('evidenceTabs').innerHTML='';
+ for(const [name,label] of evidenceFiles){let b=document.createElement('button');b.className='btn secondary';b.textContent=label;b.dataset.file=name;b.setAttribute('aria-pressed','false');b.onclick=()=>showEvidence(name).catch(e=>{$('error').textContent=e.message});$('evidenceTabs').appendChild(b);}
+}
+
 function sentence(s){
  if(!s.started)return 'A mission begins with an explicit mandate. No effect has been proposed yet.';
- if(s.status==='CLOSED_COMPLETED')return 'Mission completed with a confirmed provider receipt and itinerary. Inspect the evidence before believing the outcome.';
- if(s.status==='AWAITING_AUTHORITY')return 'The booking may already exist. HOLD has exhausted its permitted checks and is requesting bounded human authority — not permission to guess.';
+ if(s.status==='CLOSED_COMPLETED')return 'The existing booking has a matching receipt, and the simulated itinerary was completed. You can check the evidence below.';
+ if(s.status==='AWAITING_AUTHORITY')return 'The hotel may already have booked the room. HOLD has checked as far as allowed and needs your permission for one more lookup. No new booking is allowed.';
  if(s.status==='CLOSED_UNCONFIRMED')return 'The mission was closed without proof of success. An external effect may still exist; the record preserves that uncertainty.';
  if(s.status==='REVOKED')return 'The mandate was revoked. Revocation does not undo a booking already created.';
  if(s.status==='HELD')return 'The provider did not return a decisive answer. HOLD is reconciling the existing operation without retrying it.';
  return 'The mission is operating inside its habilitation. Consequential actions still pass through the kernel.';
 }
+function clearHumanStatus(s){
+ const labels={AWAITING_AUTHORITY:'YOUR DECISION NEEDED',CLOSED_COMPLETED:'BOOKING PROVED · TASK FINISHED',CLOSED_UNCONFIRMED:'STOPPED · NO PROOF OF BOOKING',REVOKED:'MISSION STOPPED BY YOU',HELD:'CHECKING THE ORIGINAL BOOKING',OPEN:'IN PROGRESS'};
+ return labels[s.status]||'IN PROGRESS';
+}
+function guide(s){
+ const box=$('guideAction'), req=s.open_request;
+ const terminal=['CLOSED_COMPLETED','CLOSED_UNCONFIRMED','REVOKED'].includes(s.status);
+ box.classList.toggle('needs-you',!!req);
+ box.classList.toggle('finished',s.status==='CLOSED_COMPLETED');
+ box.classList.toggle('stopped',['CLOSED_UNCONFIRMED','REVOKED'].includes(s.status));
+ $('start').hidden=!!s.started;
+ $('inspect').hidden=!terminal;
+ $('download').hidden=!terminal;
+ let phase='BEFORE WE BEGIN',title='You know the scenario. Ready to watch it happen?',explain='Press Start once. You will watch the agent try a booking, lose the confirmation and ask you what to do next. This is a simulation: there is no real purchase.';
+ if(s.started){
+   phase='THE AGENT IS WORKING';title='The agent is attempting one booking.';
+   explain='It can act within the spending limit. HOLD controls what happens if the hotel does not respond.';
+ }
+ if(s.status==='HELD'){
+   phase='THE RESPONSE IS MISSING';title='No confirmation arrived. The booking may already exist.';
+   explain='HOLD is checking the original request. It will not send a duplicate booking just because the hotel went silent.';
+ }
+ if(req){
+   const attempts=(s.provider_requests||[]).filter(x=>x.kind==='CREATE').length;
+   phase='YOUR TURN · HUMAN DECISION';
+   title='The booking may already exist. Now you decide what happens next.';
+   explain=attempts===1 ? 'The agent sent one booking request. The simulated hotel created one reservation but lost its reply. HOLD could not establish the result with the checks allowed so far. It has stopped the agent from making a second reservation. Your choice is directly below.' : 'The hotel did not return a conclusive answer. HOLD is asking what to do next, without silently rebooking. Your choice is directly below.';
+ }
+ if(s.status==='CLOSED_COMPLETED'){
+   const creates=(s.provider_requests||[]).filter(x=>x.kind==='CREATE').length;
+   phase='THE OUTCOME · VERIFIED LOCALLY';
+   title=creates===1?'One booking. The receipt was found. The agent finished.':'A receipt was found and the agent finished.';
+   explain='Your permission enabled an additional lookup, not a new booking. HOLD found a matching receipt and the simulated itinerary was completed. Open the evidence to see exactly what was recorded.';
+ }
+ if(s.status==='CLOSED_UNCONFIRMED'){
+   phase='STOPPED WITHOUT PROOF';title='The mission stopped without pretending the booking was confirmed.';
+   explain='The hotel might still have made a reservation. HOLD preserves this uncertainty instead of announcing success.';
+ }
+ if(s.status==='REVOKED'){
+   phase='YOU STOPPED THE MISSION';title='The agent no longer has permission to continue.';
+   explain='Revoking the mission stops further agent work, but does not cancel an existing booking at the hotel.';
+ }
+ if(s.error){phase='RUNTIME ERROR';title='The demonstration encountered an error.';explain='Read the error below. No successful booking is implied by this screen.';}
+ $('guidePhase').textContent=phase;$('guideActionTitle').textContent=title;$('guideActionExplain').textContent=explain;
+ $('guideAfter').hidden=!terminal;
+ if(terminal){
+   $('guideAfterTitle').textContent=s.status==='CLOSED_COMPLETED'?'Why this matters for the agent':'Why an honest stop matters';
+   $('guideAfterBody').textContent=s.status==='CLOSED_COMPLETED'?'The agent did not have to guess, rebook, or abandon its task. It got a permitted next step, found proof and completed the job. The traveler avoids a blind duplicate.':'Even if the work cannot be completed, HOLD can preserve the real uncertainty and prevent a misleading success claim.';
+ }
+}
 function render(s){
- $('mode').textContent=s.relay==='whatsapp'?'REAL WHATSAPP CLOUD API':'SIMULATED WHATSAPP RELAY';$('agent').textContent=(s.agent==='llama'?'LLAMA AGENT':'SCRIPTED AGENT');
+ technicalRoles(s);story(s);guide(s);
  if(!s.started)return;
  $('start').disabled=true;$('inspect').disabled=false;$('download').disabled=false;$('mission').textContent=s.mission_id;$('narrative').textContent=sentence(s);
  let tone=s.status==='CLOSED_COMPLETED'?'':s.status==='AWAITING_AUTHORITY'||s.status==='HELD'?'warn':s.status.includes('CLOSED')||s.status==='REVOKED'?'fail':'';
- setStatus(s.status.replaceAll('_',' '),tone);
+ setStatus(clearHumanStatus(s),tone);
  $('bookings').textContent=s.synthetic_bookings;$('receipts').textContent=s.effects.filter(e=>e.status==='CONFIRMED').length;
  $('events').textContent=s.events.length;$('chain').textContent=s.chain_valid?'CHAIN VERIFIED':'CHAIN INVALID';
  $('bookStatus').textContent=s.effects.map(e=>`${e.action}: ${e.status}${e.receipt?' · '+e.receipt:''}`).join(' | ')||'No external effect yet';
  $('runHint').textContent=`${s.relay==='whatsapp'?'WhatsApp live relay enabled':'Authority decision is simulated locally'} · Synthetic hotel only · Current mission ${s.mission_id}`;
  const types=new Set(['MISSION_OPENED','PROFILE_ATTACHED','RUNTIME_BOUND','EFFECT_RESERVED','EFFECT_OUTCOME','HOLD_ENTERED','POSITION','DECISION','DECISION_REQUEST','RELAY_REQUEST_SENT','AUTHORITY_ANSWER','AUTHORITY_GRANT','RECONCILED','ACTION_REFUSED','MISSION_CLOSED','REVOKED','RESUMED','EVIDENCE','ACTION_ADMITTED']);
- let filtered=s.events.filter(e=>types.has(e.type));let key=JSON.stringify(filtered.map(e=>e.seq));if(key!==last){$('timeline').innerHTML=filtered.map(e=>`<li><span class="idx mono">${String(e.seq).padStart(3,'0')}</span><div><div class="event">${esc(e.type)} <span class="flag ${/RECONCILED|CLOSED|RESUMED/.test(e.type)?'out':/HOLD|DECISION_REQUEST|REFUSED/.test(e.type)?'hit':''}">${esc((e.at||'').slice(11,19))}</span></div><div class="detail">${esc(e.detail||'Recorded in the mission journal')}</div></div></li>`).join('');$('timeline').scrollTop=$('timeline').scrollHeight;last=key;}
- const req=s.open_request;$('reply').hidden=!req;if(req){$('question').textContent=req.question||'HOLD has requested a decision';$('replyActions').innerHTML='';for(const o of req.options){let b=document.createElement('button');b.className='btn secondary';b.textContent=o.title||o.code;b.disabled=s.relay==='whatsapp';b.onclick=()=>tap(o.code);$('replyActions').appendChild(b);} $('replyHint').textContent=s.relay==='whatsapp'?'Respond using your real WhatsApp phone. The buttons here are disabled.':'Simulation: these buttons exercise the same HOLD authority handler without contacting Meta.';}
+ let filtered=s.events.filter(e=>types.has(e.type));let key=JSON.stringify(filtered.map(e=>e.seq));if(key!==last){$('timeline').innerHTML=filtered.map(e=>`<li><span class="idx mono">${String(e.seq).padStart(3,'0')}</span><div><div class="event">${esc(e.type.replaceAll('_',' ').toLowerCase())} <span class="flag ${/RECONCILED|CLOSED|RESUMED/.test(e.type)?'out':/HOLD|DECISION_REQUEST|REFUSED/.test(e.type)?'hit':''}">${esc((e.at||'').slice(11,19))}</span></div><div class="detail">${esc(e.detail||'Recorded in the mission journal')}</div></div></li>`).join('');$('timeline').scrollTop=$('timeline').scrollHeight;last=key;}
+ const req=s.open_request;$('reply').hidden=!req;if(req){$('question').textContent='The hotel did not answer. Do you allow one more lookup?';$('replyActions').innerHTML='';for(const o of req.options){let b=document.createElement('button');b.className='btn secondary';b.textContent=({EXTEND_CHECKS:'Yes — check the existing booking once',CLOSE_UNCONFIRMED:'Stop without claiming success',REVOKE:'Revoke the agent’s permission'})[o.code]||o.title||o.code;b.disabled=s.relay==='whatsapp';b.onclick=()=>tap(o.code);$('replyActions').appendChild(b);} $('replyHint').textContent=s.relay==='whatsapp'?'LIVE WHATSAPP MODE: please respond on the authorized phone. The local buttons are disabled. Delivery has not been assumed.':'Simulation: your click is recorded by the real HOLD authority handler. No WhatsApp message is sent in this mode.';}
  if(s.error)$('error').textContent='Runtime error: '+s.error;
 }
 async function send(url,body){let r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});let data=await r.json();if(!r.ok)throw new Error(data.detail||r.statusText);return data}
-async function tap(code){try{await send('/api/experience/tap',{code});await poll()}catch(e){$('error').textContent=e.message}}
+async function tap(code){try{await send('/api/experience/tap',{code});await poll();$('guideAction').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){$('error').textContent=e.message}}
 async function poll(){if(busy)return;busy=true;try{let r=await fetch('/api/experience/state',{cache:'no-store'});if(!r.ok)throw Error('Cannot read local mission API');render(await r.json())}catch(e){$('error').textContent=e.message}finally{busy=false}}
-$('start').onclick=async()=>{try{$('start').disabled=true;await send('/api/experience/start');await poll()}catch(e){$('start').disabled=false;$('error').textContent=e.message}};
-$('inspect').onclick=async()=>{try{const r=await fetch('/api/experience/inspect',{cache:'no-store'});if(!r.ok)throw Error('Unable to inspect evidence');const v=await r.json();const f=v.findings,c=f.checks; $('inspector').style.display='block';$('iChain').textContent=c.chain_valid?'Valid local event chain':'Invalid or unverified';$('iState').textContent=c.state_matches?'Matches recorded store':'Mismatch';$('iDecisions').textContent=c.decisions_match?'Recorded verdicts recomputed':'Mismatch';$('iClaims').textContent='Mission: '+f.status+' · synthetic bookings: '+f.bookings_created_synthetic+' · completed with proof: '+(f.completed_with_evidence?'YES':'NO');$('iRevision').textContent='Source: '+(v.manifest.source_commit||'unknown')+' · worktree dirty: '+v.manifest.source_worktree_dirty;$('inspectorVerdict').textContent=(c.chain_valid&&c.state_matches&&c.decisions_match)?'REPLAY MATCH':'CHECK FAILED';$('inspectorVerdict').className='st '+((c.chain_valid&&c.state_matches&&c.decisions_match)?'':'fail');$('inspector').scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){$('error').textContent=e.message}};
+$('start').onclick=async()=>{try{$('start').disabled=true;await send('/api/experience/start');await poll();$('guideAction').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){$('start').disabled=false;$('error').textContent=e.message}};
+$('inspect').onclick=async()=>{try{const r=await fetch('/api/experience/inspect',{cache:'no-store'});if(!r.ok)throw Error('Unable to inspect evidence');const v=await r.json();const f=v.findings,c=f.checks; $('inspector').style.display='block';$('iChain').textContent=c.chain_valid?'Valid local event chain':'Invalid or unverified';$('iState').textContent=c.state_matches?'Matches recorded store':'Mismatch';$('iDecisions').textContent=c.decisions_match?'Recorded verdicts recomputed':'Mismatch';$('iClaims').textContent='Mission: '+f.status+' · synthetic bookings: '+f.bookings_created_synthetic+' · completed with proof: '+(f.completed_with_evidence?'YES':'NO');$('iRevision').textContent='Source: '+(v.manifest.source_commit||'unknown')+' · worktree dirty: '+v.manifest.source_worktree_dirty;$('inspectorVerdict').textContent=(c.chain_valid&&c.state_matches&&c.decisions_match)?'REPLAY MATCH':'CHECK FAILED';$('inspectorVerdict').className='st '+((c.chain_valid&&c.state_matches&&c.decisions_match)?'':'fail');prepareEvidenceTabs();await showEvidence('findings.json');$('inspector').scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){$('error').textContent=e.message}};
 $('download').onclick=()=>{location.href='/api/experience/envelope'};
 poll();setInterval(poll,1000);
 </script></body></html>

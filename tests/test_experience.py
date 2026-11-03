@@ -148,6 +148,55 @@ def test_public_gateway_refuses_experience_controls():
         thread.join(2)
 
 
+def test_mission_story_is_backed_by_events_and_raw_zip(tmp_path):
+    x = Experience(db=str(tmp_path / "story.db"), wait_seconds=8)
+    c = TestClient(x.app)
+    assert c.get("/api/experience/evidence/manifest.json").status_code == 409
+    assert c.get("/api/experience/evidence/evil.json").status_code == 404
+    assert c.get("/api/experience/evidence/findings.json", headers={"x-forwarded-for": "203.0.113.10"}).status_code == 403
+    html = c.get("/experience").text
+    assert "FOR THE AI AGENT ON THE GROUND" in html
+    assert "META · OPEN-WEIGHT MODEL" in html
+    assert "The current default demonstration uses a scripted agent" in html
+    assert "function milestones(s)" in html
+    assert "The provider did not answer" in html
+    c.post("/api/experience/start")
+    st = await_status(x, "AWAITING_AUTHORITY")
+    assert any(q['kind']=='CREATE' and q['response']=='LOST_RESPONSE' for q in st['provider_requests'])
+    assert any(e['type']=='HOLD_ENTERED' for e in st['events'])
+    assert any(e['type']=='DECISION_REQUEST' for e in st['events'])
+    r = c.get("/api/experience/evidence/synthetic-provider.json").json()
+    assert r['matches']
+    assert r['data']['create_count'] == 1
+    assert r['expected_sha256'] == r['sha256']
+    m = c.get("/api/experience/evidence/manifest.json").json()
+    assert m['matches'] is None and m['expected_sha256'] is None
+    assert m['data']['files_sha256']['synthetic-provider.json'] == r['sha256']
+    assert c.get("/api/experience/evidence/manifest.json",headers={"forwarded": "for=192.0.2.2"}).status_code == 403
+    x.tap("EXTEND_CHECKS")
+    final = await_status(x, "CLOSED_COMPLETED")
+    assert any(e['type']=='RECONCILED' for e in final['events'])
+    assert sum(q['kind']=='CREATE' for q in final['provider_requests'])==1
+    journal = c.get("/api/experience/evidence/mission-journal.json").json()
+    assert journal['matches'] and journal['data']
+
+
+def test_jury_guide_explains_scenario_before_start_and_keeps_codes_optional():
+    from pathlib import Path
+    ui = (Path(__file__).resolve().parents[1] / 'experience' / 'index.html').read_text(encoding='utf-8')
+    assert '01 · USE CASE' in ui and '02 · SCENARIO' in ui
+    assert "03 · WHAT YOU'LL SEE" in ui and '04 · WHY IT MATTERS' in ui
+    assert ui.index('Did the hotel book it') < ui.index('id="start"')
+    assert 'Start the guided booking' in ui
+    assert ui.index('id="reply"') < ui.index('id="storySteps"')
+    assert 'Yes — check the existing booking once' in ui
+    assert 'Stop without claiming success' in ui
+    assert 'Show the technical event log (optional)' in ui
+    assert 'id="guideActionTitle"' in ui and 'function guide(s)' in ui
+    assert 'Meta Llama 3.2' in ui and 'Meta WhatsApp Cloud API' in ui
+    assert 'scripted agent and simulated authority replies' in ui
+
+
 def _rewrite(zipped, name, mutate):
     """Rewrite one file AND its manifest entry, as someone editing the archive would."""
     src = zipfile.ZipFile(io.BytesIO(zipped))

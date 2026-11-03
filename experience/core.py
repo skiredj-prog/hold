@@ -6,6 +6,9 @@ HOLD's existing Habilitation/Mission/WhatsApp inbound implementations.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
+import zipfile
 import json
 import os
 import re
@@ -187,6 +190,34 @@ class Experience:
                 raise HTTPException(409, "Start a mission before inspecting evidence")
             report, _ = capture(self.mission, self.hotel, channel=self.relay, agent=self.agent_name)
             return report
+
+        @app.get("/api/experience/evidence/{filename}")
+        def raw_evidence(request: Request, filename: str):
+            """Local-only, allowlisted projection of the actual Evidence Envelope ZIP.
+
+            The JSON is read from the same bytes as the downloadable archive, rather
+            than generated from a separate visual mock or recomputed approximation.
+            """
+            local_only(request)
+            allowed = {"manifest.json", "findings.json", "mission-journal.json",
+                       "governance-replay.json", "synthetic-provider.json", "authority-relay.json"}
+            if filename not in allowed:
+                raise HTTPException(404, "Unknown evidence artifact")
+            if not self.mission:
+                raise HTTPException(409, "Start a mission before inspecting evidence")
+            _, raw = capture(self.mission, self.hotel, channel=self.relay, agent=self.agent_name)
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                content = archive.read(filename)
+                manifest = json.loads(archive.read("manifest.json"))
+            actual = hashlib.sha256(content).hexdigest()
+            expected = (manifest.get("files_sha256", {}).get(filename)
+                        if filename != "manifest.json" else None)
+            return JSONResponse({"file": filename, "sha256": actual,
+                                 "expected_sha256": expected,
+                                 "matches": (actual == expected if expected is not None else None),
+                                 "data": json.loads(content),
+                                 "scope": "Local evidence only; archive manifest has no independent signature."},
+                                headers={"Cache-Control": "no-store"})
 
         @app.get("/api/experience/envelope")
         def envelope(request: Request):

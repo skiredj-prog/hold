@@ -80,3 +80,47 @@ Export format: `hold.experience-envelope/v0` — a **prototype export**, not an 
 ## Acceptance
 
 Run `python -m pytest -q tests/test_experience.py`. It checks: a bounded mission, exactly one synthetic booking, no early completed outcome, the signed webhook path, reply binding/duplicate rejection, completed mission with receipt/itinerary, replay parity, manifest tamper detection and protection of the local control API.
+
+## Experience v2: show the causal chain and operational benefit
+
+The landing screen now starts with the **hotel booking use case** and three
+explicit benefits: the user avoids an unverified repeat, the agent has a
+legitimate next step through uncertainty, and the organization has a record
+it can inspect. The six-stage **causal timeline** is derived from the mission
+journal and synthetic provider request log; the UI never advances it on a timer.
+
+At the incident, a side-by-side comparison distinguishes the **synthetic
+provider's lab ground truth** (one booking created, response lost) from
+**HOLD's established knowledge** (`UNKNOWN`, no correlated receipt yet).
+The prominent authority panel makes one bounded status check the primary
+choice. The agent can then resume only if actual reconciliation succeeds.
+
+The **Meta role is explicit and mode-dependent**: Meta Llama 3.2 is the model
+used in frozen E1-A6 research and can be selected for this demo using
+`--agent llama`; the default `--agent scripted` does not run a model.
+Meta WhatsApp Cloud API is used only with `--relay whatsapp` and working
+provider credentials/webhook. Simulated mode never sends a real message.
+The separate HOLD execution kernel and evidence code do not inherit
+capabilities or guarantees from either Meta service.
+
+Choose **Inspect Evidence**, then select the JSON tabs (findings, manifest,
+journal, replay, provider, authority). These are read from the same ZIP bytes
+as the export. The file digests are recomputed, and the manifest is explicitly
+labeled as *not independently signed*. Because authority metadata may be
+sensitive, review before displaying or distributing it.
+
+Note: v2 refines the interface and adds local evidence inspection. It does
+not alter the frozen E1-A6 protocol, raise the status of H3, certify
+interoperability or prove the WhatsApp live round trip.
+
+
+## Guided jury UI (v3, 2026-11-03)
+
+The user-facing `/experience` route begins by naming the booking task, why the
+response-loss scenario is dangerous, what the audience will see, and the practical
+benefit for the agent and traveler. The human decision controls live in the same
+next-action panel as the explanation. Raw event codes are secondary.
+
+No governance, relay, provider, evidence verification, or scenario state transition
+was changed. The UI milestone track follows recorded journal/provider events and
+does not advance on a visual timer. The default run is scripted/simulated.
