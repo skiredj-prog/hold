@@ -133,7 +133,7 @@ The same seed at temperature 0 does not give identical runs on every machine; ex
 ## Meta technologies
 
 - **Llama 3.2 3B** (open weights), served locally by Ollama, is the agent in every condition. It proposes; the floor admits or refuses. Llama supplies the agent's intelligence and initiative; the guarantees belong to HOLD's floor, not to the model.
-- **WhatsApp Cloud API** (Graph API): HOLD Relay sends the Decision Request to the accountable authority with interactive buttons and takes the answer back through a signed webhook (`hold/relay/whatsapp.py`). In the campaign and the replays the relay is simulated and labelled as such; the live path is not part of the main demonstration until its credentials, flow and execution evidence are validated.
+- **WhatsApp Cloud API** (Graph API): HOLD Relay sends the Decision Request to the accountable authority with interactive buttons and takes the answer back through a signed webhook (`hold/relay/whatsapp.py`). The live relay implementation is present, but the campaign and replays use a simulated relay. End-to-end Meta delivery was not validated because access/credential restrictions prevented a live test; the submission claims implementation capability, not observed live delivery.
 
 ## Known limits
 
