@@ -19,6 +19,9 @@ The film/demo should always disclose that the hotel is synthetic and the scripte
 From the HOLD repository directory:
 
 ```powershell
+$py = (Get-Command py -ErrorAction SilentlyContinue).Source
+if (-not $py) { $py = (Get-Command python -ErrorAction Stop).Source }
+
 & $py -m pip install -e ".[server]"
 & $py -m pytest -q tests/test_experience.py
 & $py -m experience --relay simulated --agent scripted --db hold-experience.db
