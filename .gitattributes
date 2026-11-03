@@ -1,2 +1,3 @@
 bench/prequalification/** -text
 bench/results/a6-*-3b/** -text
+docs/audit/harv-banning-2026-11-03/** -text

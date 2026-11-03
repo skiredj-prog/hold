@@ -75,7 +75,7 @@ HOLD est un prototype de recherche avec une architecture d’exécution effectiv
 
 ## Addendum 2 — audit externe du 3 novembre 2026
 
-Audit indépendant assisté par IA des 99 trajectoires E1-A6, réalisé par un relecteur externe, non signé et sans valeur de certification. 21 894 contrôles ont été exécutés sans faire tourner le code de HOLD. Aucune assertion comportementale n'échoue. Verdict : soutien qualifié. Réponse détaillée : [`docs/audit/RESPONSE-2026-11-03.md`](../audit/RESPONSE-2026-11-03.md).
+**Harv Banning — Independent AI-Assisted Evidence Audit** (3 novembre 2026), cité nominativement avec l'accord de son auteur. Il porte sur les 99 trajectoires E1-A6. Le rapport indique avoir été préparé par analyse automatisée (Codex), sans signature d'un relecteur humain ; il apporte un soutien expérimental avec réserves et n'a pas valeur de certification. Rapport et paquet de reproduction publiés sans modification : [`docs/audit/harv-banning-2026-11-03/`](../audit/harv-banning-2026-11-03/). 21 894 contrôles ont été exécutés sans faire tourner le code de HOLD. Aucune assertion comportementale n'échoue. Verdict : soutien qualifié. Réponse détaillée : [`docs/audit/RESPONSE-2026-11-03.md`](../audit/RESPONSE-2026-11-03.md).
 
 | Point | Statut après audit |
 |---|---|
