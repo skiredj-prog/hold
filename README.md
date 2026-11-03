@@ -1,10 +1,20 @@
 # HOLD — prêt-à-porter habilitation for autonomous agents
 
-**HOLD is an habilitation the agent wears.** Every tool call an agent makes goes through it: what is not admissible is refused before anything is executed, a refusal says what would be admissible, an effect whose outcome is unknown is reconciled instead of retried, and HOLD declares nothing successful without a receipt from the provider.
+**HOLD separates the intelligence that proposes from the authority to act, and the authority to act from the evidence required to declare success.**
+
+We don't need infallible AI agents to entrust them with missions. We need an architecture in which their capabilities are not confused with their powers. AI agents will make mistakes; HOLD does not retrain the model or rely on better prompts to prevent that. The agent keeps its initiative: it reasons, explores and proposes. The powers sit elsewhere:
+
+- **Authority belongs to the habilitation.** It says what the agent may do, for whom, within which limits, and when to return to the person it acts for. That person writes it, not the agent. The agent wears it.
+- **Execution belongs to the kernel.** A deterministic floor admits, refuses or holds every consequential action, within the habilitation and at most once. An unknown outcome is held, not retried: HOLD checks, asks the provider, then asks the accountable human for a bounded decision, while the mission keeps moving.
+- **The result belongs to the evidence.** Only a receipt correlated to the operation closes a mission. The agent can still say it succeeded; its word does not change the mission's official state. The journal does, and every verdict in it can be recomputed without the model.
+
+Safety is a resulting property, not the identity of the system. The result sought is not merely safer AI, but governable autonomy.
+
+**What the experiment shows.** In an exploratory, synthetic experiment with Meta's Llama 3.2 3B (protocol frozen before the runs), the model wearing HOLD kept making mistakes: 131 requests refused for invalid arguments, 19 attempts to book again refused, 10 success claims it could not prove. None became a consequence. Across 33 runs, no violation was executed and 8 missions were completed with a correlated receipt; the other 25 closed as unconfirmed or with no effect, never as a false success. The same model alone executed 66 violations, and a cautious agent assisted by a human completed none under its mandate. An external, AI-assisted audit of all 99 raw trajectories (unsigned) reconstructed the 8 completions and found no violation in the HOLD journals. The model's weights are unchanged. HOLD does add an agent-facing contract, but its guarantees do not depend on the agent obeying it: the refusals are the demonstration. These results support the architecture in this synthetic setting; they do not establish universal safety, nor H1 beyond E1.
 
 ## The question
 
-AI agents now act: they book, pay and send, with imperfect reasoning, bounded authority, and outcomes they cannot always observe. HOLD asks whether **the reliability of an agent's actions can be decoupled from the reliability of the model that proposes them, without taking away the agent's ability to make useful progress.**
+AI agents now act: they book, pay and send, with imperfect reasoning, bounded authority, and outcomes they cannot always observe. HOLD asks whether **intelligence, the authority to act and the authority to establish what happened can be structurally separated, so that imperfect agents keep their initiative without being given sovereignty over their own consequences.** Put differently: can the reliability of an agent's actions be decoupled from the reliability of the model that proposes them, without taking away its ability to make useful progress?
 
 The failure HOLD starts from, an action landing twice because its answer was lost, is everywhere software acts on the world:
 
