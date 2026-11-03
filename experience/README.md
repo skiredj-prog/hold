@@ -8,7 +8,7 @@ No edits to the frozen E1-A6 protocol, kernel, experiment code or campaign resul
 1. **Habilitation:** A mission with a €300 ceiling and accountable authority.
 2. **Execution:** The scripted demo agent searches and proposes one synthetic hotel booking; the provider creates it but loses the response.
 3. **HOLD:** The existing kernel and reference reconciliation logic hold dependent effects, check status, and issue a Decision Request when needed.
-4. **Authority:** A real WhatsApp button tap (live mode), or a labeled simulated tap, grants **one additional verification** rather than another booking.
+4. **Authority:** A real WhatsApp button tap (live mode), or a labeled simulated tap, grants **one additional verification** rather than another booking. The live path is implemented but was not end-to-end validated because access restrictions prevented a live test.
 5. **Continuity:** The existing provider receipt is found; the agent sends the itinerary and the mission can close only with evidence.
 6. **Evidence:** Download a ZIP of the event journal, original profile, provider register, authority message metadata, deterministic decision replay, and SHA-256 manifest.
 
