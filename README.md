@@ -36,6 +36,19 @@ python -m hold.showcase bench/results/a6-c-3b                                   
 
 **S11, rep 1 — the ceiling, and a defect we found.** The only hotel is above the ceiling: refused (I4/ENVELOPE), Decision Request to the authority, who approves once. HOLD submits the approved booking itself, and the floor refuses it (I4/CORRECTIONS): the agent's earlier invalid requests had used up the corrections budget. No effect, no violation, but a mission the authority had unblocked does not complete. The approved call should not be charged to that budget; the fix is planned after the hackathon, outside the frozen protocol.
 
+## HOLD Studio — tailor the habilitation, follow the mission, reconstruct it
+
+```bash
+pip install -e ".[server]"
+hold demo --scenario authority --serve 8787 --db hold.db   # a mission that stops and waits for the authority
+# open http://127.0.0.1:8787 while it runs
+hold studio --db hold.db                                   # afterwards: read the recorded missions
+```
+
+- **Tailor a profile.** Start from a pattern and set the powers, ceilings, accountable authority and hesitation threshold τ*. The label on the right is what the agent will obey. The browser and the Python library both validate it and compute its fingerprint; the label shows whether they agree. Download the profile and attach it to any agent that wears HOLD.
+- **Read a mission.** Every call and verdict, the hesitation rounds with σ against τ*, the Decision Request and the relay messages, live while the mission runs. The page does not take the server's word: it re-verifies the hash chain, replays every floor decision and replays the state machine in the browser.
+- **Answer the Decision Request** from the page, or tap a button on the simulated phone. In this demo the WhatsApp relay is simulated.
+
 ## Reproduce the campaign (Llama 3.2 3B, Meta open weights)
 
 ```bash
@@ -104,6 +117,8 @@ hold demo --relay whatsapp --contact 2126XXXXXXXX --serve 8787 --scenario author
 # expose http://localhost:8787 over HTTPS (e.g. cloudflared) and set the webhook to /api/whatsapp/webhook (field: messages)
 # send any message to the business number first: it opens the 24 h window for interactive messages
 ```
+
+Step by step from a Meta test number, with a preflight check (`python -m hold.whatsapp_check`): [docs/whatsapp-live.md](docs/whatsapp-live.md).
 
 ## Wear it on your own agent
 
