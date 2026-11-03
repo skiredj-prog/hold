@@ -1,1 +1,2 @@
 bench/prequalification/** -text
+bench/results/a6-*-3b/** -text
