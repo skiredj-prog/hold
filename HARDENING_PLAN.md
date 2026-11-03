@@ -36,6 +36,9 @@ Status: **verified**
 Completed:
 
 - FastAPI webhook payload-size limit (256 KiB) with regression coverage.
+- Webhook bodies are read incrementally and rejected once the 256 KiB budget is crossed, including under-declared `Content-Length` cases.
+- Incoming WhatsApp events are bound to the configured `WHATSAPP_PHONE_NUMBER_ID` when live receive mode is enabled; mismatches are rejected before mission handling.
+- Offline evidence verification applies member-count, per-member, total expansion, and compression-ratio budgets and reports malformed archives as invalid rather than raising uncontrolled errors.
 - Gateway already restricts public exposure to the signed webhook path and rejects oversized/chunked requests.
 - Studio API remains local-only unless an explicit bearer token is configured.
 
@@ -65,7 +68,7 @@ Acceptance criteria:
 - Llama and live WhatsApp are clearly marked as optional/conditional paths.
 - The final film, README, and submission form use the same claim set.
 
-Observed run evidence (3 November 2026): `177 passed, 1 warning`; scripted mission `CLOSED_COMPLETED`, one synthetic booking, valid chain; evidence envelope verification exit code 0.
+Observed run evidence (3 November 2026): `179 passed, 1 warning`; scripted mission `CLOSED_COMPLETED`, one synthetic booking, valid chain; evidence envelope verification exit code 0. The two added regression cases cover configured WhatsApp number binding and suspiciously compressed evidence archives.
 
 ## Frozen perimeter
 
