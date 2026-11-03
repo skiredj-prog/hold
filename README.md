@@ -1,10 +1,28 @@
 # HOLD — prêt-à-porter habilitation for autonomous agents
 
+[![Tests](https://github.com/skiredj-prog/hold/actions/workflows/tests.yml/badge.svg)](https://github.com/skiredj-prog/hold/actions/workflows/tests.yml)
+
 **HOLD separates intelligence, authority and evidence.** The agent proposes. The architecture governs execution. Evidence establishes what was accomplished. An agent may be right; its conviction alone does not make it the authority.
 
 > **Hackathon submission note.** The working contribution shown to the jury is the HOLD runtime, habilitation enforcement, uncertainty recovery, evidence journal/replay, guided experience, Meta Llama integration, and exploratory benchmark. Earlier TENIR/REG research and future interoperability or commercial concepts are not claimed as new implementation. See [HACKATHON_CONTRIBUTIONS.md](HACKATHON_CONTRIBUTIONS.md), [AI_DISCLOSURE.md](AI_DISCLOSURE.md), [ASSET_RIGHTS_REGISTER.md](ASSET_RIGHTS_REGISTER.md), the [hardening plan](HARDENING_PLAN.md), and [SECURITY.md](SECURITY.md).
 
 **Start here:** run the [guided governed mission](experience/README.md) first; then read the [frozen E1-A6 results](E1_A6_RESULTS.md). The hotel and provider are synthetic, and the default experience uses a scripted agent unless you explicitly select local Llama.
+
+## Jury demo — start here
+
+For the shortest reliable evaluation path, use the [JURY_DEMO.md](JURY_DEMO.md) guide. It runs the scripted agent against the synthetic hotel, demonstrates the lost-response recovery, exports an evidence envelope, and verifies it offline. No Ollama, Meta credentials, tunnel, or live WhatsApp access is required.
+
+```mermaid
+flowchart LR
+    A["Meta Llama 3.2 3B\nproposes"] --> H["HOLD\nchecks authority"]
+    H -->|admit / refuse / hold| P["Provider\nsynthetic effect"]
+    P --> E["Receipt / unknown\nevidence"]
+    E --> J["Journal + replay\ncloses mission"]
+    U["Human authority\none bounded decision"] --> H
+```
+
+**Observe:** one booking, one lost response, no duplicate dispatch, one bounded human decision, one correlated receipt.
+
 
 
 We don't need infallible AI agents to entrust them with missions. We need an architecture in which their capabilities are not confused with their powers. AI agents will make mistakes; HOLD does not retrain the model or rely on better prompts to prevent that. The agent keeps its initiative: it reasons, explores and proposes. The powers sit elsewhere:
