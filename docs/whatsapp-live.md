@@ -1,6 +1,6 @@
 # Live WhatsApp: from a Meta test number to a tap that resolves a mission
 
-The relay is complete in code (`hold/relay/whatsapp.py`): an interactive message with three reply buttons, HMAC-checked webhook (`X-Hub-Signature-256`), duplicate deliveries ignored, `STOP` to revoke, a template fallback outside the 24 h window. This page gets it working against Meta's Cloud API with the free test number. Budget: about one hour if nothing goes wrong. Until a live tap has resolved a mission and the journal shows it, present the relay as simulated.
+The relay is complete in code (`hold/relay/whatsapp.py`): an interactive message with three reply buttons, HMAC-checked webhook (`X-Hub-Signature-256`), duplicate deliveries ignored, `STOP` to revoke, a template fallback outside the 24 h window. This page gets it working against Meta's Cloud API with the free test number. Budget: about one hour if nothing goes wrong. The live relay is implemented in code. Because access restrictions prevented an end-to-end Meta test, present the relay as implementation-complete but live-unvalidated; use the simulated relay for recorded claims until a real tap resolves a mission and the journal shows it.
 
 What you need: a Meta developer account, the authority's phone with WhatsApp, `pip install -e ".[server]"`, and a tunnel that gives a public HTTPS URL (`cloudflared`; on Windows `winget install --id Cloudflare.cloudflared`).
 
