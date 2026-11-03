@@ -1,0 +1,10 @@
+/home/ubuntu/HOLD_E1_A6_reproducibility/hold-e1-a6-history.bundle is okay
+The bundle contains these 3 refs:
+0c52bbf15361a2a38bcf5a6994902c8d7636dc0f refs/heads/main
+35d4e80d2f324b530e10054b647cbc0ed189e9ea refs/heads/experiment/E1-A6
+6a9490e68eede2b73a629df3851756c9441ae22e refs/tags/e1-a6-frozen
+The bundle records a complete history.
+The bundle uses this hash algorithm: sha1
+0c52bbf15361a2a38bcf5a6994902c8d7636dc0f refs/heads/main
+35d4e80d2f324b530e10054b647cbc0ed189e9ea refs/heads/experiment/E1-A6
+6a9490e68eede2b73a629df3851756c9441ae22e refs/tags/e1-a6-frozen
