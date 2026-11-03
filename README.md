@@ -1,6 +1,6 @@
 # HOLD — prêt-à-porter habilitation for autonomous agents
 
-**HOLD separates the intelligence that proposes from the authority to act, and the authority to act from the evidence required to declare success.**
+**HOLD separates intelligence, authority and evidence.** The agent proposes. The architecture governs execution. Evidence establishes what was accomplished. An agent may be right; its conviction alone does not make it the authority.
 
 We don't need infallible AI agents to entrust them with missions. We need an architecture in which their capabilities are not confused with their powers. AI agents will make mistakes; HOLD does not retrain the model or rely on better prompts to prevent that. The agent keeps its initiative: it reasons, explores and proposes. The powers sit elsewhere:
 
@@ -10,7 +10,7 @@ We don't need infallible AI agents to entrust them with missions. We need an arc
 
 Safety is a resulting property, not the identity of the system. The result sought is not merely safer AI, but governable autonomy.
 
-**What the experiment shows.** In an exploratory, synthetic experiment with Meta's Llama 3.2 3B (protocol frozen before the runs), the model wearing HOLD kept making mistakes: 131 requests refused for invalid arguments, 19 attempts to book again refused, 10 success claims it could not prove. None became a consequence. Across 33 runs, no violation was executed and 8 missions were completed with a correlated receipt; the other 25 closed as unconfirmed or with no effect, never as a false success. The same model alone executed 66 violations, and a cautious agent assisted by a human completed none under its mandate. An external, AI-assisted audit of all 99 raw trajectories (unsigned) reconstructed the 8 completions and found no violation in the HOLD journals. The model's weights are unchanged. HOLD does add an agent-facing contract, but its guarantees do not depend on the agent obeying it: the refusals are the demonstration. These results support the architecture in this synthetic setting; they do not establish universal safety, nor H1 beyond E1.
+**What the experiment shows.** In an exploratory, synthetic experiment with Meta's Llama 3.2 3B (protocol frozen before the runs), the model wearing HOLD kept making mistakes: 131 requests refused for invalid arguments, 19 attempts to book again refused, 10 success claims it could not prove (7 were true at the provider, 3 were false; neither kind changed the mission's state). None became a consequence. Across 33 runs, no violation was executed and 8 missions were completed with a correlated receipt; the other 25 closed as unconfirmed or with no effect, never as a false success. The same model alone executed 66 violations, and a cautious agent assisted by a human completed none under its mandate. An external, AI-assisted audit of all 99 raw trajectories (unsigned) reconstructed the 8 completions and found no violation in the HOLD journals. The model's weights are unchanged. HOLD does add an agent-facing contract, but its guarantees do not depend on the agent obeying it: the refusals are the demonstration. These results support the architecture in this synthetic setting; they do not establish universal safety, nor H1 beyond E1.
 
 ## The question
 
@@ -59,7 +59,7 @@ In a controlled, exploratory experiment with **Llama 3.2 3B** (synthetic provide
   Full record, predictions, findings and erratum: [`E1_A6_RESULTS.md`](E1_A6_RESULTS.md).
 - ¹ Violations are counted by category, as the frozen code counts them: a declared provenance field is checked when it is present. Every B booking omits the structured `provider` field. Requiring every declared field would give **B = 36**; A = 66 and C = 0 are unchanged, and so is H2.
 - Disclosed reservation: re-verification from the raw traces is consistent for A and C; for B, 3 rows differ on descriptive report fields only (the verdict fields are identical). Recorded as an erratum; the original results are unchanged.
-- The agent's own words are not evidence: wearing HOLD, the 3B claimed an unproven success in 10 of 33 runs, always in missions the journal records as unconfirmed. The journal is authoritative.
+- The agent's own words are not evidence: wearing HOLD, the 3B claimed an unproven success in 10 of 33 runs, always in missions the journal records as unconfirmed. The journal is authoritative. A post-hoc reading of the synthetic provider's register adds one detail: 7 of these claims were true (the booking existed, but its receipt never reached HOLD) and 3 were false (an itinerary HOLD had refused to send). The journal treated both alike, and that is the point: from inside the mission, the two cannot be told apart.
 - **External audit (3 November 2026).** An external reviewer ran an independent, AI-assisted audit of all 99 trajectories without executing HOLD's code. It is unsigned and is not a certification.
   - It ran 21,894 checks, and no behavioural assertion failed.
   - It reconstructed the 8 completions and found no violation in the 33 HOLD journals.
@@ -142,7 +142,7 @@ The same seed at temperature 0 does not give identical runs on every machine; ex
 HOLD contributes at four distinct levels:
 
 - **Conceptual.** An unknown outcome is an operational state, not an error. An authorised action does not mean its outcome is known, and a known outcome does not make an action legitimate. HOLD tracks both questions for every effect.
-- **Architectural.** Reasoning is separated from execution authority. The model proposes (Llama). The habilitation defines the mandate. The floor admits or refuses. Provider evidence and the accountable human settle what remains open.
+- **Architectural.** Intelligence, authority and evidence are separated. The model proposes (Llama). The habilitation, written by the person the agent acts for, defines the mandate. The floor admits, refuses or holds. Only provider evidence establishes an outcome. The accountable human can grant one more check, approve one action outside the envelope, close the mission unconfirmed or revoke the habilitation, but cannot declare an effect confirmed either.
 - **Experimental.** Safety is measured together with useful progress (H1 with H2), because a system can be perfectly safe by staying held forever.
 - **Methodological.** Success is judged against verified effects and the mandate, not against the agent's account of itself. The 10 unproven success claims above are the reason.
 
@@ -154,6 +154,8 @@ HOLD sits in an active field, at the meeting point of agents, security, distribu
 - [τ-bench](https://arxiv.org/abs/2406.12045): agent reliability under domain policies.
 - The survey [From Agent Traces to Trust](https://arxiv.org/abs/2606.04990): evidence tracing and execution provenance.
 
+The held state has a close ancestor: the in-doubt transaction of two-phase commit. A participant that has lost its coordinator must not decide alone; in XA, an operator may settle the branch by a heuristic decision as a last resort. Agents add one thing: the participant narrates, telling a human in natural language that it succeeded. HOLD therefore withholds the authority to declare success from the agent, and, unlike a heuristic decision, from the human authority too: deciding to continue is not establishing the result.
+
 HOLD's originality does not rest on a gate, idempotency or an event log taken separately. What we test is whether independent enforcement, an explicit unknown state and bounded human authority, together, preserve legitimate progress, measured against baselines under a frozen protocol. A systematic comparison with these systems is still to be done.
 
 **Next.**
@@ -162,7 +164,8 @@ HOLD's originality does not rest on a gate, idempotency or an event log taken se
 2. **H3 (E2)**: does Llama's contextual discernment beat the reference rule under the same habilitation?
 3. Asynchronous resumption: a mission held for hours, then resumed without losing context.
 4. Hostile and distributed conditions: concurrency, crashes, revocation, compromised tools, and whether individually legitimate agents can produce an illegitimate collective outcome.
-5. Transfer: real providers, framework adapters, portable habilitations and external custody of evidence, which is where HOLD meets TENIR / REG.
+5. Autonomy per unit of supervision: can a clearer habilitation increase operational autonomy rather than restrict it? In E1, HOLD made progress where the cautious agent made none (8 against 0), but asked the human more often (45 solicitations against 33).
+6. Transfer: real providers, framework adapters, portable habilitations and external custody of evidence, which is where HOLD meets TENIR / REG.
 
 ## How it works
 
