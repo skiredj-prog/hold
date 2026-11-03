@@ -5,7 +5,7 @@
 
 ## Sprint 1 — Submission integrity
 
-Status: **in progress**
+Status: **complete**
 
 Completed:
 
@@ -31,7 +31,7 @@ Remaining:
 
 ## Sprint 2 — Runtime safety
 
-Status: **started**
+Status: **verified**
 
 Completed:
 
@@ -55,15 +55,17 @@ Remaining review:
 
 ## Sprint 3 — Reproducibility and judge handoff
 
-Status: **queued**
+Status: **verified**
 
 Acceptance criteria:
 
-- Clean clone starts the scripted demo with documented commands.
-- One evidence envelope exports and verifies offline.
+- Clean Windows clone starts the scripted demo with documented commands.
+- One evidence envelope exported and verified offline: manifest, journal chain, positions, verdicts, status, and state all matched.
 - The judge path does not require Ollama or live WhatsApp.
 - Llama and live WhatsApp are clearly marked as optional/conditional paths.
 - The final film, README, and submission form use the same claim set.
+
+Observed run evidence (3 November 2026): `177 passed, 1 warning`; scripted mission `CLOSED_COMPLETED`, one synthetic booking, valid chain; evidence envelope verification exit code 0.
 
 ## Frozen perimeter
 
