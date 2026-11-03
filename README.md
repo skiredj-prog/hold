@@ -2,6 +2,11 @@
 
 **HOLD separates intelligence, authority and evidence.** The agent proposes. The architecture governs execution. Evidence establishes what was accomplished. An agent may be right; its conviction alone does not make it the authority.
 
+> **Hackathon submission note.** The working contribution shown to the jury is the HOLD runtime, habilitation enforcement, uncertainty recovery, evidence journal/replay, guided experience, Meta Llama integration, and exploratory benchmark. Earlier TENIR/REG research and future interoperability or commercial concepts are not claimed as new implementation. See [HACKATHON_CONTRIBUTIONS.md](HACKATHON_CONTRIBUTIONS.md) and [ASSET_RIGHTS_REGISTER.md](ASSET_RIGHTS_REGISTER.md).
+
+**Start here:** run the [guided governed mission](experience/README.md) first; then read the [frozen E1-A6 results](E1_A6_RESULTS.md). The hotel and provider are synthetic, and the default experience uses a scripted agent unless you explicitly select local Llama.
+
+
 We don't need infallible AI agents to entrust them with missions. We need an architecture in which their capabilities are not confused with their powers. AI agents will make mistakes; HOLD does not retrain the model or rely on better prompts to prevent that. The agent keeps its initiative: it reasons, explores and proposes. The powers sit elsewhere:
 
 - **Authority belongs to the habilitation.** It says what the agent may do, for whom, within which limits, and when to return to the person it acts for. That person writes it, not the agent. The agent wears it.
