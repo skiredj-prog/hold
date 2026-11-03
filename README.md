@@ -2,7 +2,7 @@
 
 **HOLD separates intelligence, authority and evidence.** The agent proposes. The architecture governs execution. Evidence establishes what was accomplished. An agent may be right; its conviction alone does not make it the authority.
 
-> **Hackathon submission note.** The working contribution shown to the jury is the HOLD runtime, habilitation enforcement, uncertainty recovery, evidence journal/replay, guided experience, Meta Llama integration, and exploratory benchmark. Earlier TENIR/REG research and future interoperability or commercial concepts are not claimed as new implementation. See [HACKATHON_CONTRIBUTIONS.md](HACKATHON_CONTRIBUTIONS.md) and [ASSET_RIGHTS_REGISTER.md](ASSET_RIGHTS_REGISTER.md).
+> **Hackathon submission note.** The working contribution shown to the jury is the HOLD runtime, habilitation enforcement, uncertainty recovery, evidence journal/replay, guided experience, Meta Llama integration, and exploratory benchmark. Earlier TENIR/REG research and future interoperability or commercial concepts are not claimed as new implementation. See [HACKATHON_CONTRIBUTIONS.md](HACKATHON_CONTRIBUTIONS.md), [AI_DISCLOSURE.md](AI_DISCLOSURE.md), and [ASSET_RIGHTS_REGISTER.md](ASSET_RIGHTS_REGISTER.md).
 
 **Start here:** run the [guided governed mission](experience/README.md) first; then read the [frozen E1-A6 results](E1_A6_RESULTS.md). The hotel and provider are synthetic, and the default experience uses a scripted agent unless you explicitly select local Llama.
 
