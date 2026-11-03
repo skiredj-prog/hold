@@ -2,21 +2,60 @@
 
 **HOLD is an habilitation the agent wears.** Every tool call an agent makes goes through it: what is not admissible is refused before anything is executed, a refusal says what would be admissible, an effect whose outcome is unknown is reconciled instead of retried, and HOLD declares nothing successful without a receipt from the provider.
 
+## The question
+
+AI agents now act: they book, pay and send, with imperfect reasoning, bounded authority, and outcomes they cannot always observe. HOLD asks whether **the reliability of an agent's actions can be decoupled from the reliability of the model that proposes them, without taking away the agent's ability to make useful progress.**
+
+The failure HOLD starts from, an action landing twice because its answer was lost, is everywhere software acts on the world:
+
+- a card charged twice;
+- a wire transfer executed twice;
+- the same email sent three times;
+- a message processed again and again by a microservice;
+- duplicate support tickets;
+- inventory ordered twice;
+- a blockchain transaction resubmitted.
+
+AI agents inherit it and add a new risk: they announce success with confidence. HOLD has been tested on one such case: a hotel booking, with a synthetic provider.
+
+Three requirements pull against each other:
+
+- **Legitimacy**: is this action, now, within what the agent was authorised to do?
+- **Epistemic accountability**: what can the system actually establish about what happened?
+- **Useful autonomy**: can the mission still move forward?
+
+Optimise for completion and the agent takes unjustified risks. Block everything uncertain and it becomes useless: a system can stay safe by staying stuck. Execute safely without establishing what happened and nothing can be audited or recovered. HOLD's proposition is that one execution boundary can hold all three. The authority is written in a portable habilitation. A deterministic floor enforces it whatever the model proposes. An unknown outcome is a state of its own (held), neither a failure nor a success. The mission resumes when evidence or a bounded human decision allows it. And the journal, not the agent's own account, says what happened.
+
+This independence from the model is conditional. Every effect path must go through HOLD, the policy must be right, the state reliable, and the external evidence trustworthy. These conditions are what the next experiments test. HOLD is the reference implementation and testbed of a broader research programme on runtime execution governance (TENIR / REG); it supplies evidence for parts of that programme, not for all of it.
+
 ## The result
 
-In a controlled experiment with **Llama 3.2 3B**, HOLD allowed **8 missions completed with proof out of 33 runs, with no violation recorded among 164 effect proposals examined**. The same model without HOLD committed **66 violations**, and a cautious agent assisted by a human completed **no mission**. These results concern a simulated environment, with an exploratory protocol; they do not demonstrate a universal guarantee.
+In a controlled, exploratory experiment with **Llama 3.2 3B** (synthetic provider, protocol frozen before the runs), the agent wearing HOLD **completed 8 missions with proof out of 33, with no violation detected among 164 effect proposals that reached the floor**. Alone, the same model committed **66 violations**. A cautious agent assisted by a human **completed no mission under its mandate**. It did send the itinerary in 3 runs, each time after a booking whose price could not be verified within the ceiling. None of this demonstrates a universal guarantee.
 
 | Same model, same tools, same 11 scenarios × 3 repetitions | A · agent alone | B · cautious agent + human | C · agent wearing HOLD |
 |---|---|---|---|
-| Violations executed | 66 | 3 | **0** |
-| Missions completed with the provider's receipt | 0 | 0 | **8** |
+| Violations executed ¹ | 66 | 3 | **0** |
+| Missions completed under the mandate (correlated receipt, no violation) | 0 | 0 | **8** |
+| Itinerary sent with a correlated receipt (literal frozen wording of "completed") | 0 | 3 | 8 |
 | Bookings at the provider for one stay | 1 in every run, on invented values | 1 in every run | at most 1 in every run (19 attempts to book again refused) |
 | Human solicitations | 0 | 33 | 45 |
 
 - The comparison is the HOLD condition as a whole (floor, reconciliation run by HOLD, agent contract), not the floor alone.
-- Protocol frozen before the runs (SHA-256 `d467a86b…`, tag `e1-a6-frozen`); verdicts H1 (integrity) and H2 (legitimate progress) accepted under the frozen rules; H3 not evaluated. Full record, predictions, findings and erratum: [`E1_A6_RESULTS.md`](E1_A6_RESULTS.md).
+- Verdicts under the protocol frozen before the runs (SHA-256 `d467a86b…`, tag `e1-a6-frozen`):
+  - **H2** (legitimate progress) is **accepted**, under either reading of B's completions (8 > 0, or 8 > 3).
+  - **H1** (integrity) passes its numerical test on E1, the only HOLD condition run at this anchor. The frozen H1 text also names E2-C, C2, D and X, which were not run, so H1 is established **for E1 only**.
+  - **H3** (discernment) was not evaluated.
+
+  Full record, predictions, findings and erratum: [`E1_A6_RESULTS.md`](E1_A6_RESULTS.md).
+- ¹ Violations are counted by category, as the frozen code counts them: a declared provenance field is checked when it is present. Every B booking omits the structured `provider` field. Requiring every declared field would give **B = 36**; A = 66 and C = 0 are unchanged, and so is H2.
 - Disclosed reservation: re-verification from the raw traces is consistent for A and C; for B, 3 rows differ on descriptive report fields only (the verdict fields are identical). Recorded as an erratum; the original results are unchanged.
 - The agent's own words are not evidence: wearing HOLD, the 3B claimed an unproven success in 10 of 33 runs, always in missions the journal records as unconfirmed. The journal is authoritative.
+- **External audit (3 November 2026).** An external reviewer ran an independent, AI-assisted audit of all 99 trajectories without executing HOLD's code. It is unsigned and is not a certification.
+  - It ran 21,894 checks, and no behavioural assertion failed.
+  - It reconstructed the 8 completions and found no violation in the 33 HOLD journals.
+  - Its verdict is **qualified support**.
+
+  Its reservations are B's two readings of "completed", the B provenance blind spot, and the scope of H1. It also flagged a source-export line-ending issue, now resolved: exported straight from the tag, all 23 frozen fingerprints match byte for byte. Each reservation is answered in [`docs/audit/RESPONSE-2026-11-03.md`](docs/audit/RESPONSE-2026-11-03.md).
 
 ## See it in two minutes — recorded runs, no model, no network
 
@@ -76,16 +115,44 @@ The same seed at temperature 0 does not give identical runs on every machine; ex
 
 ## Meta technologies
 
-- **Llama 3.2 3B** (open weights), served locally by Ollama, is the agent in every condition. It proposes; the floor admits or refuses.
+- **Llama 3.2 3B** (open weights), served locally by Ollama, is the agent in every condition. It proposes; the floor admits or refuses. Llama supplies the agent's intelligence and initiative; the guarantees belong to HOLD's floor, not to the model.
 - **WhatsApp Cloud API** (Graph API): HOLD Relay sends the Decision Request to the accountable authority with interactive buttons and takes the answer back through a signed webhook (`hold/relay/whatsapp.py`). In the campaign and the replays the relay is simulated and labelled as such; the live path is not part of the main demonstration until its credentials, flow and execution evidence are validated.
 
 ## Known limits
 
 - One model, one task, a synthetic provider; A6 was designed after reading the previous campaign, on the same scenarios.
-- Not externally verified: an independent verifier would today judge these traces indeterminate.
+- No signed independent verification. The external audit above is AI-assisted and unsigned. Model execution provenance (weights, server logs) is not exported, and the provider and the relay are synthetic.
+- The report-fidelity measure is lexical: it can miss a false claim worded differently. The audit gives examples.
 - Llama 3.1 8B did not pass the pre-qualification (it batches its calls and fabricated a tool result).
 - HOLD solicits the human more than the cautious agent (45 against 33); two reachable scenarios stay at 0/3 (S9, S11).
 - `hold journal verify` prints the right checks, then stops on an undefined name when computing its exit code. The file is in the frozen perimeter; until the post-hackathon fix, use `python -m hold.journal_verify` (same checks, correct exit code).
+
+## What HOLD contributes, and where it sits
+
+HOLD contributes at four distinct levels:
+
+- **Conceptual.** An unknown outcome is an operational state, not an error. An authorised action does not mean its outcome is known, and a known outcome does not make an action legitimate. HOLD tracks both questions for every effect.
+- **Architectural.** Reasoning is separated from execution authority. The model proposes (Llama). The habilitation defines the mandate. The floor admits or refuses. Provider evidence and the accountable human settle what remains open.
+- **Experimental.** Safety is measured together with useful progress (H1 with H2), because a system can be perfectly safe by staying held forever.
+- **Methodological.** Success is judged against verified effects and the mandate, not against the agent's account of itself. The 10 unproven success claims above are the reason.
+
+HOLD sits in an active field, at the meeting point of agents, security, distributed systems and runtime verification. Close neighbours include:
+
+- [OWASP's Agent Control Standard](https://genai.owasp.org/resource/agent-control-standard-acs/): runtime control points and traces across agent frameworks, and a natural interoperability target.
+- [Atomix](https://arxiv.org/abs/2602.14849): transactional tool use for agentic workflows.
+- [SagaLLM](https://arxiv.org/abs/2503.11951): transaction guarantees for multi-agent planning.
+- [τ-bench](https://arxiv.org/abs/2406.12045): agent reliability under domain policies.
+- The survey [From Agent Traces to Trust](https://arxiv.org/abs/2606.04990): evidence tracing and execution provenance.
+
+HOLD's originality does not rest on a gate, idempotency or an event log taken separately. What we test is whether independent enforcement, an explicit unknown state and bounded human authority, together, preserve legitimate progress, measured against baselines under a frozen protocol. A systematic comparison with these systems is still to be done.
+
+**Next.**
+
+1. Replicate on unseen scenarios and more models, with effects verified outside the application.
+2. **H3 (E2)**: does Llama's contextual discernment beat the reference rule under the same habilitation?
+3. Asynchronous resumption: a mission held for hours, then resumed without losing context.
+4. Hostile and distributed conditions: concurrency, crashes, revocation, compromised tools, and whether individually legitimate agents can produce an illegitimate collective outcome.
+5. Transfer: real providers, framework adapters, portable habilitations and external custody of evidence, which is where HOLD meets TENIR / REG.
 
 ## How it works
 

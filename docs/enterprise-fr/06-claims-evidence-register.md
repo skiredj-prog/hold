@@ -73,3 +73,17 @@ HOLD est un prototype de recherche avec une architecture d’exécution effectiv
 | Studio (`main`) | Parcours vérifié de bout en bout en sandbox Linux le 3 novembre 2026 : 15 contrôles (validation navigateur et bibliothèque, empreintes concordantes, refus d'un profil invalide, mission en direct, tap simulé, chaîne vérifiée, décisions rejouées, état rejoué identique). Démo locale exécutée par l'auteur sous Windows jusqu'à `CLOSED_COMPLETED`. | Essais manuels scriptés, hors suite automatisée |
 | Suite et gel | `pytest` : 174 passed (sandbox Linux). `hold bench check` : protocole gelé conforme. Un échec isolé non reproduit a été observé sur 1 exécution complète sur 5. | Exécutions du 3 novembre 2026 |
 
+## Addendum 2 — audit externe du 3 novembre 2026
+
+Audit indépendant assisté par IA des 99 trajectoires E1-A6, réalisé par un relecteur externe, non signé et sans valeur de certification. 21 894 contrôles ont été exécutés sans faire tourner le code de HOLD. Aucune assertion comportementale n'échoue. Verdict : soutien qualifié. Réponse détaillée : [`docs/audit/RESPONSE-2026-11-03.md`](../audit/RESPONSE-2026-11-03.md).
+
+| Point | Statut après audit |
+|---|---|
+| C-llama | 33/33 journaux conformes aux contrôles comportementaux ; 8 achèvements reconstruits ; aucune violation détectée |
+| H2 | **ACCEPTED** sous les deux lectures de B (8 > 0 sous le mandat ; 8 > 3 selon la formulation littérale) |
+| H1 | Test numérique **réussi sur E1 seulement** ; non établi sur toutes les conditions nommées par le texte gelé (E2-C, C2, D, X non exécutées) |
+| B — achèvements | 0 sous le mandat ; 3 envois d'itinéraire avec reçu corrélé selon la formulation littérale de `completed` |
+| B — provenance | 3 violations selon la convention du code gelé ; 36 si tout champ de provenance déclaré doit être présent (`provider` absent des 33 réservations B) |
+| Identité du source gelé | Les 22 écarts venaient d'un export Windows (CRLF). Export octet pour octet depuis le tag : 23/23 empreintes conformes (`fe67cf0e…`) ; bundle git du tag et des branches (`1de66407…`), non signé |
+| Questions transmises au PMO | Définition de `completed` ; portée de H1. Les résultats enregistrés restent inchangés. |
+
