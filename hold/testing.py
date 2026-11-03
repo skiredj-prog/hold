@@ -6,7 +6,12 @@ une réservation), capable de créer puis de perdre la réponse. Aucune réserva
 
 from __future__ import annotations
 
-import fcntl
+try:
+    import fcntl  # POSIX
+except ImportError:  # pragma: no cover - exercised on Windows
+    fcntl = None
+    import msvcrt
+
 import json
 import secrets
 import threading
@@ -116,14 +121,29 @@ class LedgerHotel:
         self.path.touch(exist_ok=True)
 
     def _locked(self, fn):
-        with open(self.path, "a+", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
+        # Lock a sidecar file so the data file remains valid JSONL on every platform.
+        lock_path = self.path.with_name(self.path.name + ".lock")
+        with open(lock_path, "a+b") as lock:
+            if fcntl is not None:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+            else:
+                lock.seek(0, 2)
+                if lock.tell() == 0:
+                    lock.write(b"0")
+                    lock.flush()
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
             try:
-                f.seek(0)
-                rows = [json.loads(x) for x in f.read().splitlines() if x.strip()]
-                return fn(f, rows)
+                with open(self.path, "a+", encoding="utf-8") as f:
+                    f.seek(0)
+                    rows = [json.loads(x) for x in f.read().splitlines() if x.strip()]
+                    return fn(f, rows)
             finally:
-                fcntl.flock(f, fcntl.LOCK_UN)
+                if fcntl is not None:
+                    fcntl.flock(lock, fcntl.LOCK_UN)
+                else:
+                    lock.seek(0)
+                    msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
 
     def create(self, operation_id: str, **attrs: Any) -> Outcome:
         receipt = f"RCPT-{secrets.token_hex(3).upper()}"
