@@ -34,6 +34,9 @@ The phone should receive "HOLD preflight: …". Meta accepting a message does no
 
 ## 3. Webhook
 
+Safer variant: run the mission with `python -m experience --relay whatsapp …` and tunnel only its webhook gateway (`python -m experience.gateway`, port 8788), so nothing but the signed webhook is reachable from outside. See [experience/README.md](../experience/README.md). The steps below tunnel the HOLD server itself; its mission routes refuse requests that arrive through the tunnel.
+
+
 Terminal A, the tunnel. Note the `https://….trycloudflare.com` URL it prints; it changes each time cloudflared restarts.
 
 ```powershell
@@ -65,7 +68,7 @@ hold demo --relay whatsapp --contact 2126XXXXXXXX --serve 8787 --scenario author
 
 The agent books, the provider does not answer, HOLD checks twice, then sends the Decision Request to the phone (three buttons, in the authority's language). The demo waits 10 minutes. Tap **Autoriser 1 contrôle** (Allow 1 more check). The check finds the receipt, nothing is repeated, and the mission closes `CLOSED_COMPLETED`.
 
-Evidence to keep: a screen recording of the phone (message, tap) and of Studio at http://127.0.0.1:8787 → Read a mission. Studio shows the journal re-verified in the browser, and relay messages in mode `cloud` with their WhatsApp message ids. `hold missions live.db`, then `hold journal verify live.db <mission>`, re-checks the journal offline.
+Evidence to keep: a screen recording of the phone (message, tap) and of Studio at http://127.0.0.1:8787 → Read a mission. Studio shows the journal re-verified in the browser, and relay messages in mode `cloud` with their WhatsApp message ids. `hold missions live.db`, then `python -m hold.journal_verify live.db <mission>`, re-checks the journal offline.
 
 ## When it fails
 

@@ -49,6 +49,16 @@ hold studio --db hold.db                                   # afterwards: read th
 - **Read a mission.** Every call and verdict, the hesitation rounds with σ against τ*, the Decision Request and the relay messages, live while the mission runs. The page does not take the server's word: it re-verifies the hash chain, replays every floor decision and replays the state machine in the browser.
 - **Answer the Decision Request** from the page, or tap a button on the simulated phone. In this demo the WhatsApp relay is simulated.
 
+## One governed mission, end to end, with an evidence envelope
+
+```bash
+python -m experience --relay simulated --agent scripted --db hold-experience.db
+# open http://127.0.0.1:8787/experience · Start governed mission · Allow 1 more check · Export Envelope ZIP
+python -m experience.verify HOLD-<mission>-evidence.zip
+```
+
+One mission, one page: the habilitation, the lost response, HOLD's checks, the human's bounded decision, the receipt, and a ZIP of the record. The verifier re-checks that ZIP offline: the files against their manifest, and the journal itself (hash chain, every position and verdict recomputed, the state the events imply against the exported store). The manifest is not signed and the hotel is synthetic; see [experience/README.md](experience/README.md), which also gives a live-WhatsApp setup where only the signed webhook is exposed.
+
 ## Reproduce the campaign (Llama 3.2 3B, Meta open weights)
 
 ```bash
@@ -75,6 +85,7 @@ The same seed at temperature 0 does not give identical runs on every machine; ex
 - Not externally verified: an independent verifier would today judge these traces indeterminate.
 - Llama 3.1 8B did not pass the pre-qualification (it batches its calls and fabricated a tool result).
 - HOLD solicits the human more than the cautious agent (45 against 33); two reachable scenarios stay at 0/3 (S9, S11).
+- `hold journal verify` prints the right checks, then stops on an undefined name when computing its exit code. The file is in the frozen perimeter; until the post-hackathon fix, use `python -m hold.journal_verify` (same checks, correct exit code).
 
 ## How it works
 
@@ -154,11 +165,13 @@ All of the following holds inside the execution paths actually governed by HOLD,
 
 The journal's hash chain detects a partial alteration. It does not prove completeness, and someone able to rewrite the whole store can recompute the chain; see the external witness in the Studio notes.
 
+Technical due-diligence file (architecture, threat model, runbook, integration, enterprise readiness, claims register), in French: [docs/enterprise-fr](docs/enterprise-fr/00-README.md).
+
 ## Verify and replay
 
 ```bash
 hold profile validate hold/profiles/reservation.hold.yaml
-hold journal verify hold.db <mission>      # chain + state replay + decision replay
+python -m hold.journal_verify hold.db <mission>   # chain + state replay + decision replay; exit code 0 only if all hold
 hold journal policy hold.db <mission> --tau 0.3   # what the reference would have chosen under another policy
 hold journal export hold.db <mission> --out mission.json
 ```
