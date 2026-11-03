@@ -18,7 +18,7 @@ The jury demo presents the following working implementation in this repository:
 | Evidence journal and offline replay | [hold/journal.py](../hold/journal.py), [hold/journal_verify.py](../hold/journal_verify.py), [hold/showcase.py](../hold/showcase.py) | The mission closes from correlated evidence and the recorded decisions can be replayed without the model. |
 | Guided governed-mission experience | [experience/](../experience/) | A viewer can follow one synthetic booking, answer one bounded decision, export an evidence envelope, and verify it offline. |
 | Meta Llama integration and benchmark | [bench/](../bench/), [E1_A6_RESULTS.md](../E1_A6_RESULTS.md) | Llama 3.2 3B proposes actions; the HOLD boundary determines what is executed and what counts as established. |
-| Simulated/optional WhatsApp decision relay | [hold/relay/](../hold/relay/), [docs/whatsapp-live.md](../docs/whatsapp-live.md) | The demo can label a simulated relay; a live WhatsApp path is separate and must not be implied unless credentials and delivery evidence are present. |
+| Implemented Meta WhatsApp Cloud API decision relay | [hold/relay/](../hold/relay/), [docs/whatsapp-live.md](../docs/whatsapp-live.md) | The demo can label a simulated relay; a live WhatsApp path is separate and must not be implied unless credentials and delivery evidence are present. |
 
 ## Prior work and excluded claims
 
