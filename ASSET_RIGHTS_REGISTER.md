@@ -12,7 +12,7 @@ This is a disclosure checklist for the hackathon submission. It is not a legal o
 |---|---|---|
 | HOLD source code | Apache-2.0 license in [LICENSE](../LICENSE) | Keep the license visible in the repository and submission. |
 | Meta Llama 3.2 3B | Open-weight model used locally through Ollama | Name the model and serving path; comply with the applicable model license and attribution terms. |
-| Meta WhatsApp Cloud API | Optional live integration; benchmark/demo relay may be simulated | Clearly label simulated versus live use. Do not imply delivery or production approval from a successful API response. |
+| Meta WhatsApp Cloud API | Implemented live relay; end-to-end delivery was not validated because access/credential restrictions prevented a live test; benchmark/demo relay is simulated | State clearly that the integration is implemented but live-unvalidated. Do not imply observed delivery or production approval. |
 | Synthetic hotel provider and booking data | Synthetic demonstration data | Label as synthetic; do not present it as a real hotel, customer, or booking. |
 | Repository screenshots/UI | Project-produced or captured from the project | Confirm that no personal data, credentials, phone numbers, or private account identifiers appear. |
 | Benchmark traces and evidence envelopes | Project-generated experimental artefacts | Confirm that they contain no secrets or personal data before distribution. |
