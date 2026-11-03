@@ -134,3 +134,14 @@ def test_studio_api_is_local_only_and_validates_profiles(world):
     assert not client.post("/api/profiles/validate", json=bad).json()["valid"]
     tok = TestClient(create_app(hab.store, [hab], whatsapp=WhatsAppConfig(), studio_token="t0k"))
     assert tok.get("/api/missions", headers={"x-forwarded-for": "1.2.3.4", "authorization": "Bearer t0k"}).status_code == 200
+
+
+def test_webhook_rejects_oversized_payload_before_processing(world):
+    _, _, _, client, _ = world
+    body = b"x" * (256 * 1024 + 1)
+    response = client.post(
+        "/api/whatsapp/webhook",
+        content=body,
+        headers={"content-type": "application/json", "content-length": str(len(body))},
+    )
+    assert response.status_code == 413
