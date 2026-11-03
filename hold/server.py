@@ -30,6 +30,7 @@ STUDIO = Path(__file__).parent / "studio"
 CATALOG = Path(__file__).parent / "profiles"
 LOOPBACK = {"127.0.0.1", "::1", "localhost", "testclient"}
 FORWARD_HEADERS = ("x-forwarded-for", "forwarded", "cf-connecting-ip", "x-real-ip")
+MAX_WEBHOOK_BODY = 256 * 1024
 
 
 def create_app(store: Store, habilitations: list[Habilitation] | None = None, *, whatsapp: WhatsAppConfig | None = None, studio_token: str | None = None) -> FastAPI:
@@ -81,7 +82,15 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
     async def wa_event(request: Request) -> Response:
         if not cfg.app_secret:
             return Response(status_code=503)
+        try:
+            declared = int(request.headers.get("content-length", "-1"))
+        except ValueError:
+            declared = -1
+        if declared > MAX_WEBHOOK_BODY:
+            return Response(status_code=413)
         raw = await request.body()
+        if len(raw) > MAX_WEBHOOK_BODY:
+            return Response(status_code=413)
         if not verify_signature(raw, request.headers.get("x-hub-signature-256"), cfg.app_secret):
             return Response(status_code=401)
         try:
