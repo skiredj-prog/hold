@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HOLD Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E7ECEF; --paper-deep:#DAE2E8; --ink:#1C2541; --ink-soft:#4A5573; --ink-faint:#6E7A93;
+  --line:#93A8BF; --grid:rgba(120,145,172,.16);
+  --chalk:#E6B93C; --chalk-soft:#F5E6B5; --mark:#B23A2E; --mark-soft:#F1D9D5; --pass:#2E7458; --pass-soft:#D5E7DD;
+  --label:#FCFBF7; --font:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif; --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font);color:var(--ink);background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.mono{font-family:var(--mono);font-size:.82em;letter-spacing:0}
+
+/* barre */
+.bar{display:flex;align-items:center;gap:28px;padding:18px 28px;border-bottom:1.5px dashed var(--line);background:rgba(231,236,239,.92);position:sticky;top:0;z-index:5;backdrop-filter:blur(4px)}
+.mark{display:flex;align-items:baseline;gap:10px;text-decoration:none;color:var(--ink)}
+.mark b{font-weight:850;font-stretch:125%;font-size:22px;letter-spacing:.02em}
+.mark span{font-stretch:88%;font-size:16px;color:var(--ink-soft)}
+.modes{display:flex;gap:22px}
+.modes button{background:none;border:0;padding:6px 0;cursor:pointer;font-weight:600;font-stretch:96%;color:var(--ink-faint);border-bottom:2px solid transparent}
+.modes button[aria-pressed=true]{color:var(--ink);border-bottom:2px dashed var(--ink)}
+.bar .spacer{flex:1}
+.conn{font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:8px}
+.conn i{width:8px;height:8px;border-radius:50%;background:var(--ink-faint)}
+.conn.on i{background:var(--pass)}
+.lang{display:flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+.lang button{background:none;border:0;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer}
+.lang button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+
+main{max-width:1260px;margin:0 auto;padding:36px 28px 80px}
+
+/* atelier */
+.tailor{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:56px;align-items:start}
+.intro h1{font-stretch:118%;font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;margin:0 0 14px;letter-spacing:-.01em;max-width:16ch}
+.intro p{max-width:58ch;color:var(--ink-soft);margin:0 0 30px;font-size:16px}
+.piece{padding:26px 0 28px;border-top:1.5px dashed var(--line)}
+.piece h2{font-stretch:112%;font-weight:750;font-size:21px;margin:0 0 4px}
+.piece > p{margin:0 0 18px;color:var(--ink-soft);max-width:62ch}
+.patterns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.pattern{text-align:left;background:transparent;border:1.5px dashed var(--ink-faint);border-radius:3px;padding:14px 14px 12px;cursor:pointer;min-height:118px;display:flex;flex-direction:column;gap:6px}
+.pattern strong{font-stretch:100%;font-size:15px}
+.pattern small{color:var(--ink-soft);font-size:13px;line-height:1.35}
+.pattern em{margin-top:auto;font-style:normal;font-size:12px;color:var(--ink-faint)}
+.pattern[aria-pressed=true]{border:1.5px solid var(--ink);background:var(--label)}
+.filebtn{margin-top:12px;display:inline-flex;gap:8px;align-items:center;font-size:14px;color:var(--ink-soft);cursor:pointer;text-decoration:underline dashed;text-underline-offset:4px}
+.filebtn input{display:none}
+
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 22px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.wide{grid-column:1/-1}
+.field > span{font-size:13px;color:var(--ink-soft)}
+.field input,.field select,.field textarea{background:transparent;border:0;border-bottom:1.5px solid var(--ink-soft);padding:6px 1px;border-radius:0;min-width:0;width:100%}
+.field textarea{border:1.5px solid var(--line);border-radius:3px;padding:8px;min-height:64px;resize:vertical;font-family:var(--mono);font-size:13px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--ink);background:rgba(252,251,247,.6)}
+.field .hint{font-size:12px;color:var(--ink-faint)}
+.field.error input,.field.error textarea{border-color:var(--mark)}
+.check{display:flex;gap:10px;align-items:center;font-size:14px}
+.check input{accent-color:var(--ink);width:16px;height:16px}
+
+.power{border-left:3px solid var(--line);margin:10px 0;background:rgba(252,251,247,.55)}
+.power[data-kind=effect]{border-left-color:var(--ink)}
+.power summary{display:flex;align-items:baseline;gap:12px;padding:12px 14px;cursor:pointer;list-style:none}
+.power summary::-webkit-details-marker{display:none}
+.power summary .kind{font-size:12px;font-weight:700;font-stretch:90%;color:var(--ink-faint);min-width:52px}
+.power summary .act{font-weight:650}
+.power summary .bound{margin-left:auto;font-size:13px;color:var(--ink-soft);text-align:right}
+.power .inner{padding:4px 14px 16px}
+.power .inner h3{font-size:13px;font-weight:700;margin:16px 0 8px;color:var(--ink-soft)}
+.rowbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.btn{border:1.5px solid var(--ink);background:transparent;border-radius:3px;padding:8px 14px;font-weight:650;font-size:14px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.btn.solid{background:var(--ink);color:var(--label)}
+.btn.quiet{border-color:var(--ink-faint);color:var(--ink-soft);font-weight:550}
+.btn.danger{border-color:var(--mark);color:var(--mark)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.addrow{display:flex;gap:10px;align-items:center;margin-top:14px}
+.addrow select{border:0;border-bottom:1.5px solid var(--ink-soft);background:transparent;padding:6px 2px}
+
+.tau{display:grid;grid-template-columns:1fr auto;gap:6px 18px;align-items:center}
+.tau input[type=range]{width:100%;accent-color:var(--ink)}
+.tau output{font-family:var(--mono);font-size:18px;font-weight:500}
+.ladder{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ladder li{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1.5px dashed var(--line);border-radius:3px;background:rgba(252,251,247,.5)}
+.ladder li b{font-weight:650;flex:1}
+.ladder li small{color:var(--ink-faint)}
+.ladder button{background:none;border:1px solid var(--ink-faint);border-radius:3px;width:26px;height:24px;cursor:pointer;line-height:1}
+
+/* l'étiquette tissée */
+.labelcol{position:sticky;top:96px}
+.woven{background:var(--label);
+  background-image:repeating-linear-gradient(0deg,rgba(28,37,65,.025) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(28,37,65,.02) 0 1px,transparent 1px 3px);
+  padding:22px 24px 18px;border-radius:2px;transform:rotate(-.6deg);
+  box-shadow:0 1px 0 rgba(28,37,65,.08),0 10px 24px -14px rgba(28,37,65,.45);position:relative}
+.woven::before,.woven::after{content:"";position:absolute;left:10px;right:10px;border-top:1.5px dashed rgba(28,37,65,.38)}
+.woven::before{top:9px}.woven::after{bottom:9px}
+.woven .head{display:flex;justify-content:space-between;align-items:baseline;font-stretch:70%;font-size:13px;color:var(--ink-soft)}
+.woven .head b{font-stretch:125%;font-weight:850;font-size:16px;color:var(--ink);letter-spacing:.06em}
+.woven h2{font-stretch:78%;font-weight:750;font-size:26px;line-height:1.08;margin:10px 0 4px}
+.woven .for{font-stretch:80%;color:var(--ink-soft);margin:0 0 14px;font-size:14px}
+.woven h3{font-stretch:76%;font-weight:750;font-size:14px;margin:14px 0 6px;padding-top:10px;border-top:1px solid rgba(28,37,65,.14)}
+.woven ul{list-style:none;margin:0;padding:0;font-stretch:80%;font-size:14px}
+.woven li{display:flex;justify-content:space-between;gap:12px;padding:2px 0}
+.woven li span:last-child{color:var(--ink-soft);text-align:right}
+.steps{display:flex;flex-direction:column;gap:6px;font-stretch:80%;font-size:14px}
+.step{display:grid;grid-template-columns:118px 1fr 40px;gap:10px;align-items:center}
+.step .track{height:10px;background:rgba(28,37,65,.08);position:relative;border-radius:1px}
+.step .fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink-faint)}
+.step.reach .fill{background:var(--chalk)}
+.step.ask .fill{background:var(--ink)}
+.step .tick{position:absolute;top:-4px;bottom:-4px;border-left:1.5px solid var(--mark)}
+.step .v{font-family:var(--mono);font-size:12px;text-align:right}
+.taunote{font-size:12.5px;color:var(--ink-soft);margin:8px 0 0;font-stretch:84%}
+.never li{justify-content:flex-start}
+.never li::before{content:"✕";color:var(--mark);margin-right:8px;font-weight:700}
+.seal{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;padding-top:10px;border-top:1px solid rgba(28,37,65,.14);font-size:12.5px}
+.seal .fp{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);word-break:break-all}
+.badge{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;white-space:nowrap}
+.badge.ok{color:var(--pass)}.badge.bad{color:var(--mark)}.badge.wait{color:var(--ink-faint)}
+.labelactions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.errors{margin:14px 0 0;padding:10px 12px;border-left:3px solid var(--mark);background:var(--mark-soft);font-size:13.5px}
+.errors li{margin:2px 0}
+
+/* lecture */
+.read{display:grid;grid-template-columns:250px minmax(0,1fr) 340px;gap:36px;align-items:start}
+.side h2,.panel h2{font-stretch:108%;font-weight:750;font-size:18px;margin:0 0 10px}
+.mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.mlist button{width:100%;text-align:left;background:none;border:0;border-left:3px solid transparent;padding:8px 10px;cursor:pointer;border-radius:0}
+.mlist button[aria-pressed=true]{border-left-color:var(--ink);background:rgba(252,251,247,.7)}
+.mlist b{display:block;font-weight:600;font-size:14px;line-height:1.3}
+.mlist small{color:var(--ink-faint);font-size:12.5px}
+.empty{color:var(--ink-soft);font-size:14px;max-width:46ch}
+.mhead h1{font-stretch:108%;font-weight:780;font-size:clamp(22px,2.6vw,30px);line-height:1.12;margin:0 0 8px}
+.status{display:inline-block;font-weight:700;font-size:13px;padding:2px 9px;border-radius:2px;background:var(--paper-deep)}
+.status.HELD,.status.AWAITING_AUTHORITY{background:var(--chalk-soft)}
+.status.CLOSED_COMPLETED,.status.OPEN{background:var(--pass-soft)}
+.status.REVOKED,.status.CLOSED_FAILED{background:var(--mark-soft)}
+.checks{display:flex;flex-wrap:wrap;gap:8px 20px;margin:14px 0 26px;font-size:13.5px}
+.thread{position:relative;padding-left:26px}
+.thread::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;border-left:2px dashed var(--line)}
+.beat{position:relative;padding:5px 0 9px}
+.beat::before{content:"";position:absolute;left:-23px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:2px solid var(--ink-faint)}
+.beat.pass::before{border-color:var(--pass);background:var(--pass)}
+.beat.fail::before{border-color:var(--mark);background:var(--mark)}
+.beat.warn::before{border-color:var(--chalk);background:var(--chalk)}
+.beat p{margin:0}
+.beat .sub{color:var(--ink-soft);font-size:13.5px}
+.knot{margin:8px 0 14px;padding:14px 16px;background:rgba(245,230,181,.6);border-left:4px solid var(--chalk);position:relative}
+.knot::before{content:"";position:absolute;left:-26px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--chalk);border:3px solid var(--paper)}
+.knot > h3{margin:0 0 4px;font-stretch:104%;font-size:16px}
+.knot > p{margin:0 0 10px;color:var(--ink-soft);font-size:13.5px}
+.round{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;padding:8px 0;border-top:1px dashed rgba(28,37,65,.18);align-items:center}
+.round .name{font-weight:650}
+.round .meter{display:grid;grid-template-columns:1fr 46px;gap:8px;align-items:center}
+.round .note{grid-column:2;font-size:13px;color:var(--ink-soft)}
+.round .note.over{color:var(--mark)}
+.phone{margin:10px 0;max-width:360px;background:#fff;border-radius:14px;padding:12px;border:1.5px solid rgba(28,37,65,.18)}
+.phone .from{font-size:12px;color:var(--ink-faint);margin:0 0 6px}
+.phone .msg{background:#EAF6E5;border-radius:10px;padding:10px 12px;font-size:14px}
+.phone .btns{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.phone .btns span{display:block;text-align:center;padding:8px;border-radius:8px;background:#F4F6F8;color:#2a6fdb;font-weight:600;font-size:14px}
+.phone .btns span.tapped{background:#2a6fdb;color:#fff}
+.panel{position:sticky;top:96px;display:flex;flex-direction:column;gap:22px}
+.panel .q{font-size:14.5px;margin:0 0 12px}
+.panel .opts{display:flex;flex-direction:column;gap:8px}
+.raw{font-size:12px}
+.raw summary{cursor:pointer;font-size:14px;color:var(--ink-soft)}
+.raw table{width:100%;border-collapse:collapse;margin-top:8px}
+.raw td{padding:3px 6px;border-top:1px solid rgba(28,37,65,.1);vertical-align:top}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--label);padding:9px 16px;border-radius:3px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:1080px){.read{grid-template-columns:minmax(0,1fr)}.panel{position:static}.side{order:-1}}
+@media (max-width:900px){.tailor{grid-template-columns:minmax(0,1fr)}.labelcol{position:static}.patterns{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){main{padding:24px 16px 60px}.bar{padding:12px 16px;gap:14px;flex-wrap:wrap}.fields{grid-template-columns:minmax(0,1fr)}.conn span{display:none}.step{grid-template-columns:96px 1fr 36px}.round{grid-template-columns:minmax(0,1fr)}.round .note{grid-column:1}}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="bar">
+  <a class="mark" href="#" aria-label="HOLD Studio"><b>HOLD</b><span>Studio</span></a>
+  <nav class="modes" aria-label="Mode">
+    <button id="m-tailor" aria-pressed="true"></button>
+    <button id="m-read" aria-pressed="false"></button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="conn" id="conn"><i></i><span></span></div>
+  <div class="lang" role="group" aria-label="Language"><button data-lang="en">EN</button><button data-lang="fr">FR</button></div>
+</header>
+<main id="app"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* HOLD Studio — logique pure, sans interface.
+ * Mêmes règles que la bibliothèque Python : forme canonique, empreinte SHA-256, vérification
+ * de la chaîne du journal, rejeu des décisions du plancher, validation du profil, aperçu de
+ * l'hésitation. Tout s'exécute dans le navigateur, indépendamment de la bibliothèque.
+ */
+(function (root) {
+  "use strict";
+
+  const ENVELOPE_VERSION = "hold.event/v1";
+  const GENESIS = "0".repeat(64);
+  const LADDER_AUTHORITY = { VERIFY: "agent", CONTACT_SUPPORT: "mandate", ASK_AUTHORITY: "authority", WAIT: "none", PRESERVE: "none" };
+  const PHASES = ["RESSENTIR", "CAPTER", "PERCEVOIR", "DISCERNER", "RELIER", "CHOISIR", "ENGAGER", "REEVALUER"];
+  const PENDING_CONDITIONS = ["VISIBILITY_DELAY", "SUPPORT_REPLY"];
+  const INSIDE = ["VERIFY", "CONTACT_SUPPORT"];
+  const UNDETERMINED_SCOPE = ["VERIFY", "WAIT", "PRESERVE"];
+  const MIN_QUOTE = 8;
+  const EVENT_TYPES = {
+    MISSION_OPENED: ["title"], PROFILE_ATTACHED: ["fingerprint", "revision", "profile"], RUNTIME_BOUND: ["core", "discerner", "tools"],
+    ACTION_ADMITTED: ["action", "kind"], ACTION_REFUSED: ["action", "rule", "reason"], ACTION_RESULT: ["action", "status"],
+    EFFECT_RESERVED: ["action", "effect_key", "operation_id", "attributes"], EFFECT_OUTCOME: ["effect_key", "operation_id", "status"],
+    HOLD_ENTERED: ["effect_key", "operation_id", "scope"], POSITION: ["round", "effect_key", "position"],
+    PROPOSAL: ["round", "attempt", "discerner", "position_seq", "proposal"],
+    DECISION: ["round", "attempt", "position_seq", "proposal", "read_digest", "now_digest", "final", "outcome", "verdict"],
+    WAIT_STARTED: ["effect_key", "seconds", "until", "condition"], WAIT_ENDED: ["effect_key"],
+    PATH_EXECUTED: ["round", "path", "result"], EVIDENCE: ["effect_key", "source", "kind"], DECISION_REQUEST: ["question_id", "kind", "options"],
+    AUTHORITY_ANSWER: ["question_id", "answer", "channel"], AUTHORITY_GRANT: ["grant"], REQUEST_CLOSED: ["question_id", "reason", "status", "mission_status"],
+    RECONCILED: ["effect_key", "receipt"], RESUMED: ["effect_key"], PRESERVED: ["effect_key", "reason"], REVOKED: ["by", "channel"],
+    RELAY_SENT: ["question_id", "channel", "mode"], RELAY_FAILED: ["channel", "error"], RELAY_REJECTED: ["reason"], MISSION_CLOSED: ["outcome"],
+  };
+
+  // -- forme canonique (identique à hold/canonical.py) -------------------------------------
+  function normalize(v) {
+    if (v === null || v === undefined) return undefined;
+    if (typeof v === "number") { if (!Number.isFinite(v)) throw new Error("Nombre non fini"); return v; }
+    if (typeof v === "string" || typeof v === "boolean") return v;
+    if (Array.isArray(v)) return v.map((x) => { const n = normalize(x); return n === undefined ? null : n; });
+    if (typeof v === "object") {
+      const out = {};
+      for (const k of Object.keys(v)) { const n = normalize(v[k]); if (n !== undefined) out[k] = n; }
+      return out;
+    }
+    throw new Error("Type non canonicalisable");
+  }
+  function serialize(v) {
+    if (v === null) return "null";
+    if (Array.isArray(v)) return "[" + v.map(serialize).join(",") + "]";
+    if (typeof v === "object") return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + serialize(v[k])).join(",") + "}";
+    return JSON.stringify(v);
+  }
+  const canonical = (v) => serialize(normalize(v) ?? null);
+
+  async function sha256Hex(text) {
+    const subtle = (root.crypto && root.crypto.subtle) || (typeof require === "function" ? require("crypto").webcrypto.subtle : null);
+    const buf = await subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  const digest = (v) => sha256Hex(canonical(v));
+
+  function profileBody(p) { const { signature, ...body } = p; return body; }
+  const fingerprint = (p) => digest(profileBody(p));
+
+  // -- journal ------------------------------------------------------------------------------
+  async function verifyChain(events) {
+    let prev = GENESIS;
+    for (let i = 0; i < events.length; i++) {
+      const e = events[i];
+      const { hash, ...unsigned } = e;
+      if (e.v !== ENVELOPE_VERSION) return { valid: false, count: events.length, brokenAt: e.seq, reason: "unknown envelope version" };
+      if (e.seq !== i + 1) return { valid: false, count: events.length, brokenAt: e.seq, reason: "non-contiguous sequence" };
+      if (e.prev !== prev) return { valid: false, count: events.length, brokenAt: e.seq, reason: "broken chain" };
+      if ((await digest(unsigned)) !== hash) return { valid: false, count: events.length, brokenAt: e.seq, reason: "invalid hash" };
+      const missing = (EVENT_TYPES[e.type] || null);
+      if (!missing) return { valid: false, count: events.length, brokenAt: e.seq, reason: "unknown type " + e.type };
+      if (missing.some((k) => !(k in (e.data || {})))) return { valid: false, count: events.length, brokenAt: e.seq, reason: "missing fields" };
+      if (e.phase != null && !PHASES.includes(e.phase)) return { valid: false, count: events.length, brokenAt: e.seq, reason: "unknown phase " + e.phase };
+      prev = hash;
+    }
+    return { valid: true, count: events.length, head: prev };
+  }
+
+  function referencePath(paths, ladder) {
+    const directed = paths.find((p) => p.open && p.directed);
+    if (directed) return directed.name;
+    for (const name of ladder) { const p = paths.find((x) => x.name === name); if (p && p.open && p.reaches_tau) return name; }
+    return "PRESERVE";
+  }
+
+  // -- the gate (identical to hold/hesitation.py and hold/floor.py) ------------------------
+  const names = (v) => Array.isArray(v) ? [...new Set(v.filter((x) => typeof x === "string"))].sort() : [];
+  const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const str = (v) => (typeof v === "string" ? v : "nothing");
+  function trueMap(position) {
+    const paths = position.paths;
+    return {
+      effect_state: position.effect_state,
+      open_paths: paths.filter((p) => p.open && p.name !== "PRESERVE").map((p) => p.name).sort(),
+      reaching_tau: paths.filter((p) => p.open && p.reaches_tau).map((p) => p.name).sort(),
+      pending: { condition: "NONE" },
+    };
+  }
+  function pendingOf(m) {
+    const p = isObj(m) ? m.pending : null;
+    return isObj(p) && ![undefined, null, "", "NONE"].includes(p.condition) ? p : null;
+  }
+  function norm(s) {
+    return (s || "").normalize("NFKC").toLowerCase().replace(/\s+/g, " ").replace(/^[ ."']+|[ ."']+$/g, "");
+  }
+  function checkMap(declared, position) {
+    if (!isObj(declared)) return { reading: null, claims: {}, discrepancies: ["no reading declared"] };
+    const truth = trueMap(position); const out = []; const claims = {};
+    claims.effect_state = declared.effect_state === truth.effect_state ? "SUPPORTED" : "CONTRADICTED";
+    if (declared.effect_state !== truth.effect_state) out.push(`effect_state is ${truth.effect_state}, not ${str(declared.effect_state)}`);
+    for (const [k, label] of [["open_paths", "open paths"], ["reaching_tau", "paths reaching tau*"]]) {
+      const got = names(declared[k]);
+      const same = got.join(",") === truth[k].join(",");
+      claims[k] = same ? "SUPPORTED" : "CONTRADICTED";
+      if (!same) out.push(`${label} are ${truth[k].join(", ") || "none"}, not ${got.join(", ") || "none"}`);
+    }
+    let grounded = null;
+    const p = pendingOf(declared);
+    if (p) {
+      const cited = str(p.evidence);
+      const o = typeof p.evidence === "string" ? (position.observations || []).find((x) => x.id === p.evidence) : null;
+      const quote = norm(typeof p.quote === "string" ? p.quote : "");
+      if (!PENDING_CONDITIONS.includes(p.condition)) { out.push(`pending condition ${str(p.condition)} is not a known condition`); grounded = false; }
+      else if (!o) { out.push(`the cited evidence ${cited} does not exist`); grounded = false; }
+      else if (quote.length < MIN_QUOTE || !norm(o.text || "").includes(quote)) { out.push(`the cited evidence ${cited} does not contain the quoted passage`); grounded = false; }
+      else grounded = true;
+      claims.pending = grounded ? "UNDETERMINED" : "CONTRADICTED";
+    }
+    const values = Object.values(claims);
+    const reading = values.includes("CONTRADICTED") ? "CONTRADICTED" : values.includes("UNDETERMINED") ? "UNDETERMINED" : "SUPPORTED";
+    return { reading, claims, discrepancies: out };
+  }
+  function justifiedMoves(declared, position) {
+    const directed = position.paths.filter((p) => p.open && p.directed).map((p) => p.name);
+    if (directed.length) return directed.slice(0, 1);
+    const m = isObj(declared) ? declared : {};
+    const reach = new Set(names(m.reaching_tau));
+    const moves = INSIDE.filter((n) => reach.has(n));
+    if (pendingOf(m) && names(m.open_paths).includes("WAIT")) moves.push("WAIT");
+    if (!moves.length && reach.has("ASK_AUTHORITY")) moves.push("ASK_AUTHORITY");
+    return moves.length ? moves : ["PRESERVE"];
+  }
+  const admissibleMoves = (position) => position.paths.filter((p) => p.open).map((p) => p.name);
+  const seconds = (v) => (typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1e9 ? Math.trunc(v) : null);
+
+  function verdict(outcome, proposed, applied, reference, credit, rule, reason, reading, claims, coherent, admissible, justified, supported, discrepancies, wait) {
+    return { outcome, proposed, applied, reference, credit, rule, reason, reading, claims, coherent, admissible, justified, supported, discrepancies, wait_seconds: wait ?? null };
+  }
+  function admitProposal(proposal, position, readDigest, nowDigest, final, onRefused) {
+    const ref = position.reference; const p = proposal || {}; const move = p.move ?? null;
+    const admissible = admissibleMoves(position);
+    const justified = justifiedMoves(trueMap(position), position);
+    if (readDigest !== nowDigest) return verdict("STALE", move, null, ref, null, "I5", "The position changed during deliberation: re-read before acting.", null, {}, null, admissible, justified, [], []);
+    const mc = checkMap(p.map, position);
+    const supported = justifiedMoves(p.map, position);
+    const coherent = move ? supported.includes(move) : null;
+    let outcome, rule, reason;
+    if (!move) { outcome = "NO_PROPOSAL"; rule = "D1/NONE"; reason = "No usable proposal" + (p.error ? ` (${p.error})` : "") + "."; }
+    else if (mc.reading === null || mc.reading === "CONTRADICTED") { outcome = "MAP_REFUSED"; rule = "D1/MAP"; reason = "The declared reading is contradicted by the available evidence: " + mc.discrepancies.join("; ") + "."; }
+    else if (mc.reading === "UNDETERMINED" && !UNDETERMINED_SCOPE.includes(move)) { outcome = "MAP_REFUSED"; rule = "D1/SCOPE"; reason = `The reading is undetermined, which is enough only for bounded moves (${UNDETERMINED_SCOPE.join(", ")}), not for ${move}.`; }
+    else if (!admissible.includes(move)) {
+      const path = position.paths.find((x) => x.name === move);
+      outcome = "MOVE_REFUSED"; rule = "I4/PATH"; reason = `Path ${move} is closed: ${path ? path.reason : "unknown path"}.`;
+    } else if (!coherent) { outcome = "INCOHERENT"; rule = "D1/COHERENCE"; reason = `${move} does not follow from the declared reading, which supports ${supported.join(", ")}.`; }
+    else {
+      let wait = null;
+      if (move === "WAIT") {
+        const left = position.paths.find((x) => x.name === "WAIT").left || 0;
+        const asked = seconds(p.wait_seconds) || seconds((pendingOf(p.map) || {}).wait_seconds) || left;
+        wait = Math.max(1, Math.min(asked, left));
+      }
+      const how = mc.reading === "SUPPORTED" ? "supported by the evidence" : "that the evidence does not contradict (part of it is undetermined)";
+      return verdict("ADMITTED", move, move, ref, "discerner", "ADMIT", `${move} is open and follows from a reading ${how}.`, mc.reading, mc.claims, true, admissible, justified, supported, [], wait);
+    }
+    if (!final) return verdict(outcome, move, null, ref, null, rule, reason, mc.reading, mc.claims, coherent, admissible, justified, supported, mc.discrepancies);
+    const applied = onRefused === "reference" ? ref : "PRESERVE";
+    return verdict("REFERENCE_APPLIED", move, applied, ref, "floor", rule, `${reason} Retries exhausted: the floor applies ${applied} (credited to the floor, not to the model).`, mc.reading, mc.claims, coherent, admissible, justified, supported, mc.discrepancies);
+  }
+
+  function decisionReplay(events, profiles) {
+    let checked = 0; const mismatches = []; const positions = {};
+    for (const e of events) {
+      if (e.type === "POSITION") { positions[e.seq] = e.data.position; continue; }
+      if (e.type !== "DECISION") continue;
+      const prof = profiles[e.profile];
+      const ladder = prof ? prof.hesitation.ladder : ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"];
+      const d = e.data; const pos = positions[d.position_seq];
+      if (!pos) { mismatches.push({ seq: e.seq, round: d.round, error: "position missing" }); continue; }
+      const ref = referencePath(pos.paths, ladder);
+      const v = admitProposal(d.proposal, pos, d.read_digest, d.now_digest, d.final, d.on_refused || (prof ? prof.hesitation.on_refused_proposal : "reference"));
+      checked++;
+      if (ref !== pos.reference || canonical(v) !== canonical(d.verdict) || v.outcome !== d.outcome) mismatches.push({ seq: e.seq, round: d.round, recorded: d.verdict, replayed: v });
+    }
+    return { checked, matches: mismatches.length === 0, mismatches };
+  }
+
+  // -- independent recomputation: positions, verdicts and state from the history alone ----
+  const FORBIDDEN = ["RECREATE_EQUIVALENT_EFFECT", "DECLARE_SUCCESS_WITHOUT_EVIDENCE", "RUN_DEPENDENT_ACTIONS", "EXCEED_PROFILE"];
+  const round4 = (x) => Math.round(x * 1e4) / 1e4;
+  const pathState = (name, open, reason, sigma, authority, reaches, directed, left) => ({ name, open, reason, sigma, authority, reaches_tau: reaches, directed: !!directed, left: left ?? null });
+
+  function boundaryPosition(profile, f) {
+    const h = profile.hesitation; const tau = h.tau_star; const u = (k) => f.usage[k] || 0;
+    const coherence = ["CONFIRMED", "FAILED_PROVEN"].includes(f.effect_state) ? 1 : 0;
+    const power = (profile.powers || []).find((p) => p.action === f.action);
+    const rec = power && power.reconciliation;
+    const support = (profile.powers || []).find((p) => p.role === "support");
+    const a = profile.authority; const key = f.effect_key; const paths = [];
+    for (const name of h.ladder) {
+      if (name === "VERIFY") {
+        if (!rec) { paths.push(pathState(name, false, "no reconciliation declared for this effect", 0, "agent", false, false, 0)); continue; }
+        const left = rec.max_checks + u(`extra_checks:${key}`) - u(`checks:${key}`);
+        const sigma = round4(rec.sigma * Math.pow(rec.decay, f.not_found));
+        const ok = left > 0 && !f.revoked;
+        const grantedNow = u(`directed_checks:${key}`) > 0, scheduled = u(`scheduled_checks:${key}`) > 0;
+        const directed = ok && (grantedNow || scheduled);
+        const reason = directed ? (grantedNow ? "check granted by the authority" : "check scheduled at the end of the wait") : ok ? `${left} check(s) left` : (f.revoked ? "mandate revoked" : "checks exhausted");
+        paths.push(pathState(name, ok, reason, sigma, "agent", sigma >= tau, directed, Math.max(left, 0)));
+      } else if (name === "CONTACT_SUPPORT") {
+        if (!support) { paths.push(pathState(name, false, "no support contact power in the profile", 0, "mandate", false, false, 0)); continue; }
+        const left = support.budget == null ? null : support.budget - u(`power:${support.action}`);
+        const sigma = support.sigma != null ? support.sigma : 0.5;
+        const ok = (left === null || left > 0) && !f.revoked;
+        const reason = ok ? (left === null ? "support reachable" : `${left} contact(s) left`) : (f.revoked ? "mandate revoked" : "contact budget exhausted");
+        paths.push(pathState(name, ok, reason, sigma, "mandate", sigma >= tau, false, left === null ? null : Math.max(left, 0)));
+      } else if (name === "ASK_AUTHORITY") {
+        const left = a.max_requests - u("authority_requests");
+        const ok = f.authority_available && !f.open_request && left > 0 && !f.revoked;
+        const reason = f.revoked ? "mandate revoked" : !f.authority_available ? "authority unreachable (no channel configured)" : f.open_request ? "a request is already open" : left <= 0 ? "requests to the authority exhausted" : `${a.name} reachable on ${a.channel}`;
+        paths.push(pathState(name, ok, reason, a.sigma, "authority", a.sigma >= tau, false, Math.max(left, 0)));
+      } else if (name === "PRESERVE") {
+        if (h.max_wait_seconds > 0) {
+          const leftS = Math.max(0, h.max_wait_seconds - u(`waited_s:${key}`));
+          const ok = leftS > 0 && u(`waits:${key}`) < h.max_waits && !f.revoked;
+          const reason = f.revoked ? "mandate revoked" : !ok ? "patience exhausted" : `${leftS} s of patience left; only on a pending condition stated in the evidence`;
+          paths.push(pathState("WAIT", ok, reason, 0, "none", false, false, leftS));
+        } else paths.push(pathState("WAIT", false, "waiting is not allowed by the profile", 0, "none", false, false, 0));
+        paths.push(pathState(name, true, "always possible: keep the state without acting", 0, "none", false, false, null));
+      }
+    }
+    return {
+      effect_key: key, action: f.action, operation_id: f.operation_id, effect_state: f.effect_state, coherence, tau_star: tau,
+      threatened: coherence < tau, paths, restorable_in_habilitation: paths.some((p) => p.open && p.reaches_tau && ["agent", "mandate"].includes(p.authority)),
+      reference: referencePath(paths, h.ladder), observations: f.observations, forbidden: FORBIDDEN.slice(),
+    };
+  }
+
+  class Fold {
+    constructor(profiles) {
+      this.profiles = profiles; this.status = "OPEN"; this.revoked = false; this.effects = {}; this.usage = {}; this.requests = {};
+      this.grantsConsumed = new Set(); this.positions = {}; this.observations = {}; this.noResponse = {}; this.authorityReachable = false; this.statusMismatches = [];
+    }
+    bump(k, d = 1) { this.usage[k] = (this.usage[k] || 0) + d; }
+    apply(e) {
+      const d = e.data, t = e.type, profile = this.profiles[e.profile];
+      const budget = (action) => { const p = (profile.powers || []).find((x) => x.action === action); return !!(p && p.budget != null); };
+      const obs = (key) => (this.observations[key] = this.observations[key] || []);
+      if (t === "RUNTIME_BOUND") this.authorityReachable = !!d.authority_reachable;
+      else if (t === "ACTION_REFUSED") { if (d.correctable) this.bump(`corrections:${d.action}`); }
+      else if (t === "ACTION_ADMITTED") { if (d.kind !== "effect" && budget(d.action)) this.bump(`power:${d.action}`); if (d.grant) this.grantsConsumed.add(d.grant); }
+      else if (t === "EFFECT_RESERVED") {
+        const prev = this.effects[d.effect_key];
+        this.effects[d.effect_key] = { action: d.action, operation_id: d.operation_id, status: "DISPATCHING", receipt: null, not_found: 0, attempts: prev ? prev.attempts + 1 : 1 };
+        if (budget(d.action)) this.bump(`power:${d.action}`);
+      } else if (t === "EFFECT_OUTCOME") {
+        const eff = this.effects[d.effect_key]; eff.status = d.status;
+        if (d.status === "CONFIRMED") eff.receipt = d.receipt ?? null;
+        if (d.status === "FAILED_PROVEN" && budget(eff.action)) this.bump(`power:${eff.action}`, -1);
+        if (d.status === "UNKNOWN" && !(d.effect_key in this.noResponse)) this.noResponse[d.effect_key] = { id: `E${e.seq}`, seq: e.seq, at: e.at, source: "core", kind: "NO_RESPONSE", text: d.reason ?? null };
+      } else if (t === "HOLD_ENTERED") this.status = "HELD";
+      else if (t === "EVIDENCE") {
+        obs(d.effect_key).push({ id: `E${e.seq}`, seq: e.seq, at: e.at, source: d.source ?? null, kind: d.kind ?? null, text: d.detail || d.receipt || d.reason || null });
+        if (["status", "support"].includes(d.source) && (d.kind === "NOT_FOUND" || (["RECEIPT", "SUPPORT_REPLY"].includes(d.kind) && !d.correlated))) this.effects[d.effect_key].not_found += 1;
+      } else if (t === "WAIT_ENDED") obs(d.effect_key).push({ id: `E${e.seq}`, seq: e.seq, at: e.at, source: "core", kind: "WAITED", text: `Waited until ${d.until}; the position is read again.` });
+      else if (t === "RECONCILED") { const eff = this.effects[d.effect_key]; eff.status = "CONFIRMED"; eff.receipt = d.receipt; }
+      else if (t === "POSITION") this.positions[e.seq] = d.position;
+      else if (t === "DECISION") {
+        const applied = d.verdict.applied; const pos = this.positions[d.position_seq]; const key = pos.effect_key; const u = (k) => this.usage[k] || 0;
+        if (applied === "WAIT") {
+          this.bump(`waits:${key}`); this.bump(`waited_s:${key}`, d.verdict.wait_seconds);
+          const v = pos.paths.find((x) => x.name === "VERIFY");
+          if (v && v.open && !u(`scheduled_checks:${key}`)) this.bump(`scheduled_checks:${key}`);
+        } else if (applied === "VERIFY") {
+          this.bump(`checks:${key}`);
+          if (u(`directed_checks:${key}`) > 0) this.bump(`directed_checks:${key}`, -1);
+          else if (u(`scheduled_checks:${key}`) > 0) this.bump(`scheduled_checks:${key}`, -1);
+        } else if (applied === "CONTACT_SUPPORT") {
+          const sup = (profile.powers || []).find((p) => p.role === "support");
+          if (sup && sup.budget != null) this.bump(`power:${sup.action}`);
+        }
+      } else if (t === "PRESERVED" || t === "WAIT_STARTED") this.status = "HELD";
+      else if (t === "DECISION_REQUEST") { this.requests[d.question_id] = "OPEN"; this.bump("authority_requests"); this.status = "AWAITING_AUTHORITY"; }
+      else if (t === "AUTHORITY_ANSWER") { this.requests[d.question_id] = "ANSWERED"; if (d.answer === "REFUSE") this.status = "OPEN"; }
+      else if (t === "REQUEST_CLOSED") { this.requests[d.question_id] = d.status; this.status = d.mission_status; }
+      else if (t === "AUTHORITY_GRANT") {
+        if (d.grant.kind === "EXTRA_CHECK") { this.bump(`extra_checks:${d.grant.effect_key}`); this.bump(`directed_checks:${d.grant.effect_key}`); this.status = "HELD"; }
+        else if (d.grant.kind === "ENVELOPE_ONCE") this.status = "OPEN";
+      } else if (t === "RESUMED") { if (["HELD", "AWAITING_AUTHORITY"].includes(this.status)) this.status = "OPEN"; }
+      else if (t === "REVOKED") { this.revoked = true; for (const q in this.requests) if (this.requests[q] === "OPEN") this.requests[q] = "CANCELLED"; this.status = "REVOKED"; }
+      else if (t === "MISSION_CLOSED") { for (const q in this.requests) if (this.requests[q] === "OPEN") this.requests[q] = "CANCELLED"; this.status = d.outcome; }
+      if (e.status != null && e.status !== this.status) this.statusMismatches.push({ seq: e.seq, type: t, recorded: e.status, recomputed: this.status });
+    }
+    position(key, profile) {
+      const eff = this.effects[key];
+      const obs = (this.observations[key] || []).slice(-8);
+      if (key in this.noResponse) obs.unshift(this.noResponse[key]);
+      return boundaryPosition(profile, {
+        effect_key: key, action: eff.action, operation_id: eff.operation_id, effect_state: eff.status, not_found: eff.not_found,
+        usage: this.usage, authority_available: this.authorityReachable, open_request: Object.values(this.requests).includes("OPEN"), revoked: this.revoked, observations: obs,
+      });
+    }
+    state() {
+      const usage = {}; for (const [k, v] of Object.entries(this.usage)) if (v) usage[k] = v;
+      return { status: this.status, revoked: this.revoked, effects: this.effects, usage, requests: this.requests, grants_consumed: [...this.grantsConsumed].sort() };
+    }
+  }
+
+  /** Verification, not reproduction: every position and verdict is recomputed from the history, the
+   * frozen profiles and this implementation of the rules; what the journal asserts is only compared. */
+  async function verifyJournal(journal) {
+    const events = journal.events, profiles = journal.profiles || {};
+    const chain = await verifyChain(events);
+    const f = new Fold(profiles); const recomputed = {};
+    const positions = { checked: 0, mismatches: [] }, decisions = { checked: 0, mismatches: [] };
+    for (const e of events) {
+      if (!profiles[e.profile]) return { chain, error: `profile ${String(e.profile).slice(0, 12)} missing from the journal` };
+      if (e.type === "POSITION") {
+        const mine = f.position(e.data.effect_key, profiles[e.profile]); recomputed[e.seq] = mine; positions.checked++;
+        if (canonical(mine) !== canonical(e.data.position)) positions.mismatches.push({ seq: e.seq, round: e.data.round, fields: Object.keys(mine).filter((k) => canonical(mine[k]) !== canonical(e.data.position[k])) });
+      } else if (e.type === "DECISION") {
+        const d = e.data; const pos = recomputed[d.position_seq]; decisions.checked++;
+        if (!pos) decisions.mismatches.push({ seq: e.seq, error: "no recomputed position" });
+        else {
+          const read = await digest(pos);
+          const v = admitProposal(d.proposal, pos, read, d.now_digest, d.final, d.on_refused || profiles[e.profile].hesitation.on_refused_proposal);
+          const problems = [];
+          if (read !== d.read_digest) problems.push("the gate read a position the history does not imply");
+          if (canonical(v) !== canonical(d.verdict) || v.outcome !== d.outcome) problems.push("verdict differs");
+          if (problems.length) decisions.mismatches.push({ seq: e.seq, round: d.round, problems, recorded: d.verdict, recomputed: v });
+        }
+      }
+      f.apply(e);
+    }
+    const state = f.state();
+    const store = journal.store ? canonical(journal.store) === canonical(state) : null;
+    const counts = (type, pred = () => true) => events.filter((e) => e.type === type && pred(e)).length;
+    const external = [
+      { what: "provider", count: counts("EFFECT_OUTCOME", (e) => e.data.status !== "UNKNOWN") + counts("EVIDENCE", (e) => e.data.source !== "core"), note: "Receipts, refusals and replies are the provider's statements. Correlation with the operation is checked here; the provider's register is not." },
+      { what: "authority", count: counts("AUTHORITY_ANSWER"), note: "Taps were authenticated at runtime (Meta signature, enrolled number, open question). The signature is not in the journal; the WhatsApp message ids are, for audit with Meta." },
+      { what: "model", count: counts("PROPOSAL", (e) => e.data.proposal && e.data.proposal.model), note: "Model outputs are recorded with their digests. Reproducing them requires re-running the recorded model with the recorded prompt digest." },
+      { what: "completeness", count: null, note: "The chain proves the order and integrity of what was recorded, not that nothing was left out. A full rewrite of the store would also rewrite the chain: only an external witness of the head can rule that out." },
+      { what: "time", count: null, note: "Timestamps come from the runtime's clock." },
+    ];
+    return {
+      chain, positions: { ...positions, matches: positions.mismatches.length === 0 }, decisions: { ...decisions, matches: decisions.mismatches.length === 0 },
+      status: { matches: f.statusMismatches.length === 0, mismatches: f.statusMismatches }, state, store_matches: store, external,
+    };
+  }
+
+  // -- profil -------------------------------------------------------------------------------
+  const IDENT = /^[a-z][a-z0-9_]{0,63}$/;
+  function validateProfile(p) {
+    const errs = [];
+    const add = (loc, msg) => errs.push({ loc, msg });
+    if (!p || typeof p !== "object") return [{ loc: "", msg: "Profil vide" }];
+    if (p.hold !== "habilitation/v1") add("hold", "Version de profil attendue : habilitation/v1");
+    if (!/^[a-z0-9][a-z0-9._-]{1,63}$/.test(p.id || "")) add("id", "Identifiant : minuscules, chiffres, . _ -");
+    if (!p.title) add("title", "Titre requis");
+    if (!(Number.isInteger(p.revision) && p.revision >= 1)) add("revision", "Révision entière ≥ 1");
+    if (p.expires_at && p.issued_at && Date.parse(p.expires_at) <= Date.parse(p.issued_at)) add("expires_at", "Expire avant d'être émis");
+    const a = p.authority || {};
+    if (!a.name) add("authority.name", "Nom de l'autorité requis");
+    if (a.channel === "whatsapp" && !/^[1-9]\d{7,14}$/.test(a.contact || "")) add("authority.contact", "Numéro international, chiffres seuls (ex. 212612345678)");
+    const powers = p.powers || [];
+    if (!powers.length) add("powers", "Au moins un pouvoir");
+    const names = powers.map((x) => x.action);
+    powers.forEach((pw, i) => {
+      const loc = `powers.${i}`;
+      if (!IDENT.test(pw.action || "")) add(loc + ".action", "Nom d'action : minuscules, chiffres, _");
+      if (names.indexOf(pw.action) !== i) add(loc + ".action", "Action en double");
+      if (pw.kind === "effect") {
+        if (!(pw.identity || []).length) add(loc + ".identity", "Un effet doit déclarer ses attributs d'identité");
+        const env = pw.envelope;
+        if (env && env.max_amount) {
+          if (!(env.max_amount.amount > 0)) add(loc + ".envelope.max_amount", "Plafond positif requis");
+          if (!/^[A-Z]{3}$/.test(env.max_amount.currency || "")) add(loc + ".envelope.max_amount", "Devise ISO à 3 lettres");
+        }
+        for (const [k, w] of Object.entries((env && env.windows) || {})) if (w.start > w.end) add(`${loc}.envelope.windows.${k}`, "Fenêtre inversée");
+        const rec = pw.reconciliation;
+        if (rec) {
+          const s = powers.find((x) => x.action === rec.status_action);
+          if (!s || s.kind !== "status") add(loc + ".reconciliation", `La réconciliation exige un pouvoir « status » nommé ${rec.status_action}`);
+        }
+      } else if (pw.envelope || pw.reconciliation || (pw.identity || []).length) add(loc, "Enveloppe, identité et réconciliation sont réservées aux effets");
+      for (const d of pw.depends_on || []) { const t = powers.find((x) => x.action === d); if (!t || t.kind !== "effect") add(loc + ".depends_on", `Dépendance inconnue : ${d}`); }
+      if (pw.role === "support" && pw.kind !== "contact") add(loc + ".role", "Le rôle support exige un pouvoir de contact");
+    });
+    if (powers.filter((x) => x.role === "support").length > 1) add("powers", "Un seul pouvoir « support »");
+    const h = p.hesitation || {};
+    if (!(h.tau_star > 0 && h.tau_star <= 1)) add("hesitation.tau_star", "τ* entre 0 (exclu) et 1");
+    if (!h.ladder || h.ladder[h.ladder.length - 1] !== "PRESERVE") add("hesitation.ladder", "PRESERVE doit être le dernier chemin");
+    if (h.ladder && new Set(h.ladder).size !== h.ladder.length) add("hesitation.ladder", "Chemin en double");
+    return errs;
+  }
+
+  /** Ce que fera l'agent si chaque vérification revient « introuvable » et que le support n'aide pas. */
+  function simulateHesitation(p, action) {
+    const h = p.hesitation; const tau = h.tau_star; const a = p.authority;
+    const effect = (p.powers || []).find((x) => x.action === action) || (p.powers || []).find((x) => x.kind === "effect" && x.reconciliation);
+    const rec = effect && effect.reconciliation;
+    const support = (p.powers || []).find((x) => x.role === "support");
+    let notFound = 0, checks = 0, supportUsed = 0; const steps = [];
+    for (let i = 0; i < 10; i++) {
+      const paths = h.ladder.map((name) => {
+        if (name === "VERIFY") { const sigma = rec ? rec.sigma * Math.pow(rec.decay, notFound) : 0; const open = !!rec && checks < rec.max_checks; return { name, open, sigma, reaches_tau: sigma >= tau }; }
+        if (name === "CONTACT_SUPPORT") { const sigma = support ? (support.sigma ?? 0.5) : 0; const open = !!support && (support.budget == null || supportUsed < support.budget); return { name, open, sigma, reaches_tau: sigma >= tau }; }
+        if (name === "ASK_AUTHORITY") { const open = !!(a && (a.channel === "console" || a.contact)) && (a.max_requests ?? 2) > 0; return { name, open, sigma: a.sigma, reaches_tau: a.sigma >= tau }; }
+        return { name, open: true, sigma: 0, reaches_tau: false };
+      });
+      const ref = referencePath(paths, h.ladder);
+      const sigma = (paths.find((x) => x.name === ref) || {}).sigma || 0;
+      steps.push({ path: ref, sigma: Math.round(sigma * 100) / 100, authority: LADDER_AUTHORITY[ref] });
+      if (ref === "VERIFY") { checks++; notFound++; }
+      else if (ref === "CONTACT_SUPPORT") { supportUsed++; notFound++; }
+      else break;
+    }
+    return steps;
+  }
+
+  const api = { canonical, digest, sha256Hex, fingerprint, profileBody, verifyChain, verifyJournal, boundaryPosition, Fold, decisionReplay, admitProposal, checkMap, justifiedMoves, trueMap, referencePath, validateProfile, simulateHesitation, ENVELOPE_VERSION, PHASES };
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HoldCore = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+const CATALOG_EMBEDDED = [{"file": "achat.hold.yaml", "id": "achat-fournisseur", "title": "Achat fournisseur", "description": "L'agent passe les commandes de réapprovisionnement chez les fournisseurs référencés, dans la limite du montant et des dates de livraison fixés ; il hésite plus tôt (τ* plus haut) car une commande se défait mal.", "profile": {"hold": "habilitation/v1", "id": "achat-fournisseur", "title": "Achat fournisseur", "description": "L'agent passe les commandes de réapprovisionnement chez les fournisseurs référencés, dans la limite du montant et des dates de livraison fixés ; il hésite plus tôt (τ* plus haut) car une commande se défait mal.", "revision": 1, "issued_at": "2026-11-01T12:00:00Z", "expires_at": "2027-01-31T23:59:59Z", "authority": {"name": "Direction des achats", "channel": "whatsapp", "contact": "212600000000", "sigma": 0.95, "can_revoke": true, "max_extra_checks": 1, "max_requests": 2, "question_ttl_minutes": 60, "grant_ttl_minutes": 15, "locale": "fr"}, "powers": [{"action": "read_catalog", "kind": "read", "description": "Consulter le catalogue et les prix des fournisseurs référencés.", "identity": [], "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "place_order", "kind": "effect", "description": "Passer une commande ferme chez un fournisseur référencé.", "budget": 2, "envelope": {"max_amount": {"amount": 20000.0, "currency": "MAD"}, "amount_field": "total", "currency_field": "currency", "allowed": {"supplier_id": ["SUP-001", "SUP-007"]}, "windows": {"delivery_date": {"start": "2026-11-10", "end": "2026-12-20"}}, "required": ["supplier_id", "sku", "quantity", "total", "currency", "delivery_date"]}, "identity": ["supplier_id", "sku", "delivery_date"], "reconciliation": {"status_action": "order_status", "max_checks": 2, "sigma": 0.8, "decay": 0.5}, "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "order_status", "kind": "status", "description": "Consulter le statut d'une commande par identifiant d'opération.", "identity": [], "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "call_supplier", "kind": "contact", "description": "Joindre le commercial du fournisseur.", "budget": 1, "identity": [], "depends_on": [], "role": "support", "sigma": 0.75, "provenance": [], "provenance_source": [], "max_corrections": 2}], "hesitation": {"tau_star": 0.6, "ladder": ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"], "on_refused_proposal": "reference", "autonomous_resume": true, "max_rounds": 8, "envelope_breach": "ask_authority", "map_retries": 1, "max_wait_seconds": 900, "max_waits": 2}}, "fingerprint": "235c00fbd52d3c7261e2a2b00514310b9cf332b4bfe966006a7e86ee7e5aeede"}, {"file": "remboursement.hold.yaml", "id": "remboursement-client", "title": "Remboursement client", "description": "L'agent traite seul les remboursements sous le plafond, vérifie un remboursement incertain auprès du prestataire de paiement, et laisse l'autorité trancher au-delà de son enveloppe.", "profile": {"hold": "habilitation/v1", "id": "remboursement-client", "title": "Remboursement client", "description": "L'agent traite seul les remboursements sous le plafond, vérifie un remboursement incertain auprès du prestataire de paiement, et laisse l'autorité trancher au-delà de son enveloppe.", "revision": 1, "issued_at": "2026-11-01T12:00:00Z", "expires_at": "2026-12-31T23:59:59Z", "authority": {"name": "Responsable du service client", "channel": "whatsapp", "contact": "212600000000", "sigma": 0.95, "can_revoke": true, "max_extra_checks": 1, "max_requests": 2, "question_ttl_minutes": 60, "grant_ttl_minutes": 15, "locale": "fr"}, "powers": [{"action": "read_order", "kind": "read", "description": "Lire la commande et l'historique du client.", "identity": [], "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "issue_refund", "kind": "effect", "description": "Rembourser sur le moyen de paiement d'origine.", "budget": 3, "envelope": {"max_amount": {"amount": 150.0, "currency": "EUR"}, "amount_field": "amount", "currency_field": "currency", "allowed": {"method": ["original_payment"]}, "windows": {}, "required": ["order_id", "customer_id", "amount", "currency", "method"]}, "identity": ["order_id", "customer_id"], "reconciliation": {"status_action": "refund_status", "max_checks": 3, "sigma": 0.85, "decay": 0.5}, "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "refund_status", "kind": "status", "description": "Consulter le statut d'un remboursement par identifiant d'opération.", "identity": [], "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "contact_psp", "kind": "contact", "description": "Écrire au prestataire de paiement.", "budget": 1, "identity": [], "depends_on": [], "role": "support", "sigma": 0.6, "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "notify_customer", "kind": "effect", "description": "Prévenir le client du remboursement confirmé.", "budget": 3, "identity": ["order_id", "customer_id"], "depends_on": ["issue_refund"], "provenance": [], "provenance_source": [], "max_corrections": 2}], "hesitation": {"tau_star": 0.5, "ladder": ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"], "on_refused_proposal": "reference", "autonomous_resume": true, "max_rounds": 8, "envelope_breach": "ask_authority", "map_retries": 1, "max_wait_seconds": 900, "max_waits": 2}}, "fingerprint": "1c1faa875d02ddd2d8a7d8c7a79a6f796c081b02f53eca2d2e0239bec6cc378b"}, {"file": "reservation.hold.yaml", "id": "reservation-voyage", "title": "Réservation de voyage professionnel", "description": "L'agent prépare un déplacement : il cherche et réserve un hôtel dans l'enveloppe fixée, vérifie seul une réservation incertaine, et ne sollicite l'autorité que si la cohérence ne peut pas être rétablie dans son habilitation.", "profile": {"hold": "habilitation/v1", "id": "reservation-voyage", "title": "Réservation de voyage professionnel", "description": "L'agent prépare un déplacement : il cherche et réserve un hôtel dans l'enveloppe fixée, vérifie seul une réservation incertaine, et ne sollicite l'autorité que si la cohérence ne peut pas être rétablie dans son habilitation.", "revision": 1, "issued_at": "2026-11-01T12:00:00Z", "expires_at": "2026-11-30T23:59:59Z", "authority": {"name": "Mission authority", "channel": "whatsapp", "contact": "212600000000", "sigma": 0.95, "can_revoke": true, "max_extra_checks": 1, "max_requests": 2, "question_ttl_minutes": 60, "grant_ttl_minutes": 15, "locale": "fr"}, "powers": [{"action": "search_hotels", "kind": "read", "description": "Search available hotels (read only).", "identity": [], "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "venue_info", "kind": "read", "description": "Check the venue's address and opening hours (read only).", "identity": [], "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "create_booking", "kind": "effect", "description": "Book a room (external effect, not idempotent at the provider).", "budget": 1, "envelope": {"max_amount": {"amount": 300.0, "currency": "EUR"}, "amount_field": "price", "currency_field": "currency", "allowed": {"provider": ["hotel-synthetique"], "city": ["Lyon"]}, "windows": {"check_in": {"start": "2026-11-15", "end": "2026-11-20"}, "check_out": {"start": "2026-11-15", "end": "2026-11-21"}}, "required": ["provider", "hotel_id", "traveler", "check_in", "check_out", "price", "currency", "city"]}, "identity": ["provider", "hotel_id", "traveler", "check_in", "check_out"], "reconciliation": {"status_action": "check_booking", "max_checks": 3, "sigma": 0.9, "decay": 0.6}, "depends_on": [], "provenance": ["provider", "hotel_id", "price", "currency"], "provenance_source": ["search_hotels"], "max_corrections": 2}, {"action": "check_booking", "kind": "status", "description": "Look up the status of an existing booking by its operation id.", "identity": [], "depends_on": [], "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "contact_support", "kind": "contact", "description": "Write to the provider's support to find a booking.", "budget": 1, "identity": [], "depends_on": [], "role": "support", "sigma": 0.7, "provenance": [], "provenance_source": [], "max_corrections": 2}, {"action": "send_itinerary", "kind": "effect", "description": "Send the final itinerary to the traveler (assumes the hotel is confirmed).", "budget": 1, "identity": ["traveler", "booking_reference"], "depends_on": ["create_booking"], "provenance": ["booking_reference=receipt"], "provenance_source": ["create_booking", "check_booking"], "max_corrections": 2}], "hesitation": {"tau_star": 0.5, "ladder": ["VERIFY", "CONTACT_SUPPORT", "ASK_AUTHORITY", "PRESERVE"], "on_refused_proposal": "reference", "autonomous_resume": true, "max_rounds": 8, "envelope_breach": "ask_authority", "map_retries": 1, "max_wait_seconds": 900, "max_waits": 2}}, "fingerprint": "b31881e75644b016aa8680d88f87da55d6a08e4c12253f742bd4b66289ba8fe3"}];
+const H = window.HoldCore;
+
+const I = {
+  en: {
+    tailor: "Tailor a profile", read: "Read a mission", online: "Connected to a running HOLD", offline: "Offline: everything runs in this page",
+    intro_h: "Tailor what your agent may do on its own.",
+    intro_p: "Start from a pattern, adjust it to your mission, and download the profile. Attach the file to any agent that wears HOLD: the label on the right is exactly what it will obey.",
+    patterns_h: "Start from a pattern", patterns_p: "Each pattern is a complete, valid profile you can adjust.", powers_n: "{n} powers", open_file: "Open a profile file (JSON)",
+    identity_h: "The garment", identity_p: "What this habilitation is for, and until when it holds.", title: "Title", id: "Identifier", description: "Description", expires: "Valid until",
+    authority_h: "The accountable authority", authority_p: "The person who decides when the agent cannot restore coherence on its own, and who can revoke it.",
+    name: "Name", whatsapp: "WhatsApp number (international, digits only)", locale: "Language of the messages", can_revoke: "Can revoke the mission from WhatsApp",
+    extra_checks: "Extra checks she can grant", max_requests: "Decision Requests per mission, at most",
+    powers_h: "Powers", powers_p: "What the agent may do. Effects are bounded by an envelope; anything outside it is refused or asked.",
+    add_power: "Add a power", kinds: { read: "read", effect: "effect", status: "status", contact: "contact" },
+    action: "Action (tool name)", budget: "Budget (times)", unlimited: "unlimited", identity: "Identity attributes (comma separated)", ceiling: "Amount ceiling", currency: "Currency",
+    amount_field: "Amount field", currency_field: "Currency field", allowed: "Allowed values", allowed_hint: "one per line, e.g. city: Lyon, Paris", windows: "Date windows",
+    windows_hint: "one per line, e.g. check_in: 2026-11-15 → 2026-11-20", required: "Required attributes (comma separated)", envelope: "Envelope",
+    reconciliation: "When the outcome is unknown", status_action: "Status check (tool)", max_checks: "Checks, at most", sigma: "σ, chance of restoring coherence", decay: "σ kept after each 'not found'",
+    depends: "Depends on (effects, comma separated)", support_role: "This contact is the support HOLD may ask", remove: "Remove this power",
+    hesitation_h: "Hesitation", hesitation_p: "Pass, fail or hold. In a hold, the agent takes the least-authority path that can still restore coherence.",
+    tau: "τ*, the coherence to restore before acting again", ladder: "Order of the paths", autonomous: "Resume on its own as soon as correlated evidence arrives",
+    on_refused: "If the model proposes a refused path", ref_opt: "apply the least-authority path", preserve_opt: "preserve the state",
+    breach: "If an effect is outside the envelope", breach_refuse: "refuse it", breach_ask: "ask the authority, once", max_rounds: "Hesitation rounds, at most",
+    path: { VERIFY: "check status", CONTACT_SUPPORT: "ask support", ASK_AUTHORITY: "ask {name}", PRESERVE: "preserve" },
+    label_alone: "May do on its own", label_unsure: "When the outcome is unknown", label_never: "Will never", label_rev: "Revision {r} · for {name}",
+    label_tau: "Bars show σ; the red line is τ* = {tau}. Paths reaching it act alone, in order.", label_revoke: "{name} can stop it from WhatsApp.",
+    times: "{n}×", upto: "up to {amt} {cur}", once: "once",
+    never: ["create the same effect twice", "claim success without correlated evidence", "run a dependent step while an effect is unknown", "go beyond this label", "act on a stale reading"],
+    valid: "Valid", issues: "{n} issue(s)", lib_ok: "the library computes the same fingerprint", lib_bad: "the library disagrees",
+    download: "Download profile", copy: "Copy JSON", copied: "Profile copied", revise: "New revision", revised: "Revision {r} created; it supersedes the previous fingerprint", downloaded: "Profile downloaded",
+    missions_h: "Missions", no_missions: "No mission yet. Run `hold demo --serve 8787` and the mission appears here.", open_journal: "Open a journal file",
+    offline_read: "Open a journal exported with `hold journal export`. It is verified here, in your browser.",
+    pick: "Choose a mission to read it.", chain_ok: "Chain verified in this browser ({n} events)", chain_bad: "Chain broken at event {seq}: {reason}",
+    dec_ok: "Every floor decision replayed here ({n})", dec_bad: "{n} decision(s) do not replay", state_ok: "State replay identical", state_bad: "State replay differs",
+    request_h: "Decision Request", answer_here: "Answer from here", simulate: "Tap on the simulated phone", stranger: "Tap from another number", waiting: "Sent on WhatsApp; waiting for the tap.",
+    no_request: "Nothing waits for the authority.", raw: "Raw journal", answered: "Answer recorded: {code}", refused_answer: "Answer refused: {reason}",
+    status: { OPEN: "running", HELD: "on hold", AWAITING_AUTHORITY: "waiting for the authority", CLOSED_COMPLETED: "completed", CLOSED_UNCONFIRMED: "closed unconfirmed", CLOSED_FAILED: "failed", REVOKED: "revoked" },
+    t: {
+      opened: "Mission opened", profile: "Wears “{p}”, revision {r}", admitted: "{a}", refused: "{a} refused · {rule}", reserved: "{a} reserved before sending",
+      pass: "Confirmed · receipt {r}", fail: "Refused by the provider before creation", unknown: "No answer · outcome unknown",
+      knot_h: "HOLD · outcome unknown", knot_p: "Suspended: {scope}. Everything else continues.", round: "Round {n}",
+      proposed_over: "{d} proposed {p}; refused ({why}), the floor applied {a}", proposed_ok: "{d} proposed it; admitted", stale: "Position changed during deliberation: re-read",
+      result: { NOT_FOUND: "not found", CONFIRMED: "receipt found", REPLY: "replied", UNKNOWN: "no answer" }, correlated: "correlated with the operation",
+      request: "Decision Request sent to {to}", relay: "on WhatsApp ({mode})", answer: "{to} tapped “{code}”", grant: "Granted: {kind}", reconciled: "Reconciled · receipt {r}, nothing repeated",
+      resumed: "The mission resumes on its own", preserved: "Preserved · {r}", revoked: "Revoked by {by}", closed: "Closed · {o}", rejected: "Answer refused · {r}",
+    },
+  },
+  fr: {
+    tailor: "Tailler un profil", read: "Lire une mission", online: "Connecté à un HOLD en marche", offline: "Hors ligne : tout s'exécute dans cette page",
+    intro_h: "Taillez ce que votre agent peut faire seul.",
+    intro_p: "Partez d'un patron, ajustez-le à votre mission, téléchargez le profil. Attachez le fichier à tout agent qui porte HOLD : l'étiquette à droite est exactement ce qu'il respectera.",
+    patterns_h: "Partir d'un patron", patterns_p: "Chaque patron est un profil complet et valide, que vous ajustez.", powers_n: "{n} pouvoirs", open_file: "Ouvrir un fichier de profil (JSON)",
+    identity_h: "Le vêtement", identity_p: "À quoi sert cette habilitation, et jusqu'à quand elle tient.", title: "Titre", id: "Identifiant", description: "Description", expires: "Valable jusqu'au",
+    authority_h: "L'autorité responsable", authority_p: "La personne qui tranche quand l'agent ne peut pas rétablir la cohérence seul, et qui peut le révoquer.",
+    name: "Nom", whatsapp: "Numéro WhatsApp (international, chiffres seuls)", locale: "Langue des messages", can_revoke: "Peut révoquer la mission depuis WhatsApp",
+    extra_checks: "Contrôles supplémentaires qu'elle peut accorder", max_requests: "Decision Requests par mission, au plus",
+    powers_h: "Pouvoirs", powers_p: "Ce que l'agent peut faire. Les effets sont bornés par une enveloppe ; au-delà, c'est refusé ou demandé.",
+    add_power: "Ajouter un pouvoir", kinds: { read: "lecture", effect: "effet", status: "statut", contact: "contact" },
+    action: "Action (nom de l'outil)", budget: "Budget (fois)", unlimited: "illimité", identity: "Attributs d'identité (séparés par des virgules)", ceiling: "Plafond", currency: "Devise",
+    amount_field: "Champ du montant", currency_field: "Champ de la devise", allowed: "Valeurs permises", allowed_hint: "une par ligne, ex. city: Lyon, Paris", windows: "Fenêtres de dates",
+    windows_hint: "une par ligne, ex. check_in: 2026-11-15 → 2026-11-20", required: "Attributs requis (séparés par des virgules)", envelope: "Enveloppe",
+    reconciliation: "Quand le résultat est inconnu", status_action: "Contrôle de statut (outil)", max_checks: "Contrôles, au plus", sigma: "σ, chance de rétablir la cohérence", decay: "σ conservé après chaque « introuvable »",
+    depends: "Dépend de (effets, séparés par des virgules)", support_role: "Ce contact est le support que HOLD peut solliciter", remove: "Retirer ce pouvoir",
+    hesitation_h: "Hésitation", hesitation_p: "Pass, fail ou hold. Dans le hold, l'agent prend le chemin de moindre autorité qui peut encore rétablir la cohérence.",
+    tau: "τ*, la cohérence à rétablir avant d'agir à nouveau", ladder: "Ordre des chemins", autonomous: "Reprendre seul dès qu'une preuve corrélée arrive",
+    on_refused: "Si le modèle propose un chemin refusé", ref_opt: "appliquer le chemin de moindre autorité", preserve_opt: "conserver l'état",
+    breach: "Si un effet sort de l'enveloppe", breach_refuse: "le refuser", breach_ask: "demander à l'autorité, une fois", max_rounds: "Tours d'hésitation, au plus",
+    path: { VERIFY: "vérifier le statut", CONTACT_SUPPORT: "demander au support", ASK_AUTHORITY: "demander à {name}", PRESERVE: "conserver" },
+    label_alone: "Peut faire seul", label_unsure: "Quand le résultat est inconnu", label_never: "Ne fera jamais", label_rev: "Révision {r} · pour {name}",
+    label_tau: "Les barres montrent σ ; le trait rouge est τ* = {tau}. Les chemins qui l'atteignent agissent seuls, dans l'ordre.", label_revoke: "{name} peut l'arrêter depuis WhatsApp.",
+    times: "{n}×", upto: "jusqu'à {amt} {cur}", once: "une fois",
+    never: ["créer deux fois le même effet", "annoncer un succès sans preuve corrélée", "lancer une étape dépendante d'un effet inconnu", "aller au-delà de cette étiquette", "agir sur une lecture périmée"],
+    valid: "Valide", issues: "{n} problème(s)", lib_ok: "la bibliothèque calcule la même empreinte", lib_bad: "la bibliothèque n'est pas d'accord",
+    download: "Télécharger le profil", copy: "Copier le JSON", copied: "Profil copié", revise: "Nouvelle révision", revised: "Révision {r} créée ; elle remplace l'empreinte précédente", downloaded: "Profil téléchargé",
+    missions_h: "Missions", no_missions: "Aucune mission. Lancez `hold demo --serve 8787` et la mission apparaît ici.", open_journal: "Ouvrir un fichier de journal",
+    offline_read: "Ouvrez un journal exporté avec `hold journal export`. Il est vérifié ici, dans votre navigateur.",
+    pick: "Choisissez une mission pour la lire.", chain_ok: "Chaîne vérifiée dans ce navigateur ({n} événements)", chain_bad: "Chaîne rompue à l'événement {seq} : {reason}",
+    dec_ok: "Chaque décision du plancher rejouée ici ({n})", dec_bad: "{n} décision(s) ne se rejouent pas", state_ok: "Rejeu d'état identique", state_bad: "Rejeu d'état différent",
+    request_h: "Decision Request", answer_here: "Répondre d'ici", simulate: "Taper sur le téléphone simulé", stranger: "Taper depuis un autre numéro", waiting: "Envoyée sur WhatsApp ; en attente du tap.",
+    no_request: "Rien n'attend l'autorité.", raw: "Journal brut", answered: "Réponse enregistrée : {code}", refused_answer: "Réponse refusée : {reason}",
+    status: { OPEN: "en cours", HELD: "en hold", AWAITING_AUTHORITY: "attend l'autorité", CLOSED_COMPLETED: "terminée", CLOSED_UNCONFIRMED: "close sans confirmation", CLOSED_FAILED: "échouée", REVOKED: "révoquée" },
+    t: {
+      opened: "Mission ouverte", profile: "Porte « {p} », révision {r}", admitted: "{a}", refused: "{a} refusé · {rule}", reserved: "{a} réservé avant envoi",
+      pass: "Confirmé · reçu {r}", fail: "Refusé par le fournisseur avant création", unknown: "Pas de réponse · résultat inconnu",
+      knot_h: "HOLD · résultat inconnu", knot_p: "Suspendu : {scope}. Le reste continue.", round: "Tour {n}",
+      proposed_over: "{d} a proposé {p} ; refusé ({why}), le plancher a appliqué {a}", proposed_ok: "{d} l'a proposé ; admis", stale: "Position changée pendant la délibération : relire",
+      result: { NOT_FOUND: "introuvable", CONFIRMED: "reçu trouvé", REPLY: "a répondu", UNKNOWN: "pas de réponse" }, correlated: "corrélé à l'opération",
+      request: "Decision Request envoyée à {to}", relay: "sur WhatsApp ({mode})", answer: "{to} a tapé « {code} »", grant: "Accordé : {kind}", reconciled: "Réconcilié · reçu {r}, rien de répété",
+      resumed: "La mission reprend seule", preserved: "Conservé · {r}", revoked: "Révoqué par {by}", closed: "Close · {o}", rejected: "Réponse refusée · {r}",
+    },
+  },
+};
+
+const S = { lang: "en", mode: "tailor", server: false, relayMode: null, catalog: [], profile: null, selected: null, fp: "", libFp: null, libErrors: null, errors: [],
+            missions: [], mission: null, detail: null, journal: null, checks: null, poll: null };
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const L = () => I[S.lang];
+const fmt = (s, o = {}) => s.replace(/\{(\w+)\}/g, (_, k) => (o[k] ?? ""));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+function toast(msg) { const el = $("#toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2200); }
+function pref(k, v) { try { if (v === undefined) return localStorage.getItem("hold-studio-" + k); localStorage.setItem("hold-studio-" + k, v); } catch { return null; } }
+
+// -- chemins dans le profil -----------------------------------------------------------------
+function getPath(o, path) { return path.split(".").reduce((a, k) => (a == null ? undefined : a[k]), o); }
+function setPath(o, path, value) {
+  const keys = path.split("."); let a = o;
+  for (let i = 0; i < keys.length - 1; i++) { if (a[keys[i]] == null) a[keys[i]] = /^\d+$/.test(keys[i + 1]) ? [] : {}; a = a[keys[i]]; }
+  const last = keys[keys.length - 1];
+  if (value === undefined) delete a[last]; else a[last] = value;
+}
+function coerce(el) {
+  const t = el.dataset.type, v = el.type === "checkbox" ? el.checked : el.value;
+  if (t === "bool") return !!v;
+  if (t === "num") return v === "" ? undefined : Number(v);
+  if (t === "int") return v === "" ? undefined : parseInt(v, 10);
+  if (t === "list") return v.split(",").map((x) => x.trim()).filter(Boolean);
+  if (t === "digits") return v.replace(/[^\d]/g, "").replace(/^00/, "");
+  if (t === "date-end") return v ? v + "T23:59:59Z" : undefined;
+  if (t === "allowed") { const out = {}; v.split("\n").forEach((line) => { const m = line.match(/^\s*([\w.-]+)\s*:\s*(.+)$/); if (m) out[m[1]] = m[2].split(",").map((x) => x.trim()).filter(Boolean); }); return out; }
+  if (t === "windows") { const out = {}; v.split("\n").forEach((line) => { const m = line.match(/^\s*([\w.-]+)\s*:\s*(\d{4}-\d{2}-\d{2})\s*(?:→|->|to)\s*(\d{4}-\d{2}-\d{2})/); if (m) out[m[1]] = { start: m[2], end: m[3] }; }); return out; }
+  return v;
+}
+
+// -- atelier ----------------------------------------------------------------------------------
+const ICON = { ok: "✓", bad: "✕", wait: "…" };
+function amountOf(pw) { const m = pw.envelope && pw.envelope.max_amount; return m ? fmt(L().upto, { amt: m.amount, cur: m.currency }) : ""; }
+function bound(pw) {
+  const parts = [];
+  const a = amountOf(pw); if (a) parts.push(a);
+  if (pw.budget != null) parts.push(pw.budget === 1 ? L().once : fmt(L().times, { n: pw.budget }));
+  return parts.join(", ");
+}
+function field(label, path, opts = {}) {
+  const val = opts.value !== undefined ? opts.value : getPath(S.profile, path);
+  const err = S.errors.some((e) => e.loc === path || (opts.errLoc && e.loc.startsWith(opts.errLoc)));
+  const attrs = `data-path="${esc(path)}" data-type="${opts.type || "text"}" ${opts.attrs || ""}`;
+  let input;
+  if (opts.select) input = `<select ${attrs}>${opts.select.map(([v, l]) => `<option value="${esc(v)}" ${String(val) === String(v) ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  else if (opts.area) input = `<textarea ${attrs} rows="${opts.rows || 2}">${esc(val)}</textarea>`;
+  else input = `<input ${attrs} type="${opts.input || "text"}" value="${esc(val ?? "")}" ${opts.placeholder ? `placeholder="${esc(opts.placeholder)}"` : ""}>`;
+  return `<label class="field ${opts.wide ? "wide" : ""} ${err ? "error" : ""}"><span>${esc(label)}</span>${input}${opts.hint ? `<small class="hint">${esc(opts.hint)}</small>` : ""}</label>`;
+}
+function checkbox(label, path) {
+  return `<label class="check"><input type="checkbox" data-path="${esc(path)}" data-type="bool" ${getPath(S.profile, path) ? "checked" : ""}>${esc(label)}</label>`;
+}
+function powerEditor(pw, i) {
+  const l = L(), p = `powers.${i}`;
+  const statusOpts = S.profile.powers.filter((x) => x.kind === "status").map((x) => [x.action, x.action]);
+  let inner = `<div class="fields">${field(l.action, p + ".action")}${field(l.budget, p + ".budget", { type: "int", input: "number", attrs: 'min="0"', placeholder: l.unlimited })}
+    ${field(l.description, p + ".description", { wide: true })}</div>`;
+  if (pw.kind === "effect") {
+    const env = pw.envelope || {};
+    const allowed = Object.entries(env.allowed || {}).map(([k, v]) => `${k}: ${v.join(", ")}`).join("\n");
+    const windows = Object.entries(env.windows || {}).map(([k, w]) => `${k}: ${w.start} → ${w.end}`).join("\n");
+    inner += `<h3>${esc(l.envelope)}</h3><div class="fields">
+      ${field(l.ceiling, p + ".envelope.max_amount.amount", { type: "num", input: "number", attrs: 'min="0" step="any"', errLoc: p + ".envelope.max_amount" })}
+      ${field(l.currency, p + ".envelope.max_amount.currency", { attrs: 'maxlength="3"' })}
+      ${field(l.amount_field, p + ".envelope.amount_field")}${field(l.currency_field, p + ".envelope.currency_field")}
+      ${field(l.allowed, p + ".envelope.allowed", { area: true, type: "allowed", value: allowed, hint: l.allowed_hint, wide: true })}
+      ${field(l.windows, p + ".envelope.windows", { area: true, type: "windows", value: windows, hint: l.windows_hint, wide: true })}
+      ${field(l.required, p + ".envelope.required", { type: "list", value: (env.required || []).join(", "), wide: true })}
+      ${field(l.identity, p + ".identity", { type: "list", value: (pw.identity || []).join(", "), wide: true })}
+      ${field(l.depends, p + ".depends_on", { type: "list", value: (pw.depends_on || []).join(", "), wide: true })}</div>`;
+    if (pw.reconciliation) inner += `<h3>${esc(l.reconciliation)}</h3><div class="fields">
+      ${field(l.status_action, p + ".reconciliation.status_action", { select: statusOpts.length ? statusOpts : [[pw.reconciliation.status_action, pw.reconciliation.status_action]], errLoc: p + ".reconciliation" })}
+      ${field(l.max_checks, p + ".reconciliation.max_checks", { type: "int", input: "number", attrs: 'min="1" max="20"' })}
+      ${field(l.sigma, p + ".reconciliation.sigma", { type: "num", input: "number", attrs: 'min="0" max="1" step="0.05"' })}
+      ${field(l.decay, p + ".reconciliation.decay", { type: "num", input: "number", attrs: 'min="0" max="1" step="0.05"' })}</div>`;
+  }
+  if (pw.kind === "contact") inner += `<div class="fields" style="margin-top:14px">${field(l.sigma, p + ".sigma", { type: "num", input: "number", attrs: 'min="0" max="1" step="0.05"' })}
+      <label class="check" style="align-self:end"><input type="checkbox" data-role-index="${i}" ${pw.role === "support" ? "checked" : ""}>${esc(l.support_role)}</label></div>`;
+  inner += `<div class="rowbtns"><button class="btn danger" data-remove="${i}">${esc(l.remove)}</button></div>`;
+  return `<details class="power" data-kind="${pw.kind}" ${S.open === i ? "open" : ""} data-index="${i}">
+    <summary><span class="kind">${esc(l.kinds[pw.kind])}</span><span class="act">${esc(pw.action)}</span><span class="bound">${esc(bound(pw))}</span></summary>
+    <div class="inner">${inner}</div></details>`;
+}
+function hesitationSteps(p) {
+  const l = L(), tau = p.hesitation.tau_star;
+  return H.simulateHesitation(p).map((s) => {
+    const name = fmt(l.path[s.path], { name: p.authority.name });
+    const cls = s.path === "ASK_AUTHORITY" ? "ask" : s.sigma >= tau ? "reach" : "";
+    return `<div class="step ${cls}"><span>${esc(name)}</span><span class="track"><span class="fill" style="width:${Math.min(100, s.sigma * 100)}%"></span><span class="tick" style="left:${tau * 100}%"></span></span><span class="v">${s.path === "PRESERVE" ? "" : s.sigma.toFixed(2)}</span></div>`;
+  }).join("");
+}
+function wovenLabel() {
+  const p = S.profile, l = L();
+  const alone = p.powers.filter((x) => x.kind !== "status").map((x) => `<li><span>${esc(x.action)}</span><span>${esc(bound(x))}</span></li>`).join("");
+  const nIssues = S.errors.length + (S.libErrors ? S.libErrors.length : 0);
+  let lib = "";
+  if (S.server) lib = S.libFp == null ? `<span class="badge wait">${ICON.wait}</span>` : S.libFp === S.fp ? `<span class="badge ok">${ICON.ok} ${esc(l.lib_ok)}</span>` : `<span class="badge bad">${ICON.bad} ${esc(l.lib_bad)}</span>`;
+  return `<div class="woven" aria-label="Profile label">
+    <div class="head"><b>HOLD</b><span>habilitation/v1 · ${esc(p.id)}</span></div>
+    <h2>${esc(p.title)}</h2>
+    <p class="for">${esc(fmt(l.label_rev, { r: p.revision, name: p.authority.name }))}</p>
+    <h3>${esc(l.label_alone)}</h3><ul>${alone}</ul>
+    <h3>${esc(l.label_unsure)}</h3><div class="steps">${hesitationSteps(p)}</div>
+    <p class="taunote">${esc(fmt(l.label_tau, { tau: p.hesitation.tau_star.toFixed(2) }))}${p.authority.can_revoke ? " " + esc(fmt(l.label_revoke, { name: p.authority.name })) : ""}</p>
+    <h3>${esc(l.label_never)}</h3><ul class="never">${l.never.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>
+    <div class="seal"><span class="fp">${esc(S.fp)}</span>${nIssues ? `<span class="badge bad">${ICON.bad} ${esc(fmt(l.issues, { n: nIssues }))}</span>` : `<span class="badge ok">${ICON.ok} ${esc(l.valid)}</span>`}</div>
+    ${lib ? `<div class="seal" style="border:0;margin-top:4px;padding-top:0">${lib}</div>` : ""}
+  </div>`;
+}
+function renderTailor() {
+  const l = L(), p = S.profile;
+  const patterns = S.catalog.map((c) => `<button class="pattern" data-pattern="${esc(c.id)}" aria-pressed="${S.selected === c.id}"><strong>${esc(c.title)}</strong><small>${esc((c.description || "").slice(0, 120))}${(c.description || "").length > 120 ? "…" : ""}</small><em>${esc(fmt(l.powers_n, { n: c.profile.powers.length }))}</em></button>`).join("");
+  const ladder = p.hesitation.ladder.map((name, i, arr) => `<li><b>${esc(fmt(l.path[name], { name: p.authority.name }))}</b><small>${esc(name)}</small>
+      ${name === "PRESERVE" ? "" : `<button aria-label="up" data-move="${i}" data-dir="-1" ${i === 0 ? "disabled" : ""}>↑</button><button aria-label="down" data-move="${i}" data-dir="1" ${i >= arr.length - 2 ? "disabled" : ""}>↓</button>`}</li>`).join("");
+  $("#app").innerHTML = `<div class="tailor">
+    <section>
+      <div class="intro"><h1>${esc(l.intro_h)}</h1><p>${esc(l.intro_p)}</p></div>
+      <div class="piece"><h2>${esc(l.patterns_h)}</h2><p>${esc(l.patterns_p)}</p><div class="patterns">${patterns}</div>
+        <label class="filebtn">${esc(l.open_file)}<input type="file" accept=".json,application/json" id="profilefile"></label></div>
+      <div class="piece"><h2>${esc(l.identity_h)}</h2><p>${esc(l.identity_p)}</p><div class="fields">
+        ${field(l.title, "title", { wide: true })}${field(l.id, "id")}${field(l.expires, "expires_at", { input: "date", type: "date-end", value: (p.expires_at || "").slice(0, 10) })}
+        ${field(l.description, "description", { area: true, wide: true, rows: 3 })}</div></div>
+      <div class="piece"><h2>${esc(l.authority_h)}</h2><p>${esc(l.authority_p)}</p><div class="fields">
+        ${field(l.name, "authority.name")}${field(l.whatsapp, "authority.contact", { type: "digits", input: "tel" })}
+        ${field(l.locale, "authority.locale", { select: [["fr", "Français"], ["en", "English"]] })}
+        ${field(l.extra_checks, "authority.max_extra_checks", { type: "int", input: "number", attrs: 'min="0" max="5"' })}
+        ${field(l.max_requests, "authority.max_requests", { type: "int", input: "number", attrs: 'min="0" max="10"' })}
+        <div class="field" style="justify-content:end">${checkbox(l.can_revoke, "authority.can_revoke")}</div></div></div>
+      <div class="piece"><h2>${esc(l.powers_h)}</h2><p>${esc(l.powers_p)}</p>${p.powers.map(powerEditor).join("")}
+        <div class="addrow"><select id="newkind">${Object.entries(l.kinds).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("")}</select><button class="btn quiet" id="addpower">${esc(l.add_power)}</button></div></div>
+      <div class="piece"><h2>${esc(l.hesitation_h)}</h2><p>${esc(l.hesitation_p)}</p>
+        <div class="tau"><label for="tau">${esc(l.tau)}</label><output id="tauout">${p.hesitation.tau_star.toFixed(2)}</output>
+          <input id="tau" type="range" min="0.05" max="1" step="0.05" value="${p.hesitation.tau_star}" data-path="hesitation.tau_star" data-type="num" style="grid-column:1/-1"></div>
+        <h3 style="font-size:14px;margin:20px 0 6px">${esc(l.ladder)}</h3><ul class="ladder">${ladder}</ul>
+        <div class="fields" style="margin-top:18px">
+          ${field(l.on_refused, "hesitation.on_refused_proposal", { select: [["reference", l.ref_opt], ["preserve", l.preserve_opt]] })}
+          ${field(l.breach, "hesitation.envelope_breach", { select: [["refuse", l.breach_refuse], ["ask_authority", l.breach_ask]] })}
+          ${field(l.max_rounds, "hesitation.max_rounds", { type: "int", input: "number", attrs: 'min="1" max="50"' })}
+          <div class="field" style="justify-content:end">${checkbox(l.autonomous, "hesitation.autonomous_resume")}</div></div></div>
+    </section>
+    <aside class="labelcol"><div id="label">${wovenLabel()}</div><div id="labelfoot">${labelFoot()}</div></aside></div>`;
+}
+// The validator in core.js (frozen) words its messages in French; the English page shows them in English.
+const EN_MSG = {
+  "Profil vide": "Empty profile", "Version de profil attendue : habilitation/v1": "Expected profile version: habilitation/v1",
+  "Identifiant : minuscules, chiffres, . _ -": "Identifier: lowercase letters, digits, . _ -", "Titre requis": "Title required",
+  "Révision entière ≥ 1": "Revision must be an integer ≥ 1", "Expire avant d'être émis": "Expires before it is issued",
+  "Nom de l'autorité requis": "Authority name required", "Numéro international, chiffres seuls (ex. 212612345678)": "International number, digits only (e.g. 212612345678)",
+  "Au moins un pouvoir": "At least one power", "Nom d'action : minuscules, chiffres, _": "Action name: lowercase letters, digits, _",
+  "Action en double": "Duplicate action", "Un effet doit déclarer ses attributs d'identité": "An effect must declare its identity attributes",
+  "Plafond positif requis": "Positive ceiling required", "Devise ISO à 3 lettres": "3-letter ISO currency", "Fenêtre inversée": "Window ends before it starts",
+  "Enveloppe, identité et réconciliation sont réservées aux effets": "Envelope, identity and reconciliation are for effects only",
+  "Le rôle support exige un pouvoir de contact": "The support role requires a contact power", "Un seul pouvoir « support »": "Only one support power",
+  "τ* entre 0 (exclu) et 1": "τ* must be above 0 and at most 1", "PRESERVE doit être le dernier chemin": "PRESERVE must be the last path", "Chemin en double": "Duplicate path",
+};
+function msgText(m) {
+  if (S.lang !== "en") return m;
+  if (EN_MSG[m]) return EN_MSG[m];
+  let x = /^La réconciliation exige un pouvoir « status » nommé (.*)$/.exec(m); if (x) return `Reconciliation requires a status power named ${x[1]}`;
+  x = /^Dépendance inconnue : (.*)$/.exec(m); if (x) return `Unknown dependency: ${x[1]}`;
+  return m;
+}
+// The error list and the actions follow every validation, local or server, so a fixed profile is never left disabled.
+function labelFoot() {
+  const l = L(), allErrors = [...S.errors, ...(S.libErrors || [])];
+  return `${allErrors.length ? `<ul class="errors">${allErrors.map((e) => `<li><span class="mono">${esc(e.loc)}</span> ${esc(msgText(e.msg))}</li>`).join("")}</ul>` : ""}
+      <div class="labelactions"><button class="btn solid" id="download" ${allErrors.length ? "disabled" : ""}>${esc(l.download)}</button>
+        <button class="btn" id="copy" ${allErrors.length ? "disabled" : ""}>${esc(l.copy)}</button><button class="btn quiet" id="revise">${esc(l.revise)}</button></div>`;
+}
+function refreshLabel() {
+  $("#label").innerHTML = wovenLabel();
+  const f = $("#labelfoot"); if (f) f.innerHTML = labelFoot();
+}
+let recalcTimer = null;
+async function recalc(full) {
+  S.errors = H.validateProfile(S.profile);
+  S.fp = await H.fingerprint(S.profile);
+  if (full) renderTailor(); else { refreshLabel(); const o = $("#tauout"); if (o) o.textContent = S.profile.hesitation.tau_star.toFixed(2); }
+  if (S.server) {
+    clearTimeout(recalcTimer);
+    recalcTimer = setTimeout(async () => {
+      try {
+        const r = await (await fetch("/api/profiles/validate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(S.profile) })).json();
+        S.libFp = r.valid ? r.fingerprint : null; S.libErrors = r.valid ? null : r.errors;
+      } catch { S.libFp = null; }
+      refreshLabel();
+    }, 350);
+  }
+}
+function selectPattern(id) {
+  const c = S.catalog.find((x) => x.id === id) || S.catalog[0];
+  S.selected = c.id; S.profile = clone(c.profile); S.open = null; S.libFp = null; S.libErrors = null;
+  recalc(true);
+}
+function newPower(kind) {
+  const n = S.profile.powers.filter((x) => x.kind === kind).length + 1;
+  const base = { action: `${kind}_${n}`, kind, description: "", identity: [], depends_on: [] };
+  if (kind === "effect") {
+    let status = S.profile.powers.find((x) => x.kind === "status");
+    if (!status) { status = { action: `status_${n}`, kind: "status", description: "", identity: [], depends_on: [] }; S.profile.powers.push(status); }
+    Object.assign(base, { budget: 1, identity: ["reference"], envelope: { max_amount: { amount: 100, currency: "EUR" }, amount_field: "amount", currency_field: "currency", allowed: {}, windows: {}, required: ["reference", "amount", "currency"] },
+      reconciliation: { status_action: status.action, max_checks: 3, sigma: 0.9, decay: 0.6 } });
+  }
+  if (kind === "contact") base.sigma = 0.6;
+  S.profile.powers.push(base); S.open = S.profile.powers.length - 1; recalc(true);
+}
+function download() {
+  const p = S.profile, blob = new Blob([JSON.stringify(p, null, 2) + "\n"], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${p.id}.rev${p.revision}.hold.json`; a.click(); URL.revokeObjectURL(a.href);
+  toast(L().downloaded);
+}
+async function revise() {
+  const prev = S.fp;
+  S.profile.revision = (S.profile.revision || 1) + 1; S.profile.supersedes = prev;
+  S.profile.issued_at = new Date().toISOString().replace(/\.\d{3}Z$/, "Z"); delete S.profile.signature;
+  await recalc(true); toast(fmt(L().revised, { r: S.profile.revision }));
+}
+
+// -- lecture -----------------------------------------------------------------------------------
+const pathName = (name, prof) => fmt(L().path[name] || name, { name: prof ? prof.authority.name : "" });
+function threadHTML(events, profiles) {
+  const l = L(), t = l.t; const out = []; let knot = null;
+  const prof = profiles[events[0]?.profile] || Object.values(profiles)[0];
+  const flush = () => { if (knot) { out.push(`<div class="knot"><h3>${esc(t.knot_h)}</h3><p>${esc(fmt(t.knot_p, { scope: knot.scope }))}</p>${knot.items.join("")}</div>`); knot = null; } };
+  const push = (html) => (knot ? knot.items : out).push(html);
+  const beat = (cls, main, sub) => `<div class="beat ${cls}"><p>${main}</p>${sub ? `<p class="sub">${sub}</p>` : ""}</div>`;
+  let lastProposal = null, lastRequest = null;
+  const positions = {};  // the journal records each position once (POSITION) and decisions refer to it by sequence
+  for (const e of events) {
+    const d = e.data;
+    switch (e.type) {
+      case "POSITION": positions[e.seq] = d.position; break;
+      case "MISSION_OPENED": out.push(beat("", esc(t.opened), esc(d.title))); break;
+      case "PROFILE_ATTACHED": out.push(beat("", esc(fmt(t.profile, { p: d.profile, r: d.revision })), `<span class="mono">${esc(d.fingerprint.slice(0, 24))}…</span>`)); break;
+      case "ACTION_ADMITTED": if (d.kind !== "effect") push(beat("pass", esc(fmt(t.admitted, { a: d.action })))); break;
+      case "ACTION_REFUSED": push(beat("fail", esc(fmt(t.refused, { a: d.action, rule: d.rule })), esc(d.reason))); break;
+      case "EFFECT_RESERVED": push(beat("", esc(fmt(t.reserved, { a: d.action })), `<span class="mono">${esc(d.operation_id)}</span>`)); break;
+      case "EFFECT_OUTCOME":
+        if (d.status === "CONFIRMED") push(beat("pass", esc(fmt(t.pass, { r: d.receipt }))));
+        else if (d.status === "FAILED_PROVEN") push(beat("fail", esc(t.fail), esc(d.reason)));
+        else push(beat("warn", esc(t.unknown), esc(d.reason)));
+        break;
+      case "HOLD_ENTERED": flush(); knot = { scope: d.scope.join(", "), items: [] }; break;
+      case "PROPOSAL": lastProposal = d; break;
+      case "DECISION": {
+        const v = d.verdict, pos = d.position || positions[d.position_seq] || { paths: [], tau_star: 0 };
+        if (v.applied == null) { push(`<div class="round"><span class="name">${esc(fmt(t.round, { n: d.round }))}</span><span class="note">${esc(t.stale)}</span></div>`); break; }
+        const ps = pos.paths.find((x) => x.name === v.applied) || { sigma: 0 };
+        const disc = lastProposal ? lastProposal.discerner : "";
+        const note = v.overruled ? `<span class="note over">${esc(fmt(t.proposed_over, { d: disc, p: v.proposed ?? "—", why: v.reason.split(":")[0], a: v.applied }))}</span>` : `<span class="note">${esc(fmt(t.proposed_ok, { d: disc }))}</span>`;
+        const cls = v.applied === "ASK_AUTHORITY" ? "ask" : ps.sigma >= pos.tau_star ? "reach" : "";
+        push(`<div class="round"><span class="name">${esc(fmt(t.round, { n: d.round }))} · ${esc(pathName(v.applied, prof))}</span>
+          <span class="meter step ${cls}" style="display:grid;grid-template-columns:1fr 46px;gap:8px"><span class="track"><span class="fill" style="width:${ps.sigma * 100}%"></span><span class="tick" style="left:${pos.tau_star * 100}%"></span></span><span class="v">${v.applied === "PRESERVE" ? "" : ps.sigma.toFixed(2)}</span></span>${note}<span class="note" data-round="${d.round}"></span></div>`);
+        break;
+      }
+      case "PATH_EXECUTED": {
+        const res = (t.result[d.result] || d.result) + (d.correlated ? " · " + t.correlated : "");
+        const items = knot ? knot.items : out; const last = items[items.length - 1] || "";
+        items[items.length - 1] = last.replace(`<span class="note" data-round="${d.round}"></span>`, `<span class="note">→ ${esc(res)}</span>`);
+        break;
+      }
+      case "DECISION_REQUEST": lastRequest = d; push(beat("warn", esc(fmt(t.request, { to: d.to })))); break;
+      case "RELAY_SENT": if (lastRequest) push(`<div class="phone" data-q="${esc(lastRequest.question_id)}"><p class="from">HOLD · ${esc(d.mode)} → ${esc(d.to)}</p><div class="msg">${esc(lastRequest.question)}</div><div class="btns">${lastRequest.options.map((o) => `<span data-code="${esc(o.code)}">${esc(o.title)}</span>`).join("")}</div></div>`); break;
+      case "AUTHORITY_ANSWER": {
+        const items = knot ? knot.items : out;
+        for (let i = items.length - 1; i >= 0; i--) if (items[i].includes(`data-q="${d.question_id}"`)) { items[i] = items[i].replace(`<span data-code="${d.answer}">`, `<span data-code="${d.answer}" class="tapped">`); break; }
+        push(beat("pass", esc(fmt(t.answer, { to: prof ? prof.authority.name : "", code: d.answer })), esc(d.channel))); break;
+      }
+      case "AUTHORITY_GRANT": push(beat("pass", esc(fmt(t.grant, { kind: d.grant.kind })))); break;
+      case "RELAY_REJECTED": push(beat("fail", esc(fmt(t.rejected, { r: d.reason })))); break;
+      case "RECONCILED": push(beat("pass", esc(fmt(t.reconciled, { r: d.receipt })))); break;
+      case "RESUMED": push(beat("pass", esc(t.resumed))); flush(); break;
+      case "PRESERVED": push(beat("warn", esc(fmt(t.preserved, { r: d.reason })))); break;
+      case "REVOKED": push(beat("fail", esc(fmt(t.revoked, { by: d.by })))); flush(); break;
+      case "MISSION_CLOSED": flush(); out.push(beat(d.outcome === "CLOSED_COMPLETED" ? "pass" : "warn", esc(fmt(t.closed, { o: L().status[d.outcome] || d.outcome })))); break;
+    }
+  }
+  flush();
+  return out.join("");
+}
+async function computeChecks(journal) {
+  const chain = await H.verifyChain(journal.events);
+  const dec = H.decisionReplay(journal.events, journal.profiles);
+  return { chain, dec };
+}
+function checksHTML() {
+  const l = L(), c = S.checks; if (!c) return "";
+  const parts = [c.chain.valid ? `<span class="badge ok">${ICON.ok} ${esc(fmt(l.chain_ok, { n: c.chain.count }))}</span>` : `<span class="badge bad">${ICON.bad} ${esc(fmt(l.chain_bad, { seq: c.chain.brokenAt, reason: c.chain.reason }))}</span>`,
+    c.dec.matches ? `<span class="badge ok">${ICON.ok} ${esc(fmt(l.dec_ok, { n: c.dec.checked }))}</span>` : `<span class="badge bad">${ICON.bad} ${esc(fmt(l.dec_bad, { n: c.dec.mismatches.length }))}</span>`];
+  const st = S.detail && S.detail.verification && S.detail.verification.state;
+  if (st) parts.push(st.matches ? `<span class="badge ok">${ICON.ok} ${esc(l.state_ok)}</span>` : `<span class="badge bad">${ICON.bad} ${esc(l.state_bad)}</span>`);
+  return parts.join("");
+}
+function panelHTML() {
+  const l = L(); const req = S.detail && S.detail.open_request;
+  let html = `<div><h2>${esc(l.request_h)}</h2>`;
+  if (!req) html += `<p class="empty">${esc(l.no_request)}</p>`;
+  else {
+    html += `<p class="q">${esc(req.question)}</p>`;
+    if (S.relayMode === "cloud") html += `<p class="empty">${esc(l.waiting)}</p>`;
+    html += `<p style="font-size:13px;color:var(--ink-soft);margin:10px 0 6px">${esc(l.answer_here)}</p><div class="opts">${req.options.map((o) => `<button class="btn" data-answer="${esc(o.code)}" data-q="${esc(req.question_id)}">${esc(o.title)}</button>`).join("")}</div>`;
+    if (S.relayMode === "simulated") html += `<p style="font-size:13px;color:var(--ink-soft);margin:16px 0 6px">${esc(l.simulate)}</p><div class="opts">${req.options.map((o) => `<button class="btn quiet" data-tap="${esc(o.code)}">${esc(o.title)}</button>`).join("")}<button class="btn danger" data-tap="${esc(req.options[0].code)}" data-stranger="1">${esc(l.stranger)}</button></div>`;
+  }
+  html += `</div>`;
+  const j = S.journal;
+  if (j) html += `<details class="raw"><summary>${esc(l.raw)}</summary><table>${j.events.map((e) => `<tr><td class="mono">${e.seq}</td><td>${esc(e.type)}</td><td class="mono">${esc(e.hash.slice(0, 10))}</td></tr>`).join("")}</table></details>`;
+  return html;
+}
+function renderRead() {
+  const l = L();
+  const list = S.server ? (S.missions.length ? `<ul class="mlist">${S.missions.map((m) => `<li><button data-mission="${esc(m.id)}" aria-pressed="${S.mission === m.id}"><b>${esc(m.title)}</b><small>${esc(l.status[m.status] || m.status)}</small></button></li>`).join("")}</ul>` : `<p class="empty">${esc(l.no_missions)}</p>`) : `<p class="empty">${esc(l.offline_read)}</p>`;
+  const j = S.journal;
+  const center = j ? `<div class="mhead"><h1>${esc(j.mission.title)}</h1><span class="status ${esc(j.mission.status)}">${esc(l.status[j.mission.status] || j.mission.status)}</span></div>
+      <div class="checks">${checksHTML()}</div><div class="thread">${threadHTML(j.events, j.profiles)}</div>` : `<p class="empty">${esc(l.pick)}</p>`;
+  $("#app").innerHTML = `<div class="read"><aside class="side"><h2>${esc(l.missions_h)}</h2>${list}<label class="filebtn">${esc(l.open_journal)}<input type="file" accept=".json,application/json" id="journalfile"></label></aside>
+    <section>${center}</section><aside class="panel">${panelHTML()}</aside></div>`;
+}
+async function loadMission(id, quiet) {
+  const r = await fetch(`/api/missions/${encodeURIComponent(id)}`);
+  if (!r.ok) return;
+  S.detail = await r.json(); S.journal = S.detail.journal; S.mission = id; S.checks = await computeChecks(S.journal);
+  if (S.mode === "read") renderRead();
+  clearTimeout(S.poll);
+  if (!["CLOSED_COMPLETED", "CLOSED_UNCONFIRMED", "CLOSED_FAILED", "REVOKED"].includes(S.journal.mission.status)) S.poll = setTimeout(() => refreshRead(true), 2000);
+}
+async function refreshRead(quiet) {
+  if (!S.server) return renderRead();
+  try { S.missions = await (await fetch("/api/missions")).json(); } catch { S.missions = []; }
+  if (S.mission) await loadMission(S.mission, quiet); else renderRead();
+}
+
+// -- général -------------------------------------------------------------------------------
+function render() {
+  const l = L();
+  document.documentElement.lang = S.lang;
+  $("#m-tailor").textContent = l.tailor; $("#m-read").textContent = l.read;
+  $("#m-tailor").setAttribute("aria-pressed", S.mode === "tailor"); $("#m-read").setAttribute("aria-pressed", S.mode === "read");
+  document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lang === S.lang));
+  $("#conn").className = "conn" + (S.server ? " on" : ""); $("#conn span").textContent = S.server ? l.online : l.offline;
+  if (S.mode === "tailor") renderTailor(); else renderRead();
+}
+document.addEventListener("input", (ev) => {
+  const el = ev.target;
+  if (!el.dataset || !el.dataset.path || S.mode !== "tailor") return;
+  setPath(S.profile, el.dataset.path, coerce(el));
+  recalc(false);
+});
+document.addEventListener("change", async (ev) => {
+  const el = ev.target;
+  if (el.dataset && el.dataset.roleIndex !== undefined) {
+    S.profile.powers.forEach((p, i) => { if (i === +el.dataset.roleIndex && el.checked) p.role = "support"; else if (p.role === "support" && i === +el.dataset.roleIndex) delete p.role; else if (el.checked && p.role === "support") delete p.role; });
+    return recalc(true);
+  }
+  if (el.dataset && el.dataset.path && S.mode === "tailor") { setPath(S.profile, el.dataset.path, coerce(el)); return recalc(true); }
+  if (el.id === "profilefile" && el.files[0]) {
+    try { S.profile = JSON.parse(await el.files[0].text()); S.selected = null; S.libFp = null; recalc(true); } catch (e) { toast(String(e.message || e)); }
+  }
+  if (el.id === "journalfile" && el.files[0]) {
+    try { S.journal = JSON.parse(await el.files[0].text()); S.detail = null; S.mission = null; S.checks = await computeChecks(S.journal); renderRead(); } catch (e) { toast(String(e.message || e)); }
+  }
+});
+document.addEventListener("click", async (ev) => {
+  const b = ev.target.closest("button, summary"); if (!b) return;
+  if (b.id === "m-tailor" || b.id === "m-read") { S.mode = b.id === "m-tailor" ? "tailor" : "read"; pref("mode", S.mode); clearTimeout(S.poll); render(); if (S.mode === "read") refreshRead(); return; }
+  if (b.dataset.lang) { S.lang = b.dataset.lang; pref("lang", S.lang); render(); return; }
+  if (b.dataset.pattern) return selectPattern(b.dataset.pattern);
+  if (b.tagName === "SUMMARY") { const d = b.parentElement; S.open = d.open ? null : +d.dataset.index; return; }
+  if (b.dataset.remove !== undefined) { S.profile.powers.splice(+b.dataset.remove, 1); S.open = null; return recalc(true); }
+  if (b.dataset.move !== undefined) { const i = +b.dataset.move, j = i + +b.dataset.dir, a = S.profile.hesitation.ladder; [a[i], a[j]] = [a[j], a[i]]; return recalc(true); }
+  if (b.id === "addpower") return newPower($("#newkind").value);
+  if (b.id === "download") return download();
+  if (b.id === "copy") { try { await navigator.clipboard.writeText(JSON.stringify(S.profile, null, 2)); toast(L().copied); } catch { toast("Clipboard unavailable"); } return; }
+  if (b.id === "revise") return revise();
+  if (b.dataset.mission) { S.mission = b.dataset.mission; return loadMission(S.mission); }
+  if (b.dataset.answer) {
+    const r = await (await fetch(`/api/missions/${encodeURIComponent(S.mission)}/answer`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question_id: b.dataset.q, code: b.dataset.answer }) })).json();
+    toast(r.accepted ? fmt(L().answered, { code: b.dataset.answer }) : fmt(L().refused_answer, { reason: r.reason })); return setTimeout(() => loadMission(S.mission), 400);
+  }
+  if (b.dataset.tap) {
+    const r = await (await fetch(`/api/missions/${encodeURIComponent(S.mission)}/simulate-tap`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: b.dataset.tap, stranger: !!b.dataset.stranger }) })).json();
+    const res = (r.results || [])[0] || {}; toast(res.accepted ? fmt(L().answered, { code: b.dataset.tap }) : fmt(L().refused_answer, { reason: res.reason })); return setTimeout(() => loadMission(S.mission), 400);
+  }
+});
+
+(async function boot() {
+  S.lang = pref("lang") || ((navigator.language || "").toLowerCase().startsWith("fr") ? "fr" : "en");
+  S.mode = new URLSearchParams(location.search).get("mode") || pref("mode") || "tailor";
+  S.catalog = CATALOG_EMBEDDED;
+  if (location.protocol.startsWith("http")) {
+    try {
+      const h = await (await fetch("/api/health")).json(); S.server = !!h.ok; S.relayMode = h.whatsapp && h.whatsapp.mode;
+      const c = await (await fetch("/api/catalog")).json(); if (c.templates && c.templates.length) S.catalog = c.templates;
+    } catch { S.server = false; }
+  }
+  const first = S.catalog.find((c) => c.id === "reservation-voyage") || S.catalog[0];
+  S.selected = first.id; S.profile = clone(first.profile);
+  S.errors = H.validateProfile(S.profile); S.fp = await H.fingerprint(S.profile);
+  render();
+  if (S.mode === "read") refreshRead(); else recalc(false);
+})();
+</script>
+</body>
+</html>

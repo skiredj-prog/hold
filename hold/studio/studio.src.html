@@ -412,7 +412,6 @@ function renderTailor() {
   const patterns = S.catalog.map((c) => `<button class="pattern" data-pattern="${esc(c.id)}" aria-pressed="${S.selected === c.id}"><strong>${esc(c.title)}</strong><small>${esc((c.description || "").slice(0, 120))}${(c.description || "").length > 120 ? "…" : ""}</small><em>${esc(fmt(l.powers_n, { n: c.profile.powers.length }))}</em></button>`).join("");
   const ladder = p.hesitation.ladder.map((name, i, arr) => `<li><b>${esc(fmt(l.path[name], { name: p.authority.name }))}</b><small>${esc(name)}</small>
       ${name === "PRESERVE" ? "" : `<button aria-label="up" data-move="${i}" data-dir="-1" ${i === 0 ? "disabled" : ""}>↑</button><button aria-label="down" data-move="${i}" data-dir="1" ${i >= arr.length - 2 ? "disabled" : ""}>↓</button>`}</li>`).join("");
-  const allErrors = [...S.errors, ...(S.libErrors || [])];
   $("#app").innerHTML = `<div class="tailor">
     <section>
       <div class="intro"><h1>${esc(l.intro_h)}</h1><p>${esc(l.intro_p)}</p></div>
@@ -439,17 +438,44 @@ function renderTailor() {
           ${field(l.max_rounds, "hesitation.max_rounds", { type: "int", input: "number", attrs: 'min="1" max="50"' })}
           <div class="field" style="justify-content:end">${checkbox(l.autonomous, "hesitation.autonomous_resume")}</div></div></div>
     </section>
-    <aside class="labelcol"><div id="label">${wovenLabel()}</div>
-      ${allErrors.length ? `<ul class="errors">${allErrors.map((e) => `<li><span class="mono">${esc(e.loc)}</span> ${esc(e.msg)}</li>`).join("")}</ul>` : ""}
+    <aside class="labelcol"><div id="label">${wovenLabel()}</div><div id="labelfoot">${labelFoot()}</div></aside></div>`;
+}
+// The validator in core.js (frozen) words its messages in French; the English page shows them in English.
+const EN_MSG = {
+  "Profil vide": "Empty profile", "Version de profil attendue : habilitation/v1": "Expected profile version: habilitation/v1",
+  "Identifiant : minuscules, chiffres, . _ -": "Identifier: lowercase letters, digits, . _ -", "Titre requis": "Title required",
+  "Révision entière ≥ 1": "Revision must be an integer ≥ 1", "Expire avant d'être émis": "Expires before it is issued",
+  "Nom de l'autorité requis": "Authority name required", "Numéro international, chiffres seuls (ex. 212612345678)": "International number, digits only (e.g. 212612345678)",
+  "Au moins un pouvoir": "At least one power", "Nom d'action : minuscules, chiffres, _": "Action name: lowercase letters, digits, _",
+  "Action en double": "Duplicate action", "Un effet doit déclarer ses attributs d'identité": "An effect must declare its identity attributes",
+  "Plafond positif requis": "Positive ceiling required", "Devise ISO à 3 lettres": "3-letter ISO currency", "Fenêtre inversée": "Window ends before it starts",
+  "Enveloppe, identité et réconciliation sont réservées aux effets": "Envelope, identity and reconciliation are for effects only",
+  "Le rôle support exige un pouvoir de contact": "The support role requires a contact power", "Un seul pouvoir « support »": "Only one support power",
+  "τ* entre 0 (exclu) et 1": "τ* must be above 0 and at most 1", "PRESERVE doit être le dernier chemin": "PRESERVE must be the last path", "Chemin en double": "Duplicate path",
+};
+function msgText(m) {
+  if (S.lang !== "en") return m;
+  if (EN_MSG[m]) return EN_MSG[m];
+  let x = /^La réconciliation exige un pouvoir « status » nommé (.*)$/.exec(m); if (x) return `Reconciliation requires a status power named ${x[1]}`;
+  x = /^Dépendance inconnue : (.*)$/.exec(m); if (x) return `Unknown dependency: ${x[1]}`;
+  return m;
+}
+// The error list and the actions follow every validation, local or server, so a fixed profile is never left disabled.
+function labelFoot() {
+  const l = L(), allErrors = [...S.errors, ...(S.libErrors || [])];
+  return `${allErrors.length ? `<ul class="errors">${allErrors.map((e) => `<li><span class="mono">${esc(e.loc)}</span> ${esc(msgText(e.msg))}</li>`).join("")}</ul>` : ""}
       <div class="labelactions"><button class="btn solid" id="download" ${allErrors.length ? "disabled" : ""}>${esc(l.download)}</button>
-        <button class="btn" id="copy" ${allErrors.length ? "disabled" : ""}>${esc(l.copy)}</button><button class="btn quiet" id="revise">${esc(l.revise)}</button></div>
-    </aside></div>`;
+        <button class="btn" id="copy" ${allErrors.length ? "disabled" : ""}>${esc(l.copy)}</button><button class="btn quiet" id="revise">${esc(l.revise)}</button></div>`;
+}
+function refreshLabel() {
+  $("#label").innerHTML = wovenLabel();
+  const f = $("#labelfoot"); if (f) f.innerHTML = labelFoot();
 }
 let recalcTimer = null;
 async function recalc(full) {
   S.errors = H.validateProfile(S.profile);
   S.fp = await H.fingerprint(S.profile);
-  if (full) renderTailor(); else { $("#label").innerHTML = wovenLabel(); const o = $("#tauout"); if (o) o.textContent = S.profile.hesitation.tau_star.toFixed(2); }
+  if (full) renderTailor(); else { refreshLabel(); const o = $("#tauout"); if (o) o.textContent = S.profile.hesitation.tau_star.toFixed(2); }
   if (S.server) {
     clearTimeout(recalcTimer);
     recalcTimer = setTimeout(async () => {
@@ -457,7 +483,7 @@ async function recalc(full) {
         const r = await (await fetch("/api/profiles/validate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(S.profile) })).json();
         S.libFp = r.valid ? r.fingerprint : null; S.libErrors = r.valid ? null : r.errors;
       } catch { S.libFp = null; }
-      $("#label").innerHTML = wovenLabel();
+      refreshLabel();
     }, 350);
   }
 }
@@ -499,9 +525,11 @@ function threadHTML(events, profiles) {
   const push = (html) => (knot ? knot.items : out).push(html);
   const beat = (cls, main, sub) => `<div class="beat ${cls}"><p>${main}</p>${sub ? `<p class="sub">${sub}</p>` : ""}</div>`;
   let lastProposal = null, lastRequest = null;
+  const positions = {};  // the journal records each position once (POSITION) and decisions refer to it by sequence
   for (const e of events) {
     const d = e.data;
     switch (e.type) {
+      case "POSITION": positions[e.seq] = d.position; break;
       case "MISSION_OPENED": out.push(beat("", esc(t.opened), esc(d.title))); break;
       case "PROFILE_ATTACHED": out.push(beat("", esc(fmt(t.profile, { p: d.profile, r: d.revision })), `<span class="mono">${esc(d.fingerprint.slice(0, 24))}…</span>`)); break;
       case "ACTION_ADMITTED": if (d.kind !== "effect") push(beat("pass", esc(fmt(t.admitted, { a: d.action })))); break;
@@ -515,7 +543,7 @@ function threadHTML(events, profiles) {
       case "HOLD_ENTERED": flush(); knot = { scope: d.scope.join(", "), items: [] }; break;
       case "PROPOSAL": lastProposal = d; break;
       case "DECISION": {
-        const v = d.verdict, pos = d.position;
+        const v = d.verdict, pos = d.position || positions[d.position_seq] || { paths: [], tau_star: 0 };
         if (v.applied == null) { push(`<div class="round"><span class="name">${esc(fmt(t.round, { n: d.round }))}</span><span class="note">${esc(t.stale)}</span></div>`); break; }
         const ps = pos.paths.find((x) => x.name === v.applied) || { sigma: 0 };
         const disc = lastProposal ? lastProposal.discerner : "";
