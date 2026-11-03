@@ -82,6 +82,15 @@ def test_manifest_detects_mutation(tmp_path):
     assert not verify_export(raw.getvalue())['valid']
 
 
+def test_verifier_rejects_suspiciously_compressed_archive():
+    raw = io.BytesIO()
+    with zipfile.ZipFile(raw, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('manifest.json', json.dumps({'files_sha256': {'payload.bin': 'x'}}))
+        z.writestr('payload.bin', b'0' * 1_000_000)
+    result = verify_export(raw.getvalue())
+    assert result['valid'] is False and 'compression ratio' in result['reason']
+
+
 def test_live_path_mock_meta_signed_webhook(tmp_path, monkeypatch):
     monkeypatch.setenv('WHATSAPP_ACCESS_TOKEN', 'MOCK_TOKEN')
     monkeypatch.setenv('WHATSAPP_PHONE_NUMBER_ID', 'MOCK_PHONE')
@@ -104,6 +113,7 @@ def test_live_path_mock_meta_signed_webhook(tmp_path, monkeypatch):
     assert len(calls)==1 and calls[0]['type']=='interactive'
     q=st['open_request']
     payload=simulated_tap('212600000000',button_id(st['mission_id'],q['question_id'],'EXTEND_CHECKS'),'Allow 1 more check')
+    payload['entry'][0]['changes'][0]['value']['metadata']={'phone_number_id':'MOCK_PHONE'}
     raw=json.dumps(payload).encode()
     bad=client.post('/api/whatsapp/webhook',content=raw,headers={'x-hub-signature-256':'sha256='+'0'*64})
     assert bad.status_code==401

@@ -55,7 +55,7 @@ def verify_archive(raw_zip: bytes) -> dict[str, Any]:
     try:
         with zipfile.ZipFile(io.BytesIO(raw_zip)) as z:
             journal = verify_journal(json.loads(z.read("mission-journal.json")))
-    except (KeyError, ValueError, TypeError) as exc:
+    except (KeyError, ValueError, TypeError, OSError, RuntimeError, zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
         journal = {"valid": False, "reason": f"journal unreadable: {type(exc).__name__}: {exc}"}
     return {"valid": bool(manifest["valid"] and journal["valid"]), "manifest": manifest, "journal": journal,
             "scope": "Local re-verification only: no signature on the manifest, no proof of completeness, no provider or model re-run."}

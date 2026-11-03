@@ -82,6 +82,20 @@ def test_tap_binding_idempotence_and_resume(world):
     assert m.verify().valid
 
 
+def test_webhook_binds_incoming_events_to_configured_phone_number(world):
+    hab, hotel, relay, _, m = world
+    cfg = WhatsAppConfig(app_secret=SECRET, verify_token="verify-me", phone_number_id="PN1")
+    client = TestClient(create_app(hab.store, [hab], whatsapp=cfg, studio_token=""))
+    q = m.open_request()["question_id"]
+    payload = simulated_tap(AUTH, button_id(m.id, q, "EXTEND_CHECKS"), "Allow")
+    payload["entry"][0]["changes"][0]["value"]["metadata"] = {"phone_number_id": "WRONG"}
+    rejected = post(client, payload).json()["results"][0]
+    assert rejected["reason"] == "PHONE_NUMBER_NOT_CONFIGURED"
+    payload["entry"][0]["changes"][0]["value"]["metadata"] = {"phone_number_id": "PN1"}
+    accepted = post(client, payload).json()["results"][0]
+    assert accepted["accepted"] is True
+
+
 def test_stop_message_revokes_active_missions(world):
     hab, hotel, relay, client, m = world
     payload = {"object": "whatsapp_business_account", "entry": [{"changes": [{"field": "messages", "value": {"messages": [{"from": AUTH, "id": "wamid.T1", "type": "text", "text": {"body": "STOP"}}]}}]}]}

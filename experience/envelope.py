@@ -16,6 +16,11 @@ from typing import Any
 
 from hold.replay import decision_replay, export_journal, journal_profiles, state_replay
 
+MAX_ENVELOPE_MEMBERS = 32
+MAX_MEMBER_BYTES = 2 * 1024 * 1024
+MAX_TOTAL_UNCOMPRESSED_BYTES = 8 * 1024 * 1024
+MAX_COMPRESSION_RATIO = 1000
+
 
 def _json(value: Any) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, default=str) + "\n").encode("utf-8")
@@ -118,16 +123,42 @@ def capture(mission, hotel, *, channel: str, agent: str) -> tuple[dict[str, Any]
     return {"findings": findings, "manifest": manifest}, out.getvalue()
 
 
+def _safe_zip_members(z: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]:
+    infos = z.infolist()
+    if len(infos) > MAX_ENVELOPE_MEMBERS:
+        raise ValueError("too many archive members")
+    indexed: dict[str, zipfile.ZipInfo] = {}
+    total = 0
+    for info in infos:
+        if not info.filename or info.filename in indexed or info.is_dir():
+            raise ValueError("invalid archive layout")
+        if info.file_size > MAX_MEMBER_BYTES:
+            raise ValueError(f"archive member too large: {info.filename}")
+        if info.compress_size == 0 and info.file_size:
+            raise ValueError(f"invalid compression metadata: {info.filename}")
+        if info.compress_size and info.file_size / info.compress_size > MAX_COMPRESSION_RATIO:
+            raise ValueError(f"suspicious compression ratio: {info.filename}")
+        total += info.file_size
+        if total > MAX_TOTAL_UNCOMPRESSED_BYTES:
+            raise ValueError("archive expands beyond verification budget")
+        indexed[info.filename] = info
+    return indexed
+
+
 def verify_export(raw_zip: bytes) -> dict[str, Any]:
     """Offline verification of file digests (does NOT authenticate the manifest's author)."""
-    with zipfile.ZipFile(io.BytesIO(raw_zip)) as z:
-        names = z.namelist()
-        if len(names) != len(set(names)) or "manifest.json" not in names:
-            return {"valid": False, "reason": "Invalid archive layout"}
-        manifest = json.loads(z.read("manifest.json"))
-        hashes = manifest.get("files_sha256", {})
-        if sorted(n for n in names if n != "manifest.json") != sorted(hashes):
-            return {"valid": False, "reason": "Manifest file list mismatch"}
-        problems = [n for n, want in hashes.items() if hashlib.sha256(z.read(n)).hexdigest() != want]
-        return {"valid": not problems, "mismatched": problems,
-                "caveat": "Local SHA-256 equality only; the manifest itself has no independent signature."}
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw_zip)) as z:
+            members = _safe_zip_members(z)
+            names = list(members)
+            if "manifest.json" not in names:
+                return {"valid": False, "reason": "Invalid archive layout"}
+            manifest = json.loads(z.read(members["manifest.json"]))
+            hashes = manifest.get("files_sha256", {})
+            if not isinstance(hashes, dict) or sorted(n for n in names if n != "manifest.json") != sorted(hashes):
+                return {"valid": False, "reason": "Manifest file list mismatch"}
+            problems = [n for n, want in hashes.items() if hashlib.sha256(z.read(members[n])).hexdigest() != want]
+            return {"valid": not problems, "mismatched": problems,
+                    "caveat": "Local SHA-256 equality only; the manifest itself has no independent signature."}
+    except (OSError, RuntimeError, ValueError, KeyError, zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+        return {"valid": False, "reason": f"Invalid evidence archive: {type(exc).__name__}: {exc}"}

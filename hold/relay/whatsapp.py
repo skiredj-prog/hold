@@ -200,10 +200,12 @@ def parse_webhook(payload: Any) -> dict[str, list[dict[str, Any]]]:
             if not isinstance(change, dict) or change.get("field") != "messages":
                 continue
             value = change.get("value") or {}
+            metadata = value.get("metadata") or {}
+            phone_number_id = str(metadata.get("phone_number_id", "")) or None
             for m in value.get("messages") or []:
                 if not isinstance(m, dict) or not m.get("id") or not m.get("from"):
                     continue
-                base = {"message_id": str(m["id"]), "from": str(m["from"]), "timestamp": str(m.get("timestamp", ""))}
+                base = {"message_id": str(m["id"]), "from": str(m["from"]), "timestamp": str(m.get("timestamp", "")), "phone_number_id": phone_number_id}
                 inter = m.get("interactive") or {}
                 if m.get("type") == "interactive" and inter.get("type") == "button_reply" and (inter.get("button_reply") or {}).get("id"):
                     out["replies"].append(base | {"button": str(inter["button_reply"]["id"]), "title": str(inter["button_reply"].get("title", "")), "via": "interactive"})
@@ -216,7 +218,7 @@ def parse_webhook(payload: Any) -> dict[str, list[dict[str, Any]]]:
             for s in value.get("statuses") or []:
                 if isinstance(s, dict) and s.get("id") and s.get("status"):
                     err = (s.get("errors") or [{}])[0] or {}
-                    out["statuses"].append({"message_id": str(s["id"]), "status": str(s["status"]), "error_code": err.get("code"), "error": err.get("title") or err.get("message")})
+                    out["statuses"].append({"message_id": str(s["id"]), "status": str(s["status"]), "error_code": err.get("code"), "error": err.get("title") or err.get("message"), "phone_number_id": phone_number_id})
     return out
 
 
@@ -235,9 +237,13 @@ def simulated_tap(sender: str, button: str, title: str) -> dict[str, Any]:
 class Inbound:
     """Traite les webhooks pour un magasin donné. `habilitations` : missions → Habilitation qui les porte."""
 
-    def __init__(self, store, resolve):
+    def __init__(self, store, resolve, *, expected_phone_number_id: str | None = None):
         self.store = store
         self.resolve = resolve  # mission_id -> Habilitation | None
+        self.expected_phone_number_id = expected_phone_number_id
+
+    def _phone_allowed(self, item: dict[str, Any]) -> bool:
+        return not self.expected_phone_number_id or item.get("phone_number_id") == self.expected_phone_number_id
 
     def _seen(self, message_id: str, mission_id: str, kind: str, mode: str, peer: str, detail: dict[str, Any]) -> bool:
         from ..store import now_iso
@@ -266,11 +272,15 @@ class Inbound:
         for t in parsed["texts"]:
             results.append(self._text(t, mode))
         for s in parsed["statuses"]:
+            if not self._phone_allowed(s):
+                continue
             with self.store.tx() as c:
                 c.execute("UPDATE relay_messages SET status=?, error=COALESCE(?, error) WHERE wa_message_id=? AND direction='OUT'", (s["status"].upper(), s["error"], s["message_id"]))
         return {"results": results, "statuses": len(parsed["statuses"]), "ignored": len(parsed["others"])}
 
     def _reply(self, r: dict[str, Any], mode: str) -> dict[str, Any]:
+        if not self._phone_allowed(r):
+            return {"message_id": r["message_id"], "accepted": False, "reason": "PHONE_NUMBER_NOT_CONFIGURED"}
         parsed = parse_button_id(r["button"])
         if not parsed:
             return {"message_id": r["message_id"], "accepted": False, "reason": "UNKNOWN_BUTTON"}
@@ -303,6 +313,8 @@ class Inbound:
         return {"message_id": r["message_id"], "accepted": outcome["accepted"], "reason": outcome.get("reason"), "mission": mission_id}
 
     def _text(self, t: dict[str, Any], mode: str) -> dict[str, Any]:
+        if not self._phone_allowed(t):
+            return {"message_id": t["message_id"], "accepted": False, "reason": "PHONE_NUMBER_NOT_CONFIGURED"}
         word = t["body"].strip().lower().strip(".!")
         if word not in STOP_WORDS:
             return {"message_id": t["message_id"], "accepted": False, "reason": "TEXT_IGNORED"}

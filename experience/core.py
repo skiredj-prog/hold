@@ -65,7 +65,8 @@ class Experience:
         self.error = None
         self.report = None
         self._lock = threading.RLock()
-        self.inbound = Inbound(self.hab.store, lambda mid: self.hab if self.mission and mid == self.mission.id else None)
+        self.inbound = Inbound(self.hab.store, lambda mid: self.hab if self.mission and mid == self.mission.id else None,
+                               expected_phone_number_id=cfg.phone_number_id or None)
         self.app = create_app(self.hab.store, [self.hab], whatsapp=cfg, studio_token=os.environ.get("HOLD_STUDIO_TOKEN") or "")
         self._routes()
 

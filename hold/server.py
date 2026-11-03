@@ -52,7 +52,7 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
         habs[row["profile_fp"]] = h
         return h
 
-    inbound = Inbound(store, resolve)
+    inbound = Inbound(store, resolve, expected_phone_number_id=cfg.phone_number_id or None)
     app = FastAPI(title="HOLD", version="0.1.0", docs_url=None, redoc_url=None)
 
     def studio_guard(request: Request) -> None:
@@ -88,9 +88,14 @@ def create_app(store: Store, habilitations: list[Habilitation] | None = None, *,
             declared = -1
         if declared > MAX_WEBHOOK_BODY:
             return Response(status_code=413)
-        raw = await request.body()
-        if len(raw) > MAX_WEBHOOK_BODY:
-            return Response(status_code=413)
+        chunks = []
+        total = 0
+        async for chunk in request.stream():
+            total += len(chunk)
+            if total > MAX_WEBHOOK_BODY:
+                return Response(status_code=413)
+            chunks.append(chunk)
+        raw = b"".join(chunks)
         if not verify_signature(raw, request.headers.get("x-hub-signature-256"), cfg.app_secret):
             return Response(status_code=401)
         try:
