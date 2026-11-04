@@ -1,8 +1,8 @@
 # HOLD submission readiness — non-media review
 
-**Reviewed:** 4 November 2026  
-**Baseline:** public `main` at `0c52bbf15361a2a38bcf5a6994902c8d7636dc0f`  
-**Scope:** repository disclosures, code/model/font licensing references, public-repository privacy indicators, and hackathon roster/track documentation.  
+**Reviewed:** 4 November 2026
+**Baseline:** public `main` at `0c52bbf15361a2a38bcf5a6994902c8d7636dc0f`
+**Scope:** repository disclosures, code/model/font licensing references, public-repository privacy indicators, and hackathon roster/track documentation.
 **Excluded by request:** the final video, its changing audio, and any local files not present in the repository. No final-cut media rights are cleared by this review.
 
 ## Executive summary
