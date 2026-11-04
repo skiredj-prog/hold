@@ -44,3 +44,9 @@ sha256sum -c bench/results/MANIFEST_E1_A6.sha256
 ```
 
 This verifies files against the repository's own manifest, not their authorship, collection time, model/server execution provenance, or an external provider event. Git history and these files are hash-addressed but not signed attestations. A genuinely independent reviewer should fetch the published artifacts and report their own verification; this package does not claim that external review has occurred.
+
+## Public automated check
+
+The repository publishes `.github/workflows/frozen-reproducibility.yml`. It runs in a fresh GitHub-hosted environment and checks the exact frozen commit, all 23 protocol source fingerprints, all 102 trace-manifest entries, and `hold bench check` on the frozen tag. It can be rerun from the Actions page or from the pull request.
+
+Claim boundary: **reproduced by the project's published workflow; no external reviewer available**. This automated result is not independent human review, authenticated experiment provenance, or proof that the original Llama runs happened as reported.
