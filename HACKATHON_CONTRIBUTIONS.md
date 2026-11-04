@@ -2,7 +2,7 @@
 
 **Project:** HOLD  
 **Repository:** https://github.com/skiredj-prog/hold  
-**Prepared:** 3 November 2026
+**Prepared:** 4 November 2026
 
 This record is a submission aid. It separates the implementation demonstrated for the hackathon from earlier research, architectural foundations, and future proposals.
 
@@ -12,13 +12,13 @@ The jury demo presents the following working implementation in this repository:
 
 | Demonstrated contribution | Repository evidence | What the demo claims |
 |---|---|---|
-| HOLD execution boundary | [hold/floor.py](../hold/floor.py), [hold/runtime.py](../hold/runtime.py) | Consequential proposals are admitted, refused, or held before provider execution. |
-| Habilitation/profile enforcement | [hold/profile.py](../hold/profile.py), [hold/profiles/](../hold/profiles/) | A human-authored profile defines the mission, authority, limits, and escalation path. |
-| Unknown-outcome handling and bounded recovery | [hold/hesitation.py](../hold/hesitation.py), [hold/outcome.py](../hold/outcome.py), [hold/replay.py](../hold/replay.py) | A lost provider response is not treated as success or failure; HOLD checks and escalates within a bounded policy. |
-| Evidence journal and offline replay | [hold/journal.py](../hold/journal.py), [hold/journal_verify.py](../hold/journal_verify.py), [hold/showcase.py](../hold/showcase.py) | The mission closes from correlated evidence and the recorded decisions can be replayed without the model. |
-| Guided governed-mission experience | [experience/](../experience/) | A viewer can follow one synthetic booking, answer one bounded decision, export an evidence envelope, and verify it offline. |
-| Meta Llama integration and benchmark | [bench/](../bench/), [E1_A6_RESULTS.md](../E1_A6_RESULTS.md) | Llama 3.2 3B proposes actions; the HOLD boundary determines what is executed and what counts as established. |
-| Implemented Meta WhatsApp Cloud API decision relay | [hold/relay/](../hold/relay/), [docs/whatsapp-live.md](../docs/whatsapp-live.md) | The demo can label a simulated relay; a live WhatsApp path is separate and must not be implied unless credentials and delivery evidence are present. |
+| HOLD execution boundary | [hold/floor.py](hold/floor.py), [hold/runtime.py](hold/runtime.py) | Consequential proposals are admitted, refused, or held before provider execution. |
+| Habilitation/profile enforcement | [hold/profile.py](hold/profile.py), [hold/profiles/](hold/profiles/) | A human-authored profile defines the mission, authority, limits, and escalation path. |
+| Unknown-outcome handling and bounded recovery | [hold/hesitation.py](hold/hesitation.py), [hold/outcome.py](hold/outcome.py), [hold/replay.py](hold/replay.py) | A lost provider response is not treated as success or failure; HOLD checks and escalates within a bounded policy. |
+| Evidence journal and offline replay | [hold/journal.py](hold/journal.py), [hold/journal_verify.py](hold/journal_verify.py), [hold/showcase.py](hold/showcase.py) | The mission closes from correlated evidence and the recorded decisions can be replayed without the model. |
+| Guided governed-mission experience | [experience/](experience/) | A viewer can follow one synthetic booking, answer one bounded decision, export an evidence envelope, and verify it offline. |
+| Meta Llama integration and benchmark | [bench/](bench/), [E1_A6_RESULTS.md](E1_A6_RESULTS.md) | Llama 3.2 3B proposes actions; the HOLD boundary determines what is executed and what counts as established. |
+| Implemented Meta WhatsApp Cloud API decision relay | [hold/relay/](hold/relay/), [docs/whatsapp-live.md](docs/whatsapp-live.md) | The demo can label a simulated relay; a live WhatsApp path is separate and must not be implied unless credentials and delivery evidence are present. |
 
 ## Prior work and excluded claims
 
@@ -38,9 +38,11 @@ The public Git history contains concentrated development activity from 1–3 Nov
 
 The official team roster is an event-registration record and is not inferable from Git authors, co-authored commits, or tool/session metadata. The entrant should confirm the registered human team separately and keep it within the event limit.
 
-## Reproduction path
+## Run the jury demo or inspect the benchmark
 
-For the shortest governed experience, follow [experience/README.md](../experience/README.md). For the frozen exploratory benchmark and its scope, follow [E1_A6_RESULTS.md](../E1_A6_RESULTS.md).
+For the shortest reliable path, follow the [jury demo guide](JURY_DEMO.md). It uses the scripted agent, synthetic hotel, and simulated relay, then exports an evidence envelope that can be verified offline. No model, Meta credentials, or tunnel are required.
+
+To inspect the recorded Llama experiment and its scope and limitations, read [E1-A6 results](E1_A6_RESULTS.md). To reproduce the frozen source and verify the benchmark from a clean clone, use the [E1-A6 reproducibility handoff](docs/audit/reproducibility-2026-11-03/README.md), which contains the source export, Git bundle, hashes, and verification commands.
 
 ## Submission discipline
 
