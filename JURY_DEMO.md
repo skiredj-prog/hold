@@ -77,6 +77,7 @@ State implied by the events vs exported store: identical
 | This jury demo | One reliable governed mission | Python only |
 | [HOLD Studio](README.md#hold-studio--tailor-the-habilitation-follow-the-mission-reconstruct-it) | Profile editing and mission inspection | Python only |
 | [Recorded benchmark replay](README.md#see-it-in-two-minutes--recorded-runs-no-model-no-network) | Inspect frozen Llama traces | Python only |
+| [Forensic console](docs/console/) | Inspect three frozen E1-A6 traces in a browser | No server or network |
 | Full E1-A6 reproduction | Re-run the exploratory benchmark | Ollama, Llama 3.2 3B, about 1h40 |
 | Live WhatsApp relay | Real Meta decision transport | Meta credentials, webhook, tunnel; implemented but not live-validated |
 
