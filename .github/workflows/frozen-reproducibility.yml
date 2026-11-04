@@ -68,15 +68,14 @@ jobs:
           print(f"Verified {len(code)}/{len(code)} frozen source fingerprints")
           PY
 
-      - name: Verify all frozen trace manifest entries
+      - name: Verify all published trace manifest entries
         shell: bash
         run: |
           set -euo pipefail
-          cd frozen-source
           count="$(awk 'NF == 2 && $1 ~ /^[0-9a-f]{64}$/ {n++} END {print n+0}' bench/results/MANIFEST_E1_A6.sha256)"
           test "$count" = "102"
           sha256sum -c bench/results/MANIFEST_E1_A6.sha256
-          echo "trace_manifest=$count/$count" >> ../reproducibility-summary.txt
+          echo "trace_manifest=$count/$count" >> reproducibility-summary.txt
 
       - name: Install the frozen package
         working-directory: frozen-source
