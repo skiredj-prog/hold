@@ -10,15 +10,15 @@ What you need: a Meta developer account, the authority's phone with WhatsApp, `p
 2. **WhatsApp > API Setup.** Note the test number in **From**, its **Phone number ID** (digits, not the WhatsApp Business Account ID), and generate a **temporary access token** (it expires after about 24 h).
 3. **Allowed recipients.** In **To**, choose **Manage phone number list**, add the authority's number and enter the code WhatsApp sends to it. Up to 5 numbers.
 4. **App secret.** App settings > Basic > App secret > Show. HOLD uses it to check that every webhook event comes from Meta.
-5. **Verify token.** Any string you choose, for example `hold-verify-2026`. You will type it twice: in your shell and in Meta's webhook settings.
+5. **Verify token.** Generate a private random string of your own; do not reuse an example token from a public repository. You will type it twice: in your shell and in Meta's webhook settings.
 
 ## 2. Your shell (same window for every command below)
 
 ```powershell
 $env:WHATSAPP_ACCESS_TOKEN    = "EAAG..."           # temporary token from API Setup
 $env:WHATSAPP_PHONE_NUMBER_ID = "1234567890..."     # Phone number ID, digits
-$env:WHATSAPP_APP_SECRET      = "..."               # App settings > Basic
-$env:WHATSAPP_VERIFY_TOKEN    = "hold-verify-2026"  # your choice
+$env:WHATSAPP_APP_SECRET      = "<private-app-secret>"        # App settings > Basic
+$env:WHATSAPP_VERIFY_TOKEN    = "<generate-random-token>"     # keep private; enter the same value in Meta
 python -m hold.whatsapp_check --contact 2126XXXXXXXX
 ```
 
