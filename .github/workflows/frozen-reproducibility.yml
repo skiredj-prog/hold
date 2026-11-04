@@ -1,0 +1,110 @@
+name: frozen reproducibility
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-check:
+    name: Reproduce e1-a6-frozen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the published branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch and identify the frozen tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force --tags origin e1-a6-frozen
+          actual="$(git rev-parse e1-a6-frozen^{commit})"
+          expected="12250bca32b9fbc77113994db8a68036f9948f9d"
+          test "$actual" = "$expected"
+          echo "frozen_tag=$actual" | tee reproducibility-summary.txt
+
+      - name: Verify the 23 frozen source fingerprints
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf frozen-source
+          mkdir frozen-source
+          git archive e1-a6-frozen | tar -x -C frozen-source
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path("frozen-source")
+          protocol_path = root / "bench/protocol.frozen.json"
+          protocol = json.loads(protocol_path.read_text())
+          expected_protocol_sha = "d467a86b2bb9b22f16fd35cfe09da9ad9d0bcf05a6b9799b574abd22adedc081"
+          actual_protocol_sha = protocol.get("sha256")
+          assert actual_protocol_sha == expected_protocol_sha, (actual_protocol_sha, expected_protocol_sha)
+          code = protocol["protocol"]["code"]
+          assert len(code) == 23, len(code)
+          failures = []
+          for rel, want in sorted(code.items()):
+              path = root / "hold" / rel if not rel.startswith("hold/") else root / rel
+              if not path.is_file():
+                  failures.append((rel, "missing", want))
+                  continue
+              got = hashlib.sha256(path.read_bytes()).hexdigest()
+              if got != want:
+                  failures.append((rel, got, want))
+          if failures:
+              raise SystemExit(f"source fingerprint mismatch: {failures}")
+          with open("reproducibility-summary.txt", "a", encoding="utf-8") as out:
+              out.write(f"source_fingerprints={len(code)}/{len(code)}\n")
+          print(f"Verified {len(code)}/{len(code)} frozen source fingerprints")
+          PY
+
+      - name: Verify all published trace manifest entries
+        shell: bash
+        run: |
+          set -euo pipefail
+          count="$(awk 'NF == 2 && $1 ~ /^[0-9a-f]{64}$/ {n++} END {print n+0}' bench/results/MANIFEST_E1_A6.sha256)"
+          test "$count" = "102"
+          sha256sum -c bench/results/MANIFEST_E1_A6.sha256
+          echo "trace_manifest=$count/$count" >> reproducibility-summary.txt
+
+      - name: Install the frozen package
+        working-directory: frozen-source
+        run: python -m pip install -e ".[dev,server]"
+
+      - name: Run the frozen bench check
+        working-directory: frozen-source
+        shell: bash
+        run: |
+          set -euo pipefail
+          hold bench check | tee ../frozen-bench-check.txt
+          cat ../frozen-bench-check.txt >> ../reproducibility-summary.txt
+
+      - name: Publish reproducibility summary
+        run: |
+          {
+            echo "## Reproducibility result"
+            echo
+            echo "Reproduced by the project's published workflow; no external reviewer available."
+            echo
+            echo '```text'
+            cat reproducibility-summary.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload verification logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: frozen-reproducibility-logs
+          path: |
+            reproducibility-summary.txt
+            frozen-bench-check.txt
