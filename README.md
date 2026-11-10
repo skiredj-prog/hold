@@ -1,5 +1,10 @@
 # HOLD — prêt-à-porter habilitation for autonomous agents
 
+> **Identity lock (2026-11-10):** HOLD is the historical hackathon prototype and frozen experiments (`e1-a6-frozen`).  
+> The single maintained product and runtime is **TENIR-Gov**.  
+> See [DECISION_HOLD_TENIR_GOV_IDENTITY_LOCK.md](DECISION_HOLD_TENIR_GOV_IDENTITY_LOCK.md).  
+> Results and benchmarks in this repository are evidence about the frozen HOLD implementation only.
+
 [![Tests](https://github.com/skiredj-prog/hold/actions/workflows/tests.yml/badge.svg)](https://github.com/skiredj-prog/hold/actions/workflows/tests.yml)
 
 **HOLD separates intelligence, authority and evidence.** The agent proposes. The architecture governs execution. Evidence establishes what was accomplished. An agent may be right; its conviction alone does not make it the authority.
@@ -168,125 +173,7 @@ HOLD contributes at four distinct levels:
 
 - **Conceptual.** An unknown outcome is an operational state, not an error. An authorised action does not mean its outcome is known, and a known outcome does not make an action legitimate. HOLD tracks both questions for every effect.
 - **Architectural.** Intelligence, authority and evidence are separated. The model proposes (Llama). The habilitation, written by the person the agent acts for, defines the mandate. The floor admits, refuses or holds. Only provider evidence establishes an outcome. The accountable human can grant one more check, approve one action outside the envelope, close the mission unconfirmed or revoke the habilitation, but cannot declare an effect confirmed either.
-- **Experimental.** Safety is measured together with useful progress (H1 with H2), because a system can be perfectly safe by staying held forever.
-- **Methodological.** Success is judged against verified effects and the mandate, not against the agent's account of itself. The 10 unproven success claims above are the reason.
+- **Experimental.** Safety is measured together with useful progress (H1 with H2), because a system can be perfectly safe by staying held forever. The experiment measures both.
+- **Operational.** A portable habilitation, a deterministic floor, an unknown-outcome state, a correlated-receipt close, and an offline-verifiable journal.
 
-HOLD sits in an active field, at the meeting point of agents, security, distributed systems and runtime verification. Close neighbours include:
-
-- [OWASP's Agent Control Standard](https://genai.owasp.org/resource/agent-control-standard-acs/): runtime control points and traces across agent frameworks, and a natural interoperability target.
-- [Atomix](https://arxiv.org/abs/2602.14849): transactional tool use for agentic workflows.
-- [SagaLLM](https://arxiv.org/abs/2503.11951): transaction guarantees for multi-agent planning.
-- [τ-bench](https://arxiv.org/abs/2406.12045): agent reliability under domain policies.
-- The survey [From Agent Traces to Trust](https://arxiv.org/abs/2606.04990): evidence tracing and execution provenance.
-
-The held state has a close ancestor: the in-doubt transaction of two-phase commit. A participant that has lost its coordinator must not decide alone; in XA, an operator may settle the branch by a heuristic decision as a last resort. Agents add one thing: the participant narrates, telling a human in natural language that it succeeded. HOLD therefore withholds the authority to declare success from the agent, and, unlike a heuristic decision, from the human authority too: deciding to continue is not establishing the result.
-
-HOLD's originality does not rest on a gate, idempotency or an event log taken separately. What we test is whether independent enforcement, an explicit unknown state and bounded human authority, together, preserve legitimate progress, measured against baselines under a frozen protocol. A systematic comparison with these systems is still to be done.
-
-**Next.**
-
-1. Replicate on unseen scenarios and more models, with effects verified outside the application.
-2. **H3 (E2)**: does Llama's contextual discernment beat the reference rule under the same habilitation?
-3. Asynchronous resumption: a mission held for hours, then resumed without losing context.
-4. Hostile and distributed conditions: concurrency, crashes, revocation, compromised tools, and whether individually legitimate agents can produce an illegitimate collective outcome.
-5. Autonomy per unit of supervision: can a clearer habilitation increase operational autonomy rather than restrict it? In E1, HOLD made progress where the cautious agent made none (8 against 0), but asked the human more often (45 solicitations against 33).
-6. Transfer: real providers, framework adapters, portable habilitations and external custody of evidence, which is where HOLD meets TENIR / REG.
-
-## How it works
-
-An agent that books, pays or sends things will, sooner or later, face an action whose result is **unknown**: the request left, the answer never came. Most agents then guess — they retry and book twice, or they declare success without proof.
-
-You attach a portable profile to your agent; every tool call goes through it.
-
-- **The profile** (`habilitation/v1`, a YAML/JSON file) says what the agent may do on its own: its powers, the envelope of each effect (amount ceiling, allowed providers, date windows), budgets, the threshold τ\* of coherence to restore, and who the accountable authority is — and how she revokes.
-- **The floor** enforces what must not happen, whatever the model proposes: no equivalent effect dispatched twice, no success without correlated evidence, no dependent action while an effect is unknown, no power beyond the profile, no decision on a stale position. What this does and does not guarantee outside HOLD is stated below.
-- **Hesitation** turns "unknown" into discernment instead of guessing: *pass / fail / hold, then hold → discernment*. HOLD verifies the status, contacts the provider's support, and only asks the authority when coherence cannot be restored within the habilitation. The mission resumes autonomously as soon as correlated evidence arrives.
-- **HOLD Relay** carries the Decision Request to the authority on **WhatsApp** (interactive buttons). The tap comes back through a signed webhook and the same floor. "STOP" revokes the mission from the phone.
-- **The journal** is hash-chained with a versioned event envelope (`hold.event/v1`): every mission can be verified and replayed — state, every floor decision, and counterfactual policies — without calling the model or the provider again.
-
-In E1-A6, **Llama is the agent** and the discerner that chooses the next move during a hesitation is the reference rule, not a model. Llama can also be the discerner (`--discerner llama`, experiment E2, not qualified). Either way the model proposes and the floor admits or refuses. The floor's safety does not depend on the model, which is exactly why it cannot be credited to the model: what Llama contributes is measured separately, decision by decision, and reported even when it is nothing.
-
-## Scripted demos
-
-```bash
-pip install -e ".[server]"
-hold demo --baseline                  # without HOLD: 2 bookings for one stay; with HOLD: 1, and the authority decides on WhatsApp (simulated)
-hold demo --scenario lost-response    # the agent reconciles alone: verify, verify, receipt, resume
-hold demo --scenario support          # the provider's support finds it (correlated reply)
-hold demo --scenario never            # never visible: the authority closes it unconfirmed
-hold demo --scenario envelope         # only hotel above the ceiling: Decision Request, approve once
-```
-
-### With Llama (Meta open weights)
-
-```bash
-ollama pull llama3.2:3b
-hold demo --agent llama --discerner llama --scenario authority
-hold qualify --discerner llama        # Llama's choices vs the reference, decision by decision
-```
-
-### With real WhatsApp (Cloud API)
-
-```bash
-export WHATSAPP_ACCESS_TOKEN=... WHATSAPP_PHONE_NUMBER_ID=... WHATSAPP_APP_SECRET=... WHATSAPP_VERIFY_TOKEN=...
-hold demo --relay whatsapp --contact 2126XXXXXXXX --serve 8787 --scenario authority
-# expose http://localhost:8787 over HTTPS (e.g. cloudflared) and set the webhook to /api/whatsapp/webhook (field: messages)
-# send any message to the business number first: it opens the 24 h window for interactive messages
-```
-
-Step by step from a Meta test number, with a preflight check (`python -m hold.whatsapp_check`): [docs/whatsapp-live.md](docs/whatsapp-live.md).
-
-## Wear it on your own agent
-
-```python
-from hold import Habilitation, Outcome, LlamaDiscerner
-from hold.relay.whatsapp import WhatsAppRelay
-
-hab = Habilitation("my-profile.hold.yaml", store="hold.db", discerner=LlamaDiscerner(), relay=WhatsAppRelay())
-
-@hab.effect("create_booking")
-def create_booking(hotel_id: str, check_in: str, check_out: str, traveler: str, price: float, currency: str, operation_id: str = ""):
-    ...  # call the real provider; return Outcome.confirmed(receipt) / Outcome.rejected(reason), or let a timeout raise
-
-@hab.status("check_booking")
-def check_booking(operation_id: str):
-    ...  # Outcome.confirmed(receipt, operation_id=...) or Outcome.not_found()
-
-mission = hab.open_mission("Trip to Lyon")
-tools = mission.tools()            # tool specs for Llama / OpenAI-style tool calling
-result = mission.dispatch(name, arguments)   # every call goes through the floor
-```
-
-## What HOLD guarantees, and what it does not
-
-All of the following holds inside the execution paths actually governed by HOLD, under the profile that applies. An effect emitted by another path is outside it; the deployment must make HOLD the only holder of the provider's credentials.
-
-
-| Guarantee | Scope |
-|---|---|
-| **At-most-once dispatch** | Inside the HOLD boundary: every runtime sharing one HOLD store (threads, and processes on one host; tested with four processes). Not across separate stores or hosts. |
-| **Provider-side duplicate prevention** | Only where the provider honors the `operation_id` HOLD passes as an idempotency key. The runtime binding declares it (`@hab.effect(..., idempotency="operation_id")`); each effect is labelled `NOT_DECLARED`, `DECLARED` or `VERIFIED` (with the verification cited). |
-| **Outcome** | `CONFIRMED` only with evidence correlated to the operation; `FAILED_PROVEN` only on an explicit refusal before creation; otherwise an explicit `UNKNOWN`, never assumed. A lost response can be reconciled only if a status check or the provider's support can find it. |
-
-The journal's hash chain detects a partial alteration. It does not prove completeness, and someone able to rewrite the whole store can recompute the chain; see the external witness in the Studio notes.
-
-Technical due-diligence file (architecture, threat model, runbook, integration, enterprise readiness, claims register), in French: [docs/enterprise-fr](docs/enterprise-fr/00-README.md).
-
-## Verify and replay
-
-> **Judge note:** use `python -m hold.journal_verify DB MISSION` for the correct verification exit code. The legacy `hold journal verify` path remains in the frozen E1-A6 perimeter and has a known exit-code defect documented below; it is not used for the benchmark results.
-
-```bash
-hold profile validate hold/profiles/reservation.hold.yaml
-python -m hold.journal_verify hold.db <mission>   # chain + state replay + decision replay; exit code 0 only if all hold
-hold journal policy hold.db <mission> --tau 0.3   # what the reference would have chosen under another policy
-hold journal export hold.db <mission> --out mission.json
-```
-
-## Tests
-
-```bash
-pip install -e ".[server,dev]" && pytest
-```
-
-Status: research prototype built for the Meta Global AI Developer Hackathon. The provider is **synthetic** everywhere in this repository: no real booking is ever made.
+HOLD is the reference implementation and testbed of a broader research programme on runtime execution governance (TENIR / REG); it supplies evidence for parts of that programme, not for all of it.
